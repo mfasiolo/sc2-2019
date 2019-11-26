@@ -1,0 +1,124 @@
+---
+title: "Parallel programming"
+weight: 3
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+*Note*. Any timing results here could be substantially different to what you would get if you ran the code on your own computer, so comments on the results may also be confusing. This is because these computations are run by Travis on nodes that may be heavily contested, as part of the website build process.
+
+## Why parallel?
+
+Often, for large data processing jobs, a single CPU core is not enough. Large computational jobs can be:
+
+- cpu-bound: Take too much cpu time
+- memory-bound: Take too much memory
+- I/O-bound: Take too much time to read/write from disk
+- network-bound: Take too much time to transfer across network
+
+Parallel programming aims to distribute cpu-bound computations to different cores (in a single processor) or processors (if available). Modern supercomputers are fast because they have massive number of processors, therefore it is crucial to be able write programs that run in parallel if one wants to take advantage of large clusters of processes.
+
+However, it is not true, even for easily parallelisable computations, that running on $n$ processes will be $n$ times as fast. The gain using additional processors tend to diminish as $n$ increases.
+
+## Parallelise using `mclapply`
+
+```{r}
+library(parallel)
+num_cores = detectCores()
+num_cores
+```
+
+In a Wright-Fisher model, an important model in population genetics, we trace the frequency of a mutant in a population of constant size $N$. The number of mutants $X_k$ is a Markov process that depends only on the value of $X_{k-1}$:
+$$ X_k \sim Binomial(N, \frac{X_{k-1}} N). $$
+```{r}
+simulate_wright_fisher = function(N, n_gen, init_freq) {
+  # population size, number of generation to simulate, and initial frequency of mutant
+  counts = numeric(n_gen)
+  counts[1] = round(N * init_freq)
+  for (k in 2:n_gen) {
+    counts[k] = rbinom(1, size=N, prob=counts[k-1]/N)
+  }
+  return(counts)
+}
+counts = simulate_wright_fisher(5000, 10000, 0.2)
+plot(counts, type='l', main='frequency of mutant', xlab='generation', ylab='')
+system.time(simulate_wright_fisher(5000, 10000, 0.2))
+```
+
+This simple "neutral" Wright-Fisher model can still be vectorised relatively easily, but more complicated models won't be. This is where parallelisation comes in.
+
+## `mclapply()` (doesn't work on windows)
+
+```{r}
+library(MASS)
+wrapper = function(init_freq) simulate_wright_fisher(5000, 10, init_freq)
+init_freqs = rep(0.2, 3)
+res = mclapply(init_freqs, wrapper, mc.cores=2)
+res
+```
+
+```{r}
+wrapper2 = function(init_freq) tail(simulate_wright_fisher(5000, 1000, init_freq), 1)
+init_freqs2 = rep(0.2, 500)
+system.time(lapply(init_freqs2, wrapper2))
+system.time(mclapply(init_freqs2, wrapper2, mc.cores=2))
+system.time(mclapply(init_freqs2, wrapper2, mc.cores=4))
+```
+The results show that mclapply with 2 cores is twice as fast as lapply, but increasing to 4 cores does not improve the performance of mclapply any more. The reason behind this is that on this MacBook, there are 2 physical cores but 4 virtual cores.
+
+## `foreach` and `doParallel`
+
+Note that `foreach` is not the same as a parallel for loop. It actually outputs something, typically a list of the same length as the number of iterates in the for loop. `%do%` evaluates the expression sequentially, while `%dopar%` evaluates it in parallel.
+
+```{r}
+library(foreach)
+foreach (i=1:3) %do% {
+  i*i
+}
+
+res = foreach (i=1:2, .combine=rbind) %do% {
+  simulate_wright_fisher(5000, 10, 0.2)
+}
+res
+```
+
+A useful argument to add to `foreach` is `.final`, which is function of one argument that is called to return final. For sample, if we are only interested in the number of mutants in the most recent generation,
+```{r}
+n_gen = 1000
+res = foreach (i=1:1000, .combine=rbind, .final=function(x) x[,n_gen]) %do% {
+  simulate_wright_fisher(5000, n_gen, 0.2)
+}
+hist(res, breaks=50)
+```
+
+So far nothing has run in parallel. In order to do so, we need to register the number of cores to use via `registerDoParallel`.
+
+```{r}
+library(doParallel)
+registerDoParallel(2) # only register 2 cores since my laptop only has 2 physical cores
+n_runs = 500
+system.time(foreach (i=1:n_runs, .combine=rbind, .final=function(x) x[,n_gen]) %do% {
+  simulate_wright_fisher(5000, n_gen, 0.2)
+})
+system.time(foreach (i=1:n_runs, .combine=rbind, .final=function(x) x[,n_gen]) %dopar% {
+  simulate_wright_fisher(5000, n_gen, 0.2)
+})
+t1 = Sys.time()
+res1= foreach (i=1:n_runs, .combine=rbind, .final=function(x) x[,n_gen]) %do% {
+  simulate_wright_fisher(5000, n_gen, 0.2)
+}
+t2 = Sys.time()
+res2 = foreach (i=1:n_runs, .combine=rbind, .final=function(x) x[,n_gen]) %dopar% {
+  simulate_wright_fisher(5000, n_gen, 0.2)
+}
+t3 = Sys.time()
+t2-t1
+t3-t2
+# clean up the cluster
+stopImplicitCluster()
+```
+
+Just as in the case of `mclapply`, evaluating the code in parallel with 2 cores takes about half as much time as evaluating the code sequentially.

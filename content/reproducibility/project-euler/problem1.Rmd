@@ -1,0 +1,29 @@
+---
+title: "Problem 1: Multiples of 3 and 5"
+---
+
+If we list all the natural numbers below 10 that are multiples of 3 or 5, we get 3, 5, 6 and 9. The sum of these multiples is 23.
+
+Find the sum of all the multiples of 3 or 5 below 1000.
+
+<details>
+<summary>A Solution</summary>
+
+A simple approach to this problem is to
+
+1. initialize a counter variable to 0;
+1. iterate over the integers between 1 and 999 (inclusive): if the integer is a multiple of 3 or 5, add it to the counter.
+
+The counter's value is then the solution.
+
+```{r}
+counter <- 0
+for (i in 1:999) {
+  if (i %% 3 == 0 || i %% 5 == 0) {
+    counter <- counter + i
+  }
+}
+counter
+```
+
+</details>

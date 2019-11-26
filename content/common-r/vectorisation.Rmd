@@ -1,0 +1,77 @@
+---
+title: "Vectorisation"
+weight: 1
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Vectorisation, matrix operations, and readability
+
+Vectorisation means the same operation is applied to every single number in a vector. One avoids using loops in the code as much as possible. Why is vectorisation so important? The answer is speed: vector operations in R are much faster.
+
+Vectorisation is as important in R as in other interpreted languages, such as Matlab or python.
+
+
+```{r}
+fsum1 = function(x) {
+  fsum = 0
+  for (i in 1:length(x)) {
+      fsum = fsum + sin(x[i])
+  }
+  return(fsum)
+}
+```
+
+```{r}
+fsum2 = function(x) sum(sin(x))
+```
+
+We can compare the speed using system.time
+
+```{r}
+x = 1:1e6 #runif(1e+06, min = -1, max = 1)
+system.time(fsum1(x))
+system.time(fsum2(x))
+```
+
+As can been seen in this example, vectorised code is not only faster but also more elegant.
+
+## Matrix operations -- higher dimensional vectorisation
+
+Let us say we want to write a function that simulate the following procedure $n$ times: we toss a fair coin 100 times and return the number of heads from these 100 tosses. That is, the function should return $n$ numbers, each of which is between 0 and 100.
+
+```{r}
+coin_toss1 = function(n) {
+  output = rep(0, n)
+  for (i in 1:n) {
+    num_heads = 0
+    for (j in 1:100) {
+      num_heads = num_heads + sample(c(0,1), 1)
+    }
+    output[i] = num_heads
+  }
+  return(output)
+}
+```
+
+```{r echo=TRUE}
+coin_toss2 = function(n) {
+  tosses = matrix(sample(c(0,1), n*100, replace=TRUE), nrow=n, ncol=100)
+  return(rowSums(tosses))
+}
+num_heads = coin_toss2(10000)
+hist(num_heads, breaks=50)
+```
+
+Let us compare the speed using system.time.
+
+```{r}
+n = 2000
+system.time(coin_toss1(n))
+system.time(coin_toss2(n))
+```
+
+Generally speaking, more layers of loops result in higher speedup if the code is properly vectorised. Having 3 layers of loops or higher should be avoided in an interpreted language such as `R`.

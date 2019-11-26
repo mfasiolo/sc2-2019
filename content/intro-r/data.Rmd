@@ -1,0 +1,186 @@
+---
+title: Data
+weight: 3
+output:
+  blogdown::html_page:
+    toc: true
+---
+
+This page introduces a few basics ways to deal with data in R.
+
+## Creating synthetic data
+
+R has many functions for simulating [random variates](https://en.wikipedia.org/wiki/Random_variate) from common distributions, as well as evaluating their density / mass functions, distribution functions and quantile functions. For example, the Uniform(0,1) distribution is served by the functions
+
+- `runif(n)`: simulates `n` random variates,
+- `dunif(x)`: evaluates the density at `x`,
+- `punif(x)`: evaluates the distribution function at `x`,
+- `qunif(u)`: evaluates the quantile function at `u`.
+
+Distributions supported in this way can be found by typing `?distributions` in the R console.
+
+We can simulate 2 sets of 100 standard normal random variates as follows.
+
+```{r, echo=FALSE}
+set.seed(12345)
+```
+
+```{r}
+n <- 100
+x1s <- rnorm(n)
+x2s <- rnorm(n)
+```
+
+Let us imagine that these are predictors in a linear regression model. We can simulate synthetic responses, and plot them alongside `x1s` and `x2s`.
+
+```{r}
+beta.true <- c(3.2, 0.5, -0.2)
+sigmaSq.true <- 2
+ys <- beta.true[1] + beta.true[2]*x1s + beta.true[3]*x2s + rnorm(n, mean=0, sd=sqrt(sigmaSq.true))
+```
+
+```{r}
+plot(ys, pch=20, ylim=range(c(ys, x1s, x2s)))
+points(x1s, pch=20, col="red")
+points(x2s, pch=20, col="blue")
+```
+
+## Creating a data frame
+
+A fundamental data structure in R is the data frame. We can create a data frame to hold our synthetic data, and then print the first 10 elements.
+
+```{r}
+my.data <- data.frame(x1=x1s, x2=x2s, y=ys)
+head(my.data, 10)
+```
+
+Each row in a data frame corresponds to an observation of each the relevant variables, in this case an observation of `x1`, `x2` and `y`.
+
+## Saving and loading CSV data
+
+A simple way to store small datasets is using a [comma-separated values](https://en.wikipedia.org/wiki/Comma-separated_values) (CSV) format. In R, we can save our `my.data` dataset using the `write.csv` command.
+
+```{r}
+write.csv(my.data, file="synthetic-data.csv", row.names=FALSE)
+```
+
+The filename is relative to the current working directory, which can be printed by using the `getwd` command.
+
+```{r}
+getwd()
+```
+
+To change the working directory, one can use the `setwd` command.
+
+To load data from a CSV file, one can use the `read.csv` command.
+
+```{r}
+my.data <- read.csv(file="synthetic-data.csv")
+head(my.data)
+```
+
+Using a CSV file has the benefit that the data is in a standard format that can be easily parsed in any programming language that can read from a text file. It can also be viewed in a text editor or spreadsheet program.
+
+## Saving and loading in R's data format
+
+R has support for saving and loading using an R-specific binary format. In combination with compression (the default), this can substantially reduce large file sizes and speed up the saving/loading process. R data files are usually given the ".Rdata" extension.
+
+```{r}
+save(my.data, file="synthetic-data.Rdata")
+```
+
+Any variable or R function can be saved, and not just data frames. Multiple objects can be saved using a command such as
+```r
+save(object1, object2, object3, file="filename.Rdata")
+```
+
+The `save.image` command saves all of the variables in the workspace.
+
+Unlike `write.csv` and `read.csv`, the name of a saved variable is associated with the saved value. Loading the .Rdata file associates the same variable name to the same data.
+
+```{r}
+load(file="synthetic-data.Rdata")
+```
+
+## Performing a simple linear regression
+
+With our loaded `my.data`, we can use some of R's built-in statistical methods to try to estimate a linear model for `y` given `x1` and `x2`.
+
+```{r}
+model <- lm(y ~ x1 + x2, my.data)
+summary(model)
+```
+
+The linear model says that data point `y[i]` is a realization of a normal random variable
+$$Y^{(i)} = \beta_0 + \beta_1 x_1^{(i)} + \beta_2 x_2^{(i)} + \sigma Z^{(i)},$$
+where $Z^{(1)},\ldots,Z^{(n)}$ is a sequence of independent standard normal random variables.
+
+In particular, the intercept $\beta_0$ is included by default.
+
+We can compare the "true" values of the coefficients with the fitted values.
+
+```{r}
+beta.true
+model$coefficients
+```
+
+We can similarly compare the "true" variance of the errors with the unbiased estimate.
+
+```{r}
+sigmaSq.true
+summary(model)$sigma^2
+```
+
+#### Computing the estimates directly
+
+The estimates obtained in the linear regression example are not difficult to obtain: the `lm` function is useful because it can be used easily and has been tested extensively.
+
+First we create the design matrix
+
+```{r}
+X <- cbind(rep(1, n), my.data$x1, my.data$x2)
+```
+
+We can check that this is the same as the design matrix used by `lm`, via the `model.matrix` function.
+
+```{r}
+all(X == model.matrix(model))
+```
+
+The maximum likelihood estimate of the coefficient vector $\beta$ is
+
+$$\hat{\beta}_{\rm ML} = (X^{\rm T}X)^{-1}X^{\rm T}y,$$
+
+which is straightforward to compute.
+
+```{r}
+beta.hat <- solve(t(X)%*%X, t(X)%*%my.data$y)
+beta.hat
+```
+
+A prediction of $y$ given $x = (1,x_1,x_2)$ is
+
+$$f(x) := \hat{\beta}_0 + \hat{\beta}_1 x_1 + \hat{\beta}_2 x_2,$$
+
+and the residual sum of squares is
+
+$${\rm RSS} = \sum_{i=1}^n (y^{(i)} - f(x^{(i)}))^2.$$
+
+The maximum likelihood estimate of $\sigma^2$ is
+
+$$\hat{\sigma}^2_{\rm ML} = \frac{1}{n} {\rm RSS},$$
+
+The ML estimate $\hat{\sigma}^2_{\rm ML}$ is not what was reported above. Instead, what is reported by `summary(model)$sigma^2` is the unbiased estimate
+
+$$\hat{\sigma}^2 = \frac{1}{n-3} {\rm RSS}.$$
+
+```{r}
+RSS <- sum((my.data$y - X%*%beta.hat)^2)
+sigmaSq.MLE <- RSS / n
+sigmaSq.hat <- RSS / (n-3)
+
+sigmaSq.MLE
+sigmaSq.hat
+```
+
+The estimator is unbiased because the distribution of ${\rm RSS}/\sigma^2$ is $\chi^2_{n-3}$.

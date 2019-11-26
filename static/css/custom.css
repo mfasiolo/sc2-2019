@@ -1,0 +1,31 @@
+body {
+  font-family: 'Arvo', serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Marcellus', sans-serif;
+}
+
+code {
+  font-family: 'Source Code Pro', monospace;
+}
+pre code {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 12px;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: normal;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+h3, h4, h5, h6 {
+  font-size: 20px;
+  font-weight: bold;
+  text-align: left;
+}
