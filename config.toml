@@ -11,12 +11,12 @@ footnotereturnlinkcontents = "↩"
     url = "/"
     weight = 1
 [[menu.main]]
-    name = "Why is R not enough?"
-    url = "/intro-r/"
+    name = "Interfacing R with C/C++"
+    url = "/rcpp/"
     weight = 2
 [[menu.main]]
-    name = "Rcpp"
-    url = "/reproducibility/"
+    name = "Advanced Rcpp"
+    url = "/rcpp_advanced/"
     weight = 3
 
 [params]

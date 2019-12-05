@@ -1,0 +1,102 @@
+---
+title: 3. Rcpp 
+weight: 3
+output:
+  blogdown::html_page:
+    toc: true
+---
+
+### An overview of R's internal C API
+
+See
+
+Rcpp manual
+
+http://adv-r.had.co.nz/C-interface.html
+
+https://github.com/hadley/r-internals
+
+https://cran.r-project.org/doc/manuals/r-release/R-ints.html
+
+https://cran.r-project.org/doc/manuals/R-exts.html
+
+
+### Rcpp
+
+Here we focus on Rcpp
+
+The key aspect to note here is C++
+programs: to operate, Rcpp needs not only R but also an addi-
+tional toolchain of a compiler, linker and more to be able to cre-
+ate binary object code extending R.
+
+library("Rcpp")
+
+evalCpp("2+2", verbose = TRUE)
+
+C++ is a statically typed language, there needs to be additional
+(compile-time) information provided for each of the variables.
+
+cppFunction()
+
+Upon calling the cppFunction(), and sim-
+ilarly to the earlier example involving evalCpp(), the C++
+code is both compiled and linked, and then imported into R under
+the name of the function supplied.
+
+sourceCpp() This not only compiles, links,
+and loads the code within the external file but also adds the
+necessary “glue” to make the Rcpp function available in the R
+environment
+
+When is R slow: Profiling R code will reveal
+shortcomings related to loops, for example, for, while, and
+repeat; conditional statements, for example, if-else if-
+else and switch; and recursive functions, that is, a function
+written in terms of itself such that the problem is broken down
+on each call in a reduced state until an answer can be obtained.
+In contrast, the overhead for such operations is significantly less
+in C++.
+
+Rcpp sugar: Rcpp connects R with C++. Only the former is vectorized: C++
+is not. Rcpp Sugar, however, provides a convenient way to work
+with high-performing C++ functions in a similar way to how
+R offers vectorized operations. Example
+set.seed(4141) # <- important!
+evalCpp("R::rnorm(0, 1)")
+
+### Rcpp as an interface
+
+Rcpp is designed to facilitate interfacing libraries written in C++ or C to R.
+Moreover, the Rcpp design allows
+for seamless transfer between object types by using automatic
+converters governed by wrap(), C++ to R , and as<T>(), R
+to C++ with the T indicating the type of object being cast into.
+These two helper functions provide a noninvasive way to work
+with an external object.
+
+One important caveat when
+using additional packages within the Rcpp ecosystem is the
+correct header file may not be Rcpp.h. In a majority of cases,
+the additional package ships a dedicated header (as, e.g., Rcp-
+pArmadillo.h here) which not only declares data structures
+from both systems, but may also add complementary integra-
+tion and conversion routines. It typically needs to be listed in
+an include statement along with a depends() attribute to
+tell R where to find the additional header files:
+
+
+### Rcpp in packages
+
+Rcpp.package.skeleton()
+
+
+## Variables and values
+
+A value can be assigned to a variable using the assignment operator `<-`. The variable is created if it doesn't already exist.
+
+```{r}
+x <- 123
+```
+
+
