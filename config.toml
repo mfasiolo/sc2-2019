@@ -11,7 +11,7 @@ footnotereturnlinkcontents = "↩"
     url = "/"
     weight = 1
 [[menu.main]]
-    name = "Interfacing R with C/C++"
+    name = "Integrating R and C"
     url = "/rcpp/"
     weight = 2
 [[menu.main]]
