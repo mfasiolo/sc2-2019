@@ -8,6 +8,7 @@ r_packages:
     - tidyverse
     - mgcViz
     - devtools
+    - minibenchmark
 
 r_github_packages:
     - rstudio/blogdown
@@ -21,13 +22,6 @@ script:
 before_deploy:
     - rm public/.gitignore
     
-# Some libraries need to be installed, otheriwse rgl install fails
-addons:
-  apt:
-    packages:
-      - libgl1-mesa-dev 
-      - libglu1-mesa-dev
-
 deploy:
     provider: pages
     skip_cleanup: true

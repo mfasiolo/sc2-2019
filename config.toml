@@ -26,5 +26,5 @@ footnotereturnlinkcontents = "↩"
     highlightjsCDN = "//cdn.bootcss.com"
     highlightjsLang = ["r", "yaml", "tex"]
     highlightjsTheme = "github"
-    GithubEdit = "https://github.org/mfasiolo/sc2-2019/edit/master/content/"
-    GithubView = "https://github.org/mfasiolo/sc2-2019/blob/master/content/"
+    GithubEdit = "https://github.com/mfasiolo/sc2-2019/edit/master/content/"
+    GithubView = "https://github.com/mfasiolo/sc2-2019/blob/master/content/"
