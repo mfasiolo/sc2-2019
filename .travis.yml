@@ -9,6 +9,7 @@ r_packages:
     - mgcViz
     - devtools
     - minibenchmark
+    - gamair
 
 r_github_packages:
     - rstudio/blogdown
