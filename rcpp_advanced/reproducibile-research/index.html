@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>Reproducible research - SC2</title>
+    <meta property="og:title" content="Reproducible research - SC2">
+    
+    <meta name="twitter:card" content="summary">
+
+    
+      
+    
+
+    
+      
+      <meta property="description" content="A big computer, a complex algorithm and a long time does not equal science.
+&amp;ndash; Robert Gentleman. SSC 2003, Halifax.
+[&amp;hellip;] Reproducible research refers to being able to reproduce the analysis &amp;hellip;">
+      <meta property="og:description" content="A big computer, a complex algorithm and a long time does not equal science.
+&amp;ndash; Robert Gentleman. SSC 2003, Halifax.
+[&amp;hellip;] Reproducible research refers to being able to reproduce the analysis &amp;hellip;">
+      
+    
+
+    
+    
+
+    
+
+    
+    
+
+    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
+    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+
+<link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="breadcrumbs">
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced/">rcpp_advanced / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced/reproducibile-research/">reproducibile-research / </a>
+    
+</nav>
+
+  </head>
+
+  
+  <body class="sc2-2019">
+    <header class="masthead">
+      <h1><a href="/sc2-2019/">SC2</a></h1>
+
+<p class="tagline">Statistical Computing 2</p>
+
+      <nav class="menu">
+  <input id="menu-check" type="checkbox" />
+  <label id="menu-label" for="menu-check" class="unselectable">
+    <span class="icon close-icon">✕</span>
+    <span class="icon open-icon">☰</span>
+    <span class="text">Menu</span>
+  </label>
+  <ul>
+  
+  
+  <li><a href="/sc2-2019/">Home</a></li>
+  
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced/">Advanced Rcpp</a></li>
+  
+  
+  </ul>
+</nav>
+
+    </header>
+
+    <article class="main">
+      <header class="title">
+      
+<h1>Reproducible research</h1>
+
+<h3>
+</h3>
+<hr>
+
+
+      </header>
+
+
+
+<blockquote>
+<p>A big computer, a complex algorithm and a long time does not equal science.</p>
+<p>&ndash; Robert Gentleman. SSC 2003, Halifax.</p>
+</blockquote>
+<p>Reproducible research refers to being able to reproduce the analysis and conclusions of a particular investigation given the same raw data. When the analysis requires significant computation, this requires being able to recreate the same computational environment and run the same code on the data.</p>
+<p>It may be surprising that a lot of science involving computation is <em>not</em> reproducible. Indeed, the scientific method largely revolves around explaining precisely how conclusions are drawn from experiments, so that they can be verified, modified or refuted in subsequent investigations. In practice, relatively few scientific articles provide enough information to recreate the program used to analyze the raw data, and fewer still make it possible to do this without months of person-effort. In some cases, even the researchers who conducted the analysis would be unable to reproduce the analysis.</p>
+<p>How is this possible? One reason is that it has historically been difficult to produce code that is easy to run on many different computer systems. A second is that computational research in many areas is interactive and the various steps performed to acquire data, clean, prepare and analyze it, interpret the results and produce visualizations are not logged in their entirety.</p>
+<p>Neither of these historical reasons is very compelling today. For the first, the vast majority of data analyses are performed using a high-level programming language whose programs can be run on multiple systems, and which have package management features that allow a snapshot of the relevant properties of the computational environment to be recorded. The code can easily be made available on the Internet. The second reason is probably even more disappointing than the first: most scientists would agree that not knowing how the analysis was performed is very problematic. Flexibility on this is likely a result of the recognition that computational research is difficult, especially when researchers do not have the computing expertise required to automate their analysis workflow.</p>
+<p>One good reason that research may be impossible to reproduce is if the data cannot be shared. However, in most cases this would not prevent the code used to analyze the data being available.</p>
+<p>Reproducible research is one part of a response to the <a href="https://en.wikipedia.org/wiki/Replication_crisis">replication crisis</a>. Being able to reproduce an analysis is useful in its own right, and also often makes it easy to perform the same analysis on different data. This makes it feasible for other people to try to replicate or generalize any findings.</p>
+<p>One major advantage of reproducible research is that programs for analyzing data are more open. This helps people identify potential statistical issues or programming bugs. Many interesting proposals can then be entertained, e.g. the submission of <a href="https://en.wikipedia.org/wiki/Registered_report">registered reports</a>: an experiment and its analysis can be accepted for publication before the data is actually collected.</p>
+
+
+  <footer>
+  
+
+<script src="//yihui.name/js/math-code.js"></script>
+<script async src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script async src="//yihui.name/js/center-img.js"></script>
+
+
+<script type="text/javascript">
+var sc_project=12110974;
+var sc_invisible=1;
+var sc_security="9b171880";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12110974/0/9b171880/1/"
+alt="Web Analytics"></a></div></noscript>
+
+
+
+
+
+
+
+
+  
+
+
+<p align=right>
+
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp_advanced/reproducibile-research.md'>View source</a>
+
+|
+
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp_advanced/reproducibile-research.md'>Edit source</a>
+
+</p>
+
+
+
+
+
+<script src="https://utteranc.es/client.js"
+        repo="awllee/sc1-2019"
+        issue-term="pathname"
+        label="utterance"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+
+  
+
+  
+  <hr>
+  <div class="copyright">© 2019 <a href="https://mfasiolo.github.io/">Matteo Fasiolo</a></div>
+  
+  </footer>
+  </article>
+  
+  </body>
+</html>
+

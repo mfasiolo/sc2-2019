@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Interfacing R with C/C&#43;&#43; on SC2</title>
+    <link>https://mfasiolo.github.io/sc2-2019/rcpp/</link>
+    <description>Recent content in Interfacing R with C/C&#43;&#43; on SC2</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    
+	<atom:link href="https://mfasiolo.github.io/sc2-2019/rcpp/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>1. Using R&#39;s C API</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp/1_r_internals/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp/1_r_internals/</guid>
+      <description>Creating C functions that are callable from R Calling expSmooth from R Creating R objects within C code    body { text-align: justify}  The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the Rcpp package to interface R with C++, but it is useful to know how R’s C API work to have an idea of what is going on under the hood when you use Rcpp.</description>
+    </item>
+    
+    <item>
+      <title>2. Exercises on chaotic maps and kernel regression smoothing</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp/2_exercises/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp/2_exercises/</guid>
+      <description>Simulation based inference on the Ricker model Adaptive kernel regression smoothing    body { text-align: justify}  Simulation based inference on the Ricker model Here we consider an extremely simple model for population dynamics, the Ricker map: \[ y_{t+1} = ry_te^{-y_t}, \] where \(y_t&amp;gt;0\) represents the size of the population at time \(t\) and \(r&amp;gt;0\) is its growth rate. The model can show a wide range of dynamics, depending on the value of \(r\).</description>
+    </item>
+    
+    <item>
+      <title>3. Rcpp</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp/3_rcpp/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp/3_rcpp/</guid>
+      <description>An overview of R’s internal C API Rcpp Rcpp as an interface Rcpp in packages Variables and values   An overview of R’s internal C API See
+Rcpp manual
+http://adv-r.had.co.nz/C-interface.html
+https://github.com/hadley/r-internals
+https://cran.r-project.org/doc/manuals/r-release/R-ints.html
+https://cran.r-project.org/doc/manuals/R-exts.html
+ Rcpp Here we focus on Rcpp
+The key aspect to note here is C++ programs: to operate, Rcpp needs not only R but also an addi- tional toolchain of a compiler, linker and more to be able to cre- ate binary object code extending R.</description>
+    </item>
+    
+  </channel>
+</rss>

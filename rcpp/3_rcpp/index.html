@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>3. Rcpp - SC2</title>
+    <meta property="og:title" content="3. Rcpp - SC2">
+    
+    <meta name="twitter:card" content="summary">
+
+    
+      
+    
+
+    
+      
+      <meta property="description" content="See
+Rcpp manual
+http://adv-r.had.co.nz/C-interface.html
+https://github.com/hadley/r-internals
+https://cran.r-project.org/doc/manuals/r-release/R-ints.html &amp;hellip;">
+      <meta property="og:description" content="See
+Rcpp manual
+http://adv-r.had.co.nz/C-interface.html
+https://github.com/hadley/r-internals
+https://cran.r-project.org/doc/manuals/r-release/R-ints.html &amp;hellip;">
+      
+    
+
+    
+    
+
+    
+
+    
+    
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
+    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+
+<link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="breadcrumbs">
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp/">rcpp / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp/3_rcpp/">3_rcpp / </a>
+    
+</nav>
+
+  </head>
+
+  
+  <body class="sc2-2019">
+    <header class="masthead">
+      <h1><a href="/sc2-2019/">SC2</a></h1>
+
+<p class="tagline">Statistical Computing 2</p>
+
+      <nav class="menu">
+  <input id="menu-check" type="checkbox" />
+  <label id="menu-label" for="menu-check" class="unselectable">
+    <span class="icon close-icon">✕</span>
+    <span class="icon open-icon">☰</span>
+    <span class="text">Menu</span>
+  </label>
+  <ul>
+  
+  
+  <li><a href="/sc2-2019/">Home</a></li>
+  
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced/">Advanced Rcpp</a></li>
+  
+  
+  </ul>
+</nav>
+
+    </header>
+
+    <article class="main">
+      <header class="title">
+      
+<h1>3. Rcpp</h1>
+
+<h3>
+</h3>
+<hr>
+
+
+      </header>
+
+
+
+
+
+<div id="TOC">
+<ul>
+<li><a href="#an-overview-of-rs-internal-c-api">An overview of R’s internal C API</a></li>
+<li><a href="#rcpp">Rcpp</a></li>
+<li><a href="#rcpp-as-an-interface">Rcpp as an interface</a></li>
+<li><a href="#rcpp-in-packages">Rcpp in packages</a></li>
+<li><a href="#variables-and-values">Variables and values</a></li>
+</ul>
+</div>
+
+<div id="an-overview-of-rs-internal-c-api" class="section level3">
+<h3>An overview of R’s internal C API</h3>
+<p>See</p>
+<p>Rcpp manual</p>
+<p><a href="http://adv-r.had.co.nz/C-interface.html" class="uri">http://adv-r.had.co.nz/C-interface.html</a></p>
+<p><a href="https://github.com/hadley/r-internals" class="uri">https://github.com/hadley/r-internals</a></p>
+<p><a href="https://cran.r-project.org/doc/manuals/r-release/R-ints.html" class="uri">https://cran.r-project.org/doc/manuals/r-release/R-ints.html</a></p>
+<p><a href="https://cran.r-project.org/doc/manuals/R-exts.html" class="uri">https://cran.r-project.org/doc/manuals/R-exts.html</a></p>
+</div>
+<div id="rcpp" class="section level3">
+<h3>Rcpp</h3>
+<p>Here we focus on Rcpp</p>
+<p>The key aspect to note here is C++
+programs: to operate, Rcpp needs not only R but also an addi-
+tional toolchain of a compiler, linker and more to be able to cre-
+ate binary object code extending R.</p>
+<p>library(“Rcpp”)</p>
+<p>evalCpp(“2+2”, verbose = TRUE)</p>
+<p>C++ is a statically typed language, there needs to be additional
+(compile-time) information provided for each of the variables.</p>
+<p>cppFunction()</p>
+<p>Upon calling the cppFunction(), and sim-
+ilarly to the earlier example involving evalCpp(), the C++
+code is both compiled and linked, and then imported into R under
+the name of the function supplied.</p>
+<p>sourceCpp() This not only compiles, links,
+and loads the code within the external file but also adds the
+necessary “glue” to make the Rcpp function available in the R
+environment</p>
+<p>When is R slow: Profiling R code will reveal
+shortcomings related to loops, for example, for, while, and
+repeat; conditional statements, for example, if-else if-
+else and switch; and recursive functions, that is, a function
+written in terms of itself such that the problem is broken down
+on each call in a reduced state until an answer can be obtained.
+In contrast, the overhead for such operations is significantly less
+in C++.</p>
+<p>Rcpp sugar: Rcpp connects R with C++. Only the former is vectorized: C++
+is not. Rcpp Sugar, however, provides a convenient way to work
+with high-performing C++ functions in a similar way to how
+R offers vectorized operations. Example
+set.seed(4141) # &lt;- important!
+evalCpp(“R::rnorm(0, 1)”)</p>
+</div>
+<div id="rcpp-as-an-interface" class="section level3">
+<h3>Rcpp as an interface</h3>
+<p>Rcpp is designed to facilitate interfacing libraries written in C++ or C to R.
+Moreover, the Rcpp design allows
+for seamless transfer between object types by using automatic
+converters governed by wrap(), C++ to R , and as<T>(), R
+to C++ with the T indicating the type of object being cast into.
+These two helper functions provide a noninvasive way to work
+with an external object.</p>
+<p>One important caveat when
+using additional packages within the Rcpp ecosystem is the
+correct header file may not be Rcpp.h. In a majority of cases,
+the additional package ships a dedicated header (as, e.g., Rcp-
+pArmadillo.h here) which not only declares data structures
+from both systems, but may also add complementary integra-
+tion and conversion routines. It typically needs to be listed in
+an include statement along with a depends() attribute to
+tell R where to find the additional header files:</p>
+</div>
+<div id="rcpp-in-packages" class="section level3">
+<h3>Rcpp in packages</h3>
+<p>Rcpp.package.skeleton()</p>
+</div>
+<div id="variables-and-values" class="section level2">
+<h2>Variables and values</h2>
+<p>A value can be assigned to a variable using the assignment operator <code>&lt;-</code>. The variable is created if it doesn’t already exist.</p>
+<pre class="r"><code>x &lt;- 123</code></pre>
+</div>
+
+
+  <footer>
+  
+
+<script src="//yihui.name/js/math-code.js"></script>
+<script async src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script async src="//yihui.name/js/center-img.js"></script>
+
+
+<script type="text/javascript">
+var sc_project=12110974;
+var sc_invisible=1;
+var sc_security="9b171880";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12110974/0/9b171880/1/"
+alt="Web Analytics"></a></div></noscript>
+
+
+
+
+
+
+
+
+  
+
+
+<p align=right>
+
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp/3_Rcpp.Rmd'>View source</a>
+
+|
+
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp/3_Rcpp.Rmd'>Edit source</a>
+
+</p>
+
+
+
+
+
+<script src="https://utteranc.es/client.js"
+        repo="awllee/sc1-2019"
+        issue-term="pathname"
+        label="utterance"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+
+  
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+  
+  <hr>
+  <div class="copyright">© 2019 <a href="https://mfasiolo.github.io/">Matteo Fasiolo</a></div>
+  
+  </footer>
+  </article>
+  
+  </body>
+</html>
+
