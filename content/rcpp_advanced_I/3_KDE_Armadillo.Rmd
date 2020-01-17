@@ -165,7 +165,7 @@ Approach A seems quite appealing: we pay an upfront $O(d^3)$ cost to get ${\bf H
    
 Hence, the cost of approach B is $O(m d^2)$ as well, but has the advantage of avoiding matrix inversion which is generally less inaccurate than solving a linear system.
 
-The approach we are going to follow is based on the observation that $({\bf x}_i - \mu)^T {\bf H}^{-1}({\bf x}_i - \mu) = {\bf z}_i^T{\bf z}_i$, hence once we have obtained ${\bf z}_i$ by forward-substitution as in step 1 above, we just need to calculate its squared norm at cost $O(d)$. Having obtained the cholesky decomposition of $\bm H$, computing its log-determinant is very cheap because $\log\text{det}({\bf H}) = \log\text{det}({\bf L}{\bf L}^T) = 2\log\text{det}({\bf L}) = 2\log\text{trace}({\bf L})$.
+The approach we are going to follow is based on the observation that $({\bf x}_i - \mu)^T {\bf H}^{-1}({\bf x}_i - \mu) = {\bf z}_i^T{\bf z}_i$, hence once we have obtained ${\bf z}_i$ by forward-substitution as in step 1 above, we just need to calculate its squared norm at cost $O(d)$. Having obtained the cholesky decomposition of $\bf H$, computing its log-determinant is very cheap because $\log\text{det}({\bf H}) = \log\text{det}({\bf L}{\bf L}^T) = 2\log\text{det}({\bf L}) = 2\log\text{trace}({\bf L})$.
 Before lookign at the `Armadillo` function will evaluate the Gaussian log-density, which we call `dmvnInt`, lets look at the function that will be accessed at R level:
 ```{r engine = 'Rcpp', eval = FALSE}
 Rcpp::NumericVector kde_i(mat& y, mat& x, mat& H) {
