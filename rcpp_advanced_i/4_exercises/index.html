@@ -164,9 +164,6 @@ ggplot(solarAU,
        aes(x = toy, y = tod, z = logprod)) +
        stat_summary_hex() +
        scale_fill_gradientn(colours = viridis(50))</code></pre>
-<pre><code>## Warning: Computation failed in `stat_summary_hex()`:
-## Package `hexbin` required for `stat_summary_hex`.
-## Please install and try again.</code></pre>
 <p><img src="/sc2-2019/rcpp_advanced_I/4_Exercises_files/figure-html/unnamed-chunk-3-1.png" width="672" />
 As expected, there are more hours of daylight in Austral winter, hence more production occurs during that period of the year.</p>
 <p>Now, we aim at modelling the expected log-production, <span class="math inline">\(y\)</span>, as a function of <span class="math inline">\({\bf x} = \{\text{tod}, \text{toy}\}\)</span>. That is, we want a model for <span class="math inline">\(\mathbb{E}(y|{\bf x})\)</span>. We start with a simple polynomial regression model:
@@ -198,13 +195,6 @@ pl2 &lt;- ggplot(solarAU,
        stat_summary_hex() +
        scale_fill_gradientn(colours = viridis(50))
 grid.arrange(pl1, pl2, ncol = 2)</code></pre>
-<pre><code>## Warning: Computation failed in `stat_summary_hex()`:
-## Package `hexbin` required for `stat_summary_hex`.
-## Please install and try again.
-
-## Warning: Computation failed in `stat_summary_hex()`:
-## Package `hexbin` required for `stat_summary_hex`.
-## Please install and try again.</code></pre>
 <p><img src="/sc2-2019/rcpp_advanced_I/4_Exercises_files/figure-html/unnamed-chunk-6-1.png" width="960" style="display: block; margin: auto;" />
 In particular, the second plot shows a clear non-linear pattern in the residuals. To improve our fit, we make our linear regression model locally adaptive by adopting a local least regression approach (see, e.g., Hastie et al, 2009, section 6.1.2 and 6.3). This consists in letting the estimated regression coefficients depend on <span class="math inline">\(\bf x\)</span>, so that <span class="math inline">\(\hat{\beta} = \hat{\beta}({\bf x})\)</span>. To achieve this, for a fixed value <span class="math inline">\({\bf x}_0\)</span>, we find <span class="math inline">\(\hat{\beta}({\bf x}_0)\)</span> by minimizing the following objective:
 <span class="math display">\[
@@ -250,13 +240,6 @@ pl2 &lt;- ggplot(solarAU_sub,
        scale_fill_gradientn(colours = viridis(50))
 
 grid.arrange(pl1, pl2, ncol = 2)</code></pre>
-<pre><code>## Warning: Computation failed in `stat_summary_hex()`:
-## Package `hexbin` required for `stat_summary_hex`.
-## Please install and try again.
-
-## Warning: Computation failed in `stat_summary_hex()`:
-## Package `hexbin` required for `stat_summary_hex`.
-## Please install and try again.</code></pre>
 <p><img src="/sc2-2019/rcpp_advanced_I/4_Exercises_files/figure-html/unnamed-chunk-11-1.png" width="960" style="display: block; margin: auto;" />
 The left plot look quite similar to the data (first plot of this document) and the residual plots shows no clear residual pattern. However, our code is very slow, so:</p>
 <p><strong>Q2 start</strong> To speed up the local least squares fit, implement is in <code>RcppArmadillo</code> and compare your solutions with the <code>R</code> code above in terms of speed (and correctness). If you wish, you can re-use the code we have described in a previous chapter for evaluating the multivariate normal density. <strong>Q2 end</strong></p>
