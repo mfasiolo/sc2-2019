@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
-	<meta name="generator" content="Hugo 0.60.1" />
+	<meta name="generator" content="Hugo 0.62.2" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
@@ -16,10 +16,8 @@
 
     
       
-      <meta property="description" content="This is the website with materials for the first computing unit of the taught component of the Computational Statistics and Data Science (COMPASS) PhD programme.
-The unit description provides further &amp;hellip;">
-      <meta property="og:description" content="This is the website with materials for the first computing unit of the taught component of the Computational Statistics and Data Science (COMPASS) PhD programme.
-The unit description provides further &amp;hellip;">
+      <meta property="description" content="This website contains teaching materials for part of the second computing unit of the taught component of the Computational Statistics and Data Science (COMPASS) PhD programme. The material for the &amp;hellip;">
+      <meta property="og:description" content="This website contains teaching materials for part of the second computing unit of the taught component of the Computational Statistics and Data Science (COMPASS) PhD programme. The material for the &amp;hellip;">
       
     
 
@@ -82,7 +80,9 @@ The unit description provides further &amp;hellip;">
   
   <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
   
-  <li><a href="/sc2-2019/rcpp_advanced/">Advanced Rcpp</a></li>
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
   
   
   </ul>
@@ -97,15 +97,31 @@ The unit description provides further &amp;hellip;">
       </header>
 
 
+<!-- raw HTML omitted -->
+<!-- raw HTML omitted -->
 <h1 id="statistical-computing-2">Statistical Computing 2</h1>
-<p>This is the website with materials for the first computing unit of the taught component of the <a href="https://www.bristol.ac.uk/cdt/compass/">Computational Statistics and Data Science (COMPASS) PhD programme</a>.</p>
-<p>The <a href="https://www.bris.ac.uk/unit-programme-catalogue/UnitDetails.jsa?ayrCode=19%2F20&amp;unitCode=MATHM0040">unit description</a> provides further details on the unit.</p>
-<p>This unit should provide researchers in computational statistics with core computational skills that can be used in both theoretical and applied research.</p>
-<p>This unit focuses on the R programming language, because it is a fairly easy to learn high-level language with a healthy data science community. Most of the ideas apply straightforwardly to other programming languages.</p>
+<p>This website contains teaching materials for part of the second computing unit of the taught component of the <a href="https://www.bristol.ac.uk/cdt/compass/">Computational Statistics and Data Science (COMPASS) PhD programme</a>. The material for the fist computing unit can be found <a href="https://awllee.github.io/sc1-2019/">here</a>.</p>
+<p>The material provided here focuses on how <code>R</code> can be interfaced with <code>C++</code> via the <code>Rcpp</code> package. More specifically, we guide the students through the following steps:</p>
+<ol>
+<li>
+<p>interfacing <code>R</code> with <code>C++</code> manually via <code>.Call()</code>;</p>
+</li>
+<li>
+<p>using the <code>Rcpp</code> package for easier/safer integration between <code>R</code> and <code>C++</code>;</p>
+</li>
+<li>
+<p>using <code>Rcpp sugar</code> for performing standard statistical operations in <code>C++</code>;</p>
+</li>
+<li>
+<p>performing numerical linear algebra computation via the <code>RcppArmadillo</code> package.</p>
+</li>
+</ol>
+<p>Each chapter contains one or more programming exercises, focused on exploiting the <code>Rcpp</code> family of packages to speed-up statistical computations.</p>
 <p>References:</p>
 <ul>
-<li>Allaire, J.J., Eddelbuettel, D. and François, R., 2018. Rcpp Attributes. Vignette included in R package Rcpp, URL http://CRAN. R-Project. org/package= Rcpp.</li>
+<li>Allaire, J.J., Eddelbuettel, D. and François, R., 2018. Rcpp Attributes. Vignette included in R package Rcpp, URL <a href="http://CRAN.R-Project.org/package=Rcpp">http://CRAN.R-Project.org/package=Rcpp</a>.</li>
 <li>Chambers, J.M., 2017. Extending R. Chapman and Hall/CRC.</li>
+<li>Eddelbuettel, D., 2013. Seamless R and C++ integration with Rcpp. New York: Springer.</li>
 <li>Eddelbuettel, D. and Balamuta, J.J., 2018. Extending R with C++: A Brief Introduction to Rcpp. The American Statistician, 72(1), pp.28-36.</li>
 <li>Eddelbuettel, D. and François, R., 2010. Rcpp syntactic sugar.</li>
 <li>Eddelbuettel, D. and Sanderson, C., 2014. RcppArmadillo: Accelerating R with high-performance C++ linear algebra. Computational Statistics &amp; Data Analysis, 71, pp.1054-1063.</li>

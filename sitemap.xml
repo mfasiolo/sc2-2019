@@ -3,15 +3,11 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/1_rcpp_sugar/</loc>
+  </url>
+  
+  <url>
     <loc>https://mfasiolo.github.io/sc2-2019/rcpp/1_r_internals/</loc>
-  </url>
-  
-  <url>
-    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/</loc>
-  </url>
-  
-  <url>
-    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/reproducibile-research/</loc>
   </url>
   
   <url>
@@ -19,7 +15,11 @@
   </url>
   
   <url>
-    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/literate/</loc>
+    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/2_rcpparmadillo/</loc>
+  </url>
+  
+  <url>
+    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/3_kde_armadillo/</loc>
   </url>
   
   <url>
@@ -27,15 +27,23 @@
   </url>
   
   <url>
-    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/project-euler/</loc>
+    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/junk/</loc>
   </url>
   
   <url>
-    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/latex-lyx/</loc>
+    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/</loc>
   </url>
   
   <url>
-    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/reading/</loc>
+    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/4_exercises/</loc>
+  </url>
+  
+  <url>
+    <loc>https://mfasiolo.github.io/sc2-2019/rcpp/4_exercises/</loc>
+  </url>
+  
+  <url>
+    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/</loc>
   </url>
   
   <url>
@@ -48,14 +56,6 @@
   
   <url>
     <loc>https://mfasiolo.github.io/sc2-2019/rcpp/</loc>
-  </url>
-  
-  <url>
-    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/project-euler/problem1/</loc>
-  </url>
-  
-  <url>
-    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/project-euler/problem2/</loc>
   </url>
   
   <url>

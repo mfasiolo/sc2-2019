@@ -98,7 +98,9 @@
   
   <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
   
-  <li><a href="/sc2-2019/rcpp_advanced/">Advanced Rcpp</a></li>
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
   
   
   </ul>
@@ -127,6 +129,7 @@
 <li><a href="#creating-c-functions-that-are-callable-from-r">Creating C functions that are callable from R</a></li>
 <li><a href="#calling-expsmooth-from-r">Calling expSmooth from R</a></li>
 <li><a href="#creating-r-objects-within-c-code">Creating R objects within C code</a></li>
+<li><a href="#references">References</a></li>
 </ul>
 </div>
 
@@ -286,8 +289,8 @@ library(microbenchmark)
 microbenchmark(smoR(), smoC(), times = 500)</code></pre>
 <pre><code>## Unit: microseconds
 ##    expr     min       lq      mean   median       uq      max neval
-##  smoR() 676.236 683.0905 696.94142 688.2660 697.5755 1922.305   500
-##  smoC()  27.063  27.3615  32.48822  27.8815  28.7570 1741.418   500</code></pre>
+##  smoR() 541.930 549.7555 559.26313 554.8250 559.0035 1736.606   500
+##  smoC()  21.551  21.7925  24.97788  22.1285  22.7320 1171.166   500</code></pre>
 <p>So the C version is more than 10 times faster. The comparison it somewhat unfair, because the R function is allocating memory containing the smoothed temperature at every call, while the C version is re-using the memory allocated to the <code>tmpSmooth</code> vector. However, the ability to overwrite R objects without copying them is one of the reasons for interfacing R with C.</p>
 <p>We now go back to our original application, and fit a model which excludes <code>so2</code> with didn’t seem to matter and that includes the effect of smoothed temperature:</p>
 <pre class="r"><code>chicago$tmpSmooth &lt;- tmpSmooth
@@ -368,14 +371,24 @@ smoC2 &lt;- function() .Call(&quot;expSmooth2&quot;, chicago$tmpd, 0.9)
 library(microbenchmark)
 microbenchmark(smoR(), smoC(), smoC2(), times = 500)</code></pre>
 <pre><code>## Unit: microseconds
-##     expr     min       lq      mean   median       uq      max neval
-##   smoR() 677.134 700.0510 722.10277 711.8445 725.9390 1914.676   500
-##   smoC()  27.757  28.3940  33.95004  29.2115  31.6680 1404.669   500
-##  smoC2()  27.196  28.4735  39.59478  37.1390  38.9425 1668.733   500</code></pre>
+##     expr     min      lq      mean   median       uq      max neval
+##   smoR() 549.545 553.984 562.59119 556.6920 562.2225 1499.900   500
+##   smoC()  22.135  22.478  25.56661  22.8080  23.4340 1088.213   500
+##  smoC2()  22.786  27.969  32.58840  28.4435  29.8320 1239.527   500</code></pre>
 <p>despite the fact that is it allocating memory for the output vector at every call. Importanly, <code>expSmooth2</code> is safer and works directly with integer input vectors:</p>
 <pre class="r"><code>plot(chicago$death[1:1000], col = &quot;grey&quot;)
 lines(.Call(&quot;expSmooth2&quot;, chicago$death, 0.9)[1:1000], col = 2)</code></pre>
 <p><img src="/sc2-2019/rcpp/1_R_internals_files/figure-html/unnamed-chunk-32-1.png" width="528" style="display: block; margin: auto;" /></p>
+</div>
+<div id="references" class="section level3">
+<h3>References</h3>
+<ul>
+<li><p>Chambers, J.M., 2017. Extending R. Chapman and Hall/CRC.</p></li>
+<li><p>CRAN. R internals, see <a href="https://cran.r-project.org/doc/manuals/r-release/R-ints.html" class="uri">https://cran.r-project.org/doc/manuals/r-release/R-ints.html</a></p></li>
+<li><p>CRAN. Writing R extensions, see <a href="https://cran.r-project.org/doc/manuals/R-exts.html" class="uri">https://cran.r-project.org/doc/manuals/R-exts.html</a></p></li>
+<li><p>Wickham H.. R’s C interface, see <a href="http://adv-r.had.co.nz/C-interface.html" class="uri">http://adv-r.had.co.nz/C-interface.html</a></p></li>
+<li><p>Wickham H.. R internals, see <a href="https://github.com/hadley/r-internals" class="uri">https://github.com/hadley/r-internals</a></p></li>
+</ul>
 </div>
 
 

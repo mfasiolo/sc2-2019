@@ -11,24 +11,21 @@
     
     
     <item>
+      <title>1. Rcpp sugar</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/1_rcpp_sugar/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/1_rcpp_sugar/</guid>
+      <description>Vectorized operators and sugar versions of basic R functions Random number generation    body { text-align: justify}  In a previous chapter we explained how Rcpp allows users to interface R with C++ in convenient way. Here we cover Rcpp sugar, which consists of a set of functions and operators which make the C++ code written using Rcpp behave similarly to what would happen in R. In other words Rcpp sugar allows us to write C++ code which is similar to the R equivalent, but often more efficient.</description>
+    </item>
+    
+    <item>
       <title>1. Using R&#39;s C API</title>
       <link>https://mfasiolo.github.io/sc2-2019/rcpp/1_r_internals/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp/1_r_internals/</guid>
-      <description>Creating C functions that are callable from R Calling expSmooth from R Creating R objects within C code    body { text-align: justify}  The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the Rcpp package to interface R with C++, but it is useful to know how R’s C API work to have an idea of what is going on under the hood when you use Rcpp.</description>
-    </item>
-    
-    <item>
-      <title>Reproducible research</title>
-      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/reproducibile-research/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/reproducibile-research/</guid>
-      <description>A big computer, a complex algorithm and a long time does not equal science.
-&amp;ndash; Robert Gentleman. SSC 2003, Halifax.
- Reproducible research refers to being able to reproduce the analysis and conclusions of a particular investigation given the same raw data. When the analysis requires significant computation, this requires being able to recreate the same computational environment and run the same code on the data.
-It may be surprising that a lot of science involving computation is not reproducible.</description>
+      <description>Creating C functions that are callable from R Calling expSmooth from R Creating R objects within C code References    body { text-align: justify}  The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the Rcpp package to interface R with C++, but it is useful to know how R’s C API work to have an idea of what is going on under the hood when you use Rcpp.</description>
     </item>
     
     <item>
@@ -41,78 +38,59 @@ It may be surprising that a lot of science involving computation is not reproduc
     </item>
     
     <item>
-      <title>Literate programming</title>
-      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/literate/</link>
+      <title>2. RcppArmadillo</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/2_rcpparmadillo/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/literate/</guid>
-      <description>Instead of imagining that our main task is to instruct a computer what to do, let us concentrate rather on explaining to human beings what we want a computer to do.
-– Donald E. Knuth
- Literate programming was introduced by Donald Knuth in a 1984 article featuring the quote above.
-In practice, literate programming involves writing source code that can be processed to produce
-a document explaining what the program does, a program that can be executed.</description>
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/2_rcpparmadillo/</guid>
+      <description>Introduction Motivating example 1: matrix-matrix-vector product Motivating example 2: sums of matrices Basic RcppArmadillo usage References    body { text-align: justify}  Introduction Many standard statistical models/algorithms (e.g., linear regression, principal component analysis, …) require using numerical algebra routines, hence this section explains how to perform such computations efficiently using the RcppArmadillo R package. RcppArmadillo provides an interface to the Armadillo C++ numerical linear algebra library, which is highly useful in practice because it provides an interesting balance between performance and ease of use.</description>
     </item>
     
     <item>
-      <title>3. Rcpp</title>
+      <title>3. Example on multivariate KDE with RcppArmadillo</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/3_kde_armadillo/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/3_kde_armadillo/</guid>
+      <description>Introduction An R-based and a dumb Rcpp solution A better RcppArmadillo solution References    body { text-align: justify}  Introduction To provide a more challeging example illustrating the capabilities of RcppArmadillo, here we show how to perform multivariate kernel density estimation (k.d.e.) using this library. In particular, let \(\bf x_1^o, \dots, \bf x_n^o\) be \(d\)-dimensional vectors, sample from the density \(\pi(\bf x)\). A k.d.e. estimate of \(\pi({\bf x})\) is \[ \hat{\pi}_{\bf H}({\bf x}) = \frac{1}{n} \sum_{i=1}^n \kappa_{\bf H}({\bf x} - {\bf x}_i^o), \] where \(\kappa_{\bf H}\) is a kernel with positive definite bandwidth matrix \({\bf H}\).</description>
+    </item>
+    
+    <item>
+      <title>3. Rcpp basics</title>
       <link>https://mfasiolo.github.io/sc2-2019/rcpp/3_rcpp/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp/3_rcpp/</guid>
-      <description>An overview of R’s internal C API Rcpp Rcpp as an interface Rcpp in packages Variables and values   An overview of R’s internal C API See
-Rcpp manual
-http://adv-r.had.co.nz/C-interface.html
-https://github.com/hadley/r-internals
-https://cran.r-project.org/doc/manuals/r-release/R-ints.html
-https://cran.r-project.org/doc/manuals/R-exts.html
- Rcpp Here we focus on Rcpp
-The key aspect to note here is C++ programs: to operate, Rcpp needs not only R but also an addi- tional toolchain of a compiler, linker and more to be able to cre- ate binary object code extending R.</description>
+      <description>Rcpp via R CMD SHLIB: the old but instructive way Rcpp via sourceCpp() Inline Rcpp via cppFunction() and evalCpp() References    body { text-align: justify}  Rcpp via R CMD SHLIB: the old but instructive way To illustrate how Rcpp works, let us consider again our C function for exponential smoothing, that is:
+#include &amp;lt;R.h&amp;gt; #include &amp;lt;Rinternals.h&amp;gt; SEXP expSmooth2(SEXP y, SEXP a) { int ni; double *xy, *xys; double ai; SEXP ys; y = PROTECT(coerceVector(y, REALSXP)); ni = length(y); ys = PROTECT(allocVector(REALSXP, ni)); ai = REAL(a)[0]; xy = REAL(y); xys = REAL(ys); xys[0] = xy[0]; for(int i = 1; i &amp;lt; ni; i++){ xys[i] = ai * xys[i-1] + (1 - ai) * xy[i]; } UNPROTECT(2); return ys; } Now, the same function can be implemented in “raw” Rcpp as follows (as we will explain later this is NOT the recommended way of using Rcpp):</description>
     </item>
     
     <item>
-      <title>Literate programming with LaTeX and LyX</title>
-      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/latex-lyx/</link>
+      <title>3. Rcpp basics</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/junk/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/latex-lyx/</guid>
-      <description>It is straightforward to incorporate R code chunks in LaTeX using knitr.
-For example, you can take the following code and paste it into a file with extension .Rnw. After doing so, you can open it with RStudio.
-Before trying to compile the file (by clicking &amp;ldquo;Compile PDF&amp;rdquo;), first check in your global or project options that under the &amp;ldquo;Sweave&amp;rdquo; menu, &amp;ldquo;Weave Rnw files using:&amp;rdquo; is set to &amp;ldquo;knitr&amp;rdquo;. Otherwise, Sweave will be used, which requires a few modifications to the input file.</description>
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/junk/</guid>
+      <description>Rcpp via R CMD SHLIB: the old but instructive way    body { text-align: justify}  Rcpp via R CMD SHLIB: the old but instructive way # fObj &amp;lt;- function(.x) .x^2 # # fGrad &amp;lt;- function(.x, h = 1e-3) (fObj(.x+h) - fObj(.x)) / h # # x0 &amp;lt;- x1 &amp;lt;- 2 # xSeq1 &amp;lt;- numeric(500) # # for(ii in 1:500){ # x1 &amp;lt;- x0 - 0.01 * fGrad(x0) # x0 &amp;lt;- x1 # xSeq1[ii] &amp;lt;- x1 # } # # x0 &amp;lt;- x1 &amp;lt;- 2 # xSeq2 &amp;lt;- numeric(500) # # for(ii in 1:500){ # x1 &amp;lt;- x0 - 0.</description>
     </item>
     
     <item>
-      <title>Additional reading</title>
-      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/reading/</link>
+      <title>4. Exercise on local polynomial regression</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/4_exercises/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/reading/</guid>
-      <description> Turing Way: Reproducibility Literate Programming SW Carpentry: Producing Reports With knitr R Markdown: The Definitive Guide  </description>
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/4_exercises/</guid>
+      <description>Smoothing by local polynomial regression References    body { text-align: justify}  Smoothing by local polynomial regression Consider the following data set on solar electricity production from Sidney, Australia:
+load(&amp;quot;solarAU.RData&amp;quot;) head(solarAU) ## prod toy tod ## 8832 0.019 0.000000e+00 0 ## 8833 0.032 5.708088e-05 1 ## 8834 0.020 1.141618e-04 2 ## 8835 0.038 1.712427e-04 3 ## 8836 0.036 2.283235e-04 4 ## 8837 0.012 2.854044e-04 5 The variables are:</description>
     </item>
     
     <item>
-      <title>Problem 1: Multiples of 3 and 5</title>
-      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/project-euler/problem1/</link>
+      <title>4. Exercises on Rcpp</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp/4_exercises/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/project-euler/problem1/</guid>
-      <description>If we list all the natural numbers below 10 that are multiples of 3 or 5, we get 3, 5, 6 and 9. The sum of these multiples is 23.
-Find the sum of all the multiples of 3 or 5 below 1000.
- A Solution
-A simple approach to this problem is to
-initialize a counter variable to 0; iterate over the integers between 1 and 999 (inclusive): if the integer is a multiple of 3 or 5, add it to the counter.</description>
-    </item>
-    
-    <item>
-      <title>Problem 2: Even Fibonacci numbers</title>
-      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/project-euler/problem2/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced/project-euler/problem2/</guid>
-      <description>Each new term in the Fibonacci sequence is generated by adding the previous two terms. By starting with 1 and 2, the first 10 terms will be:
-\[1, 2, 3, 5, 8, 13, 21, 34, 55, 89, \ldots\]
-By considering the terms in the Fibonacci sequence whose values do not exceed four million, find the sum of the even-valued terms.
- A Solution
-Let \(F_1, F_2, \ldots\) denote the (non-standard) Fibonnaci sequence with \(F_1 = 1\) and \(F_2 = 2\).</description>
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp/4_exercises/</guid>
+      <description>Computing the c.d.f. of the Tweedie distribution    body { text-align: justify}  Computing the c.d.f. of the Tweedie distribution Here we consider the Tweedie distribution which includes continuous distributions, such as the normal and gamma, and discrete distributions, such as the Poisson. Its density is \[ p(y|\mu,\phi,p)=a(y,\phi,p)\exp\bigg[\frac{1}{\phi}\{y\theta-\kappa(\theta)\}\bigg], \] where \[ \theta=\frac{\mu^{1-p}}{1-p}\;\;\text{for}\;p\neq1\;\;\;\text{and}\;\;\;\theta=\log\mu\;\;\text{for}\;p=1, \] and \[ \kappa(\theta)=\frac{\mu^{2-p}}{2-p}\;\;\text{for}\;p\neq2\;\;\;\text{and}\;\;\;\theta=\log\mu\;\;\text{for}\;p=2. \] with \(\mu&amp;gt;0\) being the mean, \(\phi&amp;gt;0\) the scale and \(1\leq p\leq2\) is such that \(\text{var}(y)=\mu^{p}\).</description>
     </item>
     
   </channel>

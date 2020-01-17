@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    <title>Interfacing R with C/C&#43;&#43; - SC2</title>
-    <meta property="og:title" content="Interfacing R with C/C&#43;&#43; - SC2">
+    <title>Advanced Rcpp I - SC2</title>
+    <meta property="og:title" content="Advanced Rcpp I - SC2">
     
     <meta name="twitter:card" content="summary">
 
@@ -15,8 +15,8 @@
 
     
       
-      <meta property="description" content="In this chapter we will see how R can be interfaced with C&#43;&#43; for speeding up statistical computations. In particular, we will explain how functions written in C&#43;&#43; can be called from R via the .Call &amp;hellip;">
-      <meta property="og:description" content="In this chapter we will see how R can be interfaced with C&#43;&#43; for speeding up statistical computations. In particular, we will explain how functions written in C&#43;&#43; can be called from R via the .Call &amp;hellip;">
+      <meta property="description" content="In the previous chapter we have seen how R can be easily interfaced with C&#43;&#43; via the Rcpp package. Here we will explore the capabilies of Rcpp more in details. In particular, we will show how Rcpp &amp;hellip;">
+      <meta property="og:description" content="In the previous chapter we have seen how R can be easily interfaced with C&#43;&#43; via the Rcpp package. Here we will explore the capabilies of Rcpp more in details. In particular, we will show how Rcpp &amp;hellip;">
       
     
 
@@ -26,7 +26,7 @@
     
 
     
-    <link href="/sc2-2019/rcpp/index.xml" rel="alternate" type="application/rss+xml" title="SC2" />
+    <link href="/sc2-2019/rcpp_advanced_i/index.xml" rel="alternate" type="application/rss+xml" title="SC2" />
     
     
 
@@ -60,7 +60,7 @@
     
         <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
     
-        <a href="https://mfasiolo.github.io/sc2-2019/rcpp/">rcpp / </a>
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/">rcpp_advanced_i / </a>
     
 </nav>
 
@@ -85,9 +85,9 @@
   
   <li><a href="/sc2-2019/">Home</a></li>
   
-  <li class="active"><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
   
-  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  <li class="active"><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
   
   <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
   
@@ -100,7 +100,7 @@
     <article class="main">
       <header class="title">
       
-<h1>Interfacing R with C/C&#43;&#43;</h1>
+<h1>Advanced Rcpp I</h1>
 
 <h3>
 </h3>
@@ -112,7 +112,7 @@
 
 <!-- raw HTML omitted -->
 <!-- raw HTML omitted -->
-<p>In this chapter we will see how <code>R</code> can be interfaced with <code>C++</code> for speeding up statistical computations. In particular, we will explain how functions written in <code>C++</code> can be called from <code>R</code> via the <code>.Call</code> interface. We will then explain how the <code>Rcpp</code> provides tools for seemlessly integrating <code>R</code> with <code>C++</code>, thus providing a better alternative to direct usage of <code>R</code>'s <code>C</code> <code>API</code>.</p>
+<p>In the previous chapter we have seen how <code>R</code> can be easily interfaced with <code>C++</code> via the <code>Rcpp</code> package. Here we will explore the capabilies of <code>Rcpp</code> more in details. In particular, we will show how <code>Rcpp sugar</code> allows us to write <code>C++</code> code that looks like <code>R</code> code, but that is often much faster. We will then consider the <code>RcppArmadillo</code> package, which is an interface to <code>Armadillo</code> <code>C++</code> linear algebra library, and we will demostrate that it can lead to superior performance, relative to based <code>R</code>, in the context of statistical computing.</p>
 <p>The chapter consists of the following sections:</p>
 
 
@@ -120,19 +120,19 @@
 <ul>
     
         <li>
-            <a href="/sc2-2019/rcpp/1_r_internals/"> 1. Using R&#39;s C API</a>
+            <a href="/sc2-2019/rcpp_advanced_i/1_rcpp_sugar/"> 1. Rcpp sugar</a>
         </li>
     
         <li>
-            <a href="/sc2-2019/rcpp/2_exercises/"> 2. Exercises on chaotic maps and kernel regression smoothing</a>
+            <a href="/sc2-2019/rcpp_advanced_i/2_rcpparmadillo/"> 2. RcppArmadillo</a>
         </li>
     
         <li>
-            <a href="/sc2-2019/rcpp/3_rcpp/"> 3. Rcpp basics</a>
+            <a href="/sc2-2019/rcpp_advanced_i/3_kde_armadillo/"> 3. Example on multivariate KDE with RcppArmadillo</a>
         </li>
     
         <li>
-            <a href="/sc2-2019/rcpp/4_exercises/"> 4. Exercises on Rcpp</a>
+            <a href="/sc2-2019/rcpp_advanced_i/4_exercises/"> 4. Exercise on local polynomial regression</a>
         </li>
     
 </ul>
@@ -173,11 +173,11 @@ alt="Web Analytics"></a></div></noscript>
 
 <p align=right>
 
-<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp/_index.md'>View source</a>
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp_advanced_I/_index.md'>View source</a>
 
 |
 
-<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp/_index.md'>Edit source</a>
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp_advanced_I/_index.md'>Edit source</a>
 
 </p>
 
