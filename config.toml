@@ -15,9 +15,13 @@ footnotereturnlinkcontents = "↩"
     url = "/rcpp/"
     weight = 2
 [[menu.main]]
-    name = "Advanced Rcpp"
-    url = "/rcpp_advanced/"
+    name = "Advanced Rcpp I"
+    url = "/rcpp_advanced_I/"
     weight = 3
+[[menu.main]]
+    name = "Advanced Rcpp II"
+    url = "/rcpp_advanced_II/"
+    weight = 4
 
 [params]
     description = "Statistical Computing 2"

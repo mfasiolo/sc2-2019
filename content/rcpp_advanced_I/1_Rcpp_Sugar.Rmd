@@ -1,0 +1,208 @@
+---
+title: 1. Rcpp sugar
+weight: 1
+output:
+  blogdown::html_page:
+    toc: true
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+In a previous chapter we explained how `Rcpp` allows users to interface `R` with `C++` in convenient way. Here we cover `Rcpp sugar`, which consists of a set of functions and operators which make the `C++` code written using `Rcpp` behave similarly to what would happen in `R`. In other words `Rcpp sugar` allows us to write `C++` code which is similar to the `R` equivalent, but often more efficient.
+This document follow closely the official [Rcpp sugar vignette](http://dirk.eddelbuettel.com/code/rcpp/Rcpp-sugar.pdf).
+
+### Vectorized operators and sugar versions of basic `R` functions
+
+Consider the following `Rcpp` code for summing two vectors:
+```{r} 
+library(Rcpp)
+sourceCpp(code = '
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::export(name = "vsum")]]
+NumericVector vsum_I(const NumericVector x1, const NumericVector x2)
+{
+  int ni = x1.size();
+  NumericVector out(ni);
+  
+  for(int ii = 0; ii < ni; ii++){
+    out[ii] = x1[ii] + x2[ii];
+  }
+  
+  return out;
+}')
+```
+First of all, let's check whether it works:
+```{r}
+d <- 1e5
+x1 <- rnorm(d)
+x2 <- rnorm(d)
+y <- vsum(x1, x2)
+
+max( abs(y - (x1+x2)) )
+```
+It seems so. The `Rcpp` code above is quite lengthy: do we really need to write a `for` loop to simply add to vector together? Thanks to `Rcpp sugar`, we don't have to. In particular, `Rcpp sugar` uses operator overloading to vectorize many operations involving vectors represented using the `Rcpp` vector classes (`NumericVector`, `IntegerVector`, ...). Hence, we can write vector addition in a much more compact form:
+```{r} 
+sourceCpp(code = '
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::export(name = "vsumVett")]]
+NumericVector vsum_I(const NumericVector x1, const NumericVector x2)
+{
+  return x1 + x2;
+}')
+```
+Let's see whether this works:
+```{r}
+y <- vsumVett(x1, x2)
+max( abs(y - (x1+x2)) )
+```
+It does! All four basic arithmetic operations `+`, `-`, `*` and `/` are vectorized, thanks to `Rcpp sugar`. Vector-scalar operations are also vectorized, for instance we can do $x1 * 3.0 + 1.0$, which gives the same result as in `R`. 
+
+Notice though, that writing such simple arithmetic expression in `Rcpp` will not give you a big performance gain in most cases, for instance:
+```{r}
+library(microbenchmark)
+microbenchmark(R = x1 + x2, Rcpp = vsum(x1, x2), RcppSugar = vsumVett(x1, x2))
+```
+This is because basic arithmetic operations in `R` are computed using internal code, which is written in `C` or `C++`. Calling `C++` from `R` has also some overheads, so the `C++` code can actually become much slower than the `R` version, for instance:
+```{r}
+d <- 1e2
+x1 <- rnorm(d)
+x2 <- rnorm(d)
+microbenchmark(R = x1 + x2, Rcpp = vsum(x1, x2), RcppSugar = vsumVett(x1, x2))
+```
+Here `Rcpp` is much slower than `R`, because the computational effort is limited (the vectors `x1` and `x2` are short) and it is dominated by the cost of calling `C++` from `R`. Closing this brief digression on the dangers of using `Rcpp` without a clear idea of where the performance gains will come from, we go back to `Rcpp sugar`.
+
+`Rcpp sugar` provide vectorized versions of the main logical operators `>`, `<`, `>=`, `<=`, `==`, `&`, `|` and `!`. For instance, we can defined the function:
+```{r} 
+sourceCpp(code = '
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::export(name = "inRange")]]
+LogicalVector inRange_I(const NumericVector x, const NumericVector u, const NumericVector l)
+{
+  return x > l & x < u;
+}')
+```
+which checks which elements of `x` falls in the range defined by `l` and `u`. Example usage:
+```{r}
+set.seed(5151)
+n <- 5
+u <- rep(0.8, n)
+l <- rep(0.2, n)
+x <- runif(n)
+data.frame(x = x, inside = inRange(x, u, l))
+```
+As in `R` some operators can be use also in a "unary" sense, for example `!x` will negate a `LogicalVector` and `-x` will change the sign of a numeric vector.  
+
+`Rcpp sugar` also provides `Rcpp` versions of many basic `R` functions, including:
+
+
+   - **logical operations** such as `ifelse`, `all`, `any`, ...;
+   - **arithmetic operation** such as `sign`, `sqrt`, `diff`, `cumsum`, ...;
+   - **special functions** such as `gamma`, `beta`, `choose`, ...;
+   - **stat summaries** such as `mean`, `median`, `range`, ...;
+   - **matrix operations** such as `colSums`, `diag`, ...;
+   - **statistical distribution** such as `dnorm`, `pgamma`, ...;
+   - ...
+   
+See [here](http://thecoatlessprofessor.com/programming/cpp/unofficial-rcpp-api-documentation/#sugar) for a full list. This makes working with `Rcpp` very easy, if you are already familiar with `R`. For example, we can do:
+```{r}
+cppFunction('
+List exampleSugar(NumericVector x) {
+
+ NumericVector x1 = cumsum(x); 
+ LogicalVector x2 = any(is_na(x));
+ NumericMatrix x3 = cbind(x1, x1);
+  
+ List out = List::create(x1, x2, x3);
+  
+ return out;     
+}')
+
+exampleSugar( c(1, 0, -2, NA) )
+```
+Which gives us the same results we would get with base `R`.
+
+### Random number generation 
+
+`Rcpp sugar` provides `C++` level access to the random number generator (RNG) available in `R`. For example, we can do:
+```{r, fig.align='center', fig.height=4, fig.width=4}
+cppFunction('
+NumericVector rbeta_rcpp(const int n, const int a, const int b) {
+ return rbeta(n, a, b);
+}')
+
+hist(rbeta_rcpp(1e3, 1, 3))
+```
+Given that `Rcpp` is using `R`'s RNG, setting the seed within the `R` session will make the results reproducible and identical to what we would get with base `R`:
+```{r}
+set.seed(321)
+rbeta_rcpp(5, 1, 3)
+
+set.seed(321)
+rbeta(5, 1, 3)
+```
+
+`cppFunction` adopts the `Rcpp` namespace by default hence, within `rbeta_rcpp`, the line `rbeta(n, a, b)` is equivalent to `Rcpp::rbeta(n, a, b)`. `Rcpp::rbeta` outputs a `NumericVector` of length `n`. If, instead, we want to simulate random variables one at the time, we can use functions defined in the `R` namespace. For example:
+```{r}
+cppFunction('
+NumericVector rbeta_R(const int n, const int a, const int b) {
+ NumericVector out(n);
+ for(int ii = 0; ii < n; ii++) out[ii] = R::rbeta(a, b);
+ return out;
+}')
+
+set.seed(321)
+rbeta_R(5, 1, 3)
+```
+Notice that `R::rbeta` returns a `double`, not a `NumericVector`. See [here](http://thecoatlessprofessor.com/programming/cpp/unofficial-rcpp-api-documentation/#stat-dist) for a complete list of the statistical distribution available via `Rcpp sugar`.
+
+As explained [here](https://gallery.rcpp.org/articles/random-number-generation/index.html) and in the [Writing R Extensions](https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Random-number-generation) documentationm, to use `R`'s internal RNG in `C/C++` we need to call `GetRNGState` before using the RNG and  `PutRNGState` before returning to `R`. The first call reads the state of the RNG (see `?.Random.seed`), the second updates it. When we use use the `R`'s RNG withing function exported via the `// [[Rcpp::export]]` attribute we don't have to call `GetRNGState` or `PutRNGState`, because `Rcpp` does it for us in the automatically generated `C++` wrapper function. The `// [[Rcpp::export]]` attribute is used automatically by `cppFunction` and, in fact, if we recompile a previous example:
+```{r}
+cppFunction('
+NumericVector rbeta_rcpp(const int n, const int a, const int b) {
+ return rbeta(n, a, b);
+}', rebuild = TRUE, verbose = TRUE)
+```
+we see that the `C++` wrapper contains the `Rcpp::RNGScope rcpp_rngScope_gen;` which internally calls `GetRNGState`. `PutRNGState` will be called automatically when exiting the `C++` wrapper function. 
+
+One case when we need to worry about the reading and writing the `R`'s RNG state, is when we want to do things manually, that is without using the `// [[Rcpp::export]]` attribute. To provide an example,  define the function:
+```{r engine = 'rcpp', eval = FALSE}
+#include <Rcpp.h>
+using namespace Rcpp;
+
+RcppExport SEXP rnorm_manual(SEXP n) {
+  
+  NumericVector out( as<int>(n) );
+  
+  RNGScope rngScope;
+  
+  out = rnorm(as<int>(n), 0.0, 1.0);
+  
+  return out;
+}
+```
+in the "rnorm_manual.cpp" file, load it and test it: 
+```{r}
+system("export PKG_CXXFLAGS=`Rscript -e \"Rcpp:::CxxFlags()\"` && 
+        R CMD SHLIB rnorm_manual.cpp")
+dyn.load("rnorm_manual.so")
+
+set.seed(31)
+.Call("rnorm_manual", 3)
+
+set.seed(31)
+rnorm(3)
+```
+Here we needed to create an `RNGScope` object, before using the RNG via `rnorm`. **IMPORTANTLY** the `RNGScope` must be declared **AFTER** declaring any of the outputs of the function (the vector `out` in this case). Failing to do so, for example declaring an output after the `RNGScope` object, will lead to very annoying intermittent crashed. Hence, it is generally preferable to use the `Rcpp::export` which deals with the RNG state automatically.
+
+
+
+

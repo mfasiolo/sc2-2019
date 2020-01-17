@@ -10,6 +10,10 @@ r_packages:
     - devtools
     - microbenchmark
     - gamair
+    - tweedie
+    - Rcpp
+    - RcppArmadillo
+    - mvtnorm
 
 r_github_packages:
     - rstudio/blogdown

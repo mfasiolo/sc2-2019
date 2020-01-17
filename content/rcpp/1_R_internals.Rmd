@@ -294,4 +294,14 @@ lines(.Call("expSmooth2", chicago$death, 0.9)[1:1000], col = 2)
 
 ```
 
+### References
 
+- Chambers, J.M., 2017. Extending R. Chapman and Hall/CRC.
+
+- CRAN. R internals, see https://cran.r-project.org/doc/manuals/r-release/R-ints.html
+
+- CRAN. Writing R extensions, see https://cran.r-project.org/doc/manuals/R-exts.html
+
+- Wickham H.. R's C interface, see http://adv-r.had.co.nz/C-interface.html
+
+- Wickham H.. R internals, see https://github.com/hadley/r-internals

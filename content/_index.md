@@ -2,20 +2,33 @@
 title: Home
 ---
 
+<style>
+body {
+text-align: justify}
+</style>  
+
 # Statistical Computing 2
 
-This is the website with materials for the first computing unit of the taught component of the [Computational Statistics and Data Science (COMPASS) PhD programme](https://www.bristol.ac.uk/cdt/compass/).
+This website contains teaching materials for part of the second computing unit of the taught component of the [Computational Statistics and Data Science (COMPASS) PhD programme](https://www.bristol.ac.uk/cdt/compass/). The material for the fist computing unit can be found [here](https://awllee.github.io/sc1-2019/).
 
-The [unit description](https://www.bris.ac.uk/unit-programme-catalogue/UnitDetails.jsa?ayrCode=19%2F20&unitCode=MATHM0040) provides further details on the unit.
+The material provided here focuses on how `R` can be interfaced with `C++` via the `Rcpp` package. More specifically, we guide the students through the following steps:
 
-This unit should provide researchers in computational statistics with core computational skills that can be used in both theoretical and applied research.
+  1. interfacing `R` with `C++` manually via `.Call()`;
+  
+  2. using the `Rcpp` package for easier/safer integration between `R` and `C++`;
+  
+  3. using `Rcpp sugar` for performing standard statistical operations in `C++`; 
+  
+  4. performing numerical linear algebra computation via the `RcppArmadillo` package.
+  
+Each chapter contains one or more programming exercises, focused on exploiting the `Rcpp` family of packages to speed-up statistical computations.
 
-This unit focuses on the R programming language, because it is a fairly easy to learn high-level language with a healthy data science community. Most of the ideas apply straightforwardly to other programming languages.
 
 References:
 
-- Allaire, J.J., Eddelbuettel, D. and François, R., 2018. Rcpp Attributes. Vignette included in R package Rcpp, URL http://CRAN. R-Project. org/package= Rcpp.
+- Allaire, J.J., Eddelbuettel, D. and François, R., 2018. Rcpp Attributes. Vignette included in R package Rcpp, URL http://CRAN.R-Project.org/package=Rcpp.
 - Chambers, J.M., 2017. Extending R. Chapman and Hall/CRC.
+- Eddelbuettel, D., 2013. Seamless R and C++ integration with Rcpp. New York: Springer.
 - Eddelbuettel, D. and Balamuta, J.J., 2018. Extending R with C++: A Brief Introduction to Rcpp. The American Statistician, 72(1), pp.28-36.
 - Eddelbuettel, D. and François, R., 2010. Rcpp syntactic sugar.
 - Eddelbuettel, D. and Sanderson, C., 2014. RcppArmadillo: Accelerating R with high-performance C++ linear algebra. Computational Statistics & Data Analysis, 71, pp.1054-1063.

@@ -1,0 +1,309 @@
+---
+title: 2. RcppArmadillo
+weight: 2
+output:
+  blogdown::html_page:
+    toc: true
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+
+### Introduction
+
+Many standard statistical models/algorithms (e.g., linear regression, principal component analysis, ...) require using numerical algebra routines, hence this section explains how to perform such computations efficiently using the `RcppArmadillo` `R` package. `RcppArmadillo` provides an interface to the `Armadillo` `C++` numerical linear algebra library, which is highly useful in practice because it provides an interesting balance between performance and ease of use. The syntax of `Armadillo` resembles that of `Matlab`, which is not too different from `R`'s syntax. Part of the performance speed-ups of `Armadillo`, relative to base `R`, are obtained via automatic pooling of several linear algebra operations into one at compile-time.   
+
+### Motivating example 1: matrix-matrix-vector product
+
+To demostrate the capabilities of `Armadillo`, we start by considering a simple example on matrix multiplication. In particular, consider computing the product ${\bf A} {\bf B} {\bf y}$ where ${\bf A}$ and ${\bf B}$ are $d \times d$ matrices and $y$ is a $d$-dimensional vector. In `R` we would compute the product simply by doing `A%*%B%*%y`. Could we get some speed-ups by using `Rcpp`? To verify this we create a function that computes the matrix-matrix-vector product in `Rcpp`:
+```{r}
+library(Rcpp)
+sourceCpp(code = '
+ #include <Rcpp.h>
+ using namespace Rcpp;
+
+ // [[Rcpp::export(name = "MMv")]]
+ NumericVector MMv_I(NumericMatrix A, NumericMatrix B, NumericVector y) {
+   return A * B * y  ;
+ }'
+)
+```
+Given what we have seen so far, you should be quite clear about how this function works. Let's compare its speed with base `R`:
+```{r}
+d <- 1e3
+A <- matrix(rnorm(d^2), d, d)
+B <- matrix(rnorm(d^2), d, d)
+y <- rnorm(d)
+
+library(microbenchmark)
+microbenchmark(R = A %*% B %*% y, Rcpp = MMv(A, B, y))
+```
+Depending on the set up of your system (e.g., default linear algebra library used) you might get that the `Rcpp` is a bit slower or faster than the `R` solution, but it is unlikely that you will get serious performance gains. Now, let us consider an `RcppArmadillo` version:
+```{r}
+sourceCpp(code = '
+ // [[Rcpp::depends(RcppArmadillo)]]
+ #include <RcppArmadillo.h>
+ using namespace Rcpp;
+
+ // [[Rcpp::export(name = "MMv_arma")]]
+ arma::vec MMv_arma_I(arma::mat& A, arma::mat& B, arma::vec& y) {
+   return A * B * y;
+}', verbose = TRUE)
+```
+Before illustrating the performance of this function, let's explain what is going on in the code above:
+
+   - `// [[Rcpp::depends(RcppArmadillo)]]` is an `Rcpp` attribute that states that our code depends on the `RcppArmadillo`
+     package. The attribute make so that `sourceCpp` will configure the build environment to compile and link against 
+     the `RcppArmadillo` package.
+   - `#include <RcppArmadillo.h>` includes the code from `RcppArmadillo`, notice that we don't need to include `Rcpp.h`
+     as well.
+   - `arma::mat` and `arma::vec` indicate matrices and vectors of doubles defined in the `arma` namespace of the
+     the `Armadillo` library. Here these are passed by reference using `arma::mat&` and `arma::vec&`, 
+     hence no copy is produced. From the text output of `sourceCpp` we see that the original `SEXP` objects
+     are converted to `arma::mat` objects via the `Rcpp::traits::input_parameter` mechanism. 
+     The latter is beyond the scope of this course, but the point is that the convertion 
+     from `R` to `arma` objects is handled automatically by `RcppArmadillo`. Conversions in the opposite direction
+     are handled via `Rcpp::wrap`.
+
+Let us now compare our `Armadillo` implementation with the plain `R` version:
+```{r}
+microbenchmark(R = A %*% B %*% y, 
+               Arma = MMv_arma(A, B, y))
+```
+Now the performance gains are substantial! It might be tempting to conclude that the `Armadillo` library is just so much better that `R` default linear algebra routines, but we need to understand how this performance gain was achieved. To do so, consider the following comparison: 
+```{r}
+microbenchmark(R = A %*% (B %*% y), 
+               Arma = MMv_arma(A, B, y))
+```
+It seems that simply adding a pair of brackets made our `R` code much more efficient, and closer to `Armadillo`'s performance! The reason is simply that the code `A %*% B %*% y` computes the matrix product first, which is an $O(d^3)$ operation, and the multiplies that resulting matrix by the vector `y` which is a $O(d^2)$ operations. Instead, `A %*% (B %*% y)` computes two matrix-vector multiplications, thus avoiding the $O(d^3)$ computation. The question is whether the speed-up we are getting from `Armadillo` is due to the fact that this library is automatically computing the matrix-matrix-vector product using this more efficient order of operations. To verify this, we write the following
+```{r}
+sourceCpp(code = '
+ // [[Rcpp::depends(RcppArmadillo)]]
+ #include <RcppArmadillo.h>
+ using namespace Rcpp;
+
+ // [[Rcpp::export(name = "MMv_arma_slow")]]
+ arma::vec MMv_arma_I(arma::mat& A, arma::mat& B, arma::vec& y) {
+   arma::mat C = A * B;
+   return C * y;
+}')
+```
+And we compare it with the inefficient `R` implementation:
+```{r}
+microbenchmark(R = A %*% B %*% y,
+               Arma_slow = MMv_arma_slow(A, B, y))
+```
+Now, the performance is comparable, hence the efficiency of the `Armadillo` implementation is mostly due to the order in which the computations are performed. The fact that we can achieve similar performance using base `R` and a well-placed pair of brackets might be disappointing, but notice that is remarkable that `Armadillo` is able to work-out how to chose the order of operations to optimized efficiency, in an automatic fashion. In reality, `Armadillo` does more than just reordering operation, but it adopts it can combine several operations into one and reduce the need for temporary objects. This can result in faster computation and lower memory usage, relative to naive evaluation. Delayed evaluation is achieved via template meta-programming, which is beyond the scope of this course. From a user point of view, what matters is that template meta-programming allows `Armadillo` to reason about linear algebra expression at compile-time, with the aim of  producing code that is tailored to each mathematical expression. See `Armadillo`'s [website](http://arma.sourceforge.net/) for more details.
+
+Before describing some of the main functions and structures provide by `Armadillo` and `RcppArmadillo`, we cover another basic example in the next session. 
+
+### Motivating example 2: sums of matrices
+
+In the previous section we considered the `R` code `A %*% B %*% y` and we show how it can be made much more efficient simply by writing it as `A %*% (B %*% y)`. Here we consider an simple linear algebra example where improving the efficiency of the `R` is straightforward. In particular, consider calculating ${\bf A} + {\bf B} + {\bf C} + {\bf D} + {\bf E}$, where ${\bf A}, \dots, {\bf E}$ are $d \times d$ matrices (the shape of the matrices is not important). A simple `Armadillos` function for computing such a sum is:
+```{r}
+sourceCpp(code = '
+// [[Rcpp::depends(RcppArmadillo)]]
+#include <RcppArmadillo.h>
+using namespace arma;
+
+// [[Rcpp::export(name = "mSum_arma")]]
+mat mSum_i(mat& A, mat& B, mat& C, mat& D, mat& E) {
+  return A + B + C + D + E;
+}')
+```
+Let us compare it with with plain `R` code:
+```{r}
+A <- B <- C <- D <- E <- matrix(rnorm(1e6), 1e3, 1e3)
+
+microbenchmark(R = R <- A + B + C + D + E,
+               arma = R <- mSum_arma(A, B, C, D, E))
+```
+As we might have expected, the `Armadillo` version of the sum is faster. How was this better performance achieved? Notice that when evaluating the `A + B + C + D + E`, `R` will compute `A + B` and store the result a temporariy object, which we call `AB`. Then, it will compute `AB + C` and store the temporary result in another matrix, and so on. Hence, the four matrix sums will result in the allocation of four matrices, three of these are temporary and will be discarded, the last one will be stored as `R`. An efficient implementation would avoid allocating memory for three temporary matrices, but would simply allocate memory for `R` and than do:
+```{r, eval = FALSE}
+for(i in 1:d)
+  for(j in 1:d)
+    R[i, j] <- A[i, j] + B[i, j] + C[i, j] + D[i, j] + E[i, j]  
+```
+but such nested loops are of course hopelessly inefficient in `R`. The question is whether `Armadillo` has been able to work out that this is the best way of framing of computation. To investigate whether the performance of `Armadillo` could be attributed to such compile-time optimization, we write a version of `mSum_arma` which explicitly create temporary matrices:
+```{r}
+sourceCpp(code = '
+// [[Rcpp::depends(RcppArmadillo)]]
+#include <RcppArmadillo.h>
+using namespace arma;
+
+// [[Rcpp::export(name = "mSum_arma_slow")]]
+mat mSum_i(mat& A, mat& B, mat& C, mat& D, mat& E) {
+  mat T1 = A + B;
+  mat T2 = T1 + C;
+  mat T3 = T2 + D;
+  return T3 + E;
+}')
+```
+We then add this version to the comparison
+```{r}
+A <- B <- C <- D <- E <- matrix(rnorm(1e6), 1e3, 1e3)
+
+microbenchmark(R = R <- A + B + C + D + E,
+               arma = R <- mSum_arma(A, B, C, D, E), 
+               arma_slow = R <- mSum_arma_slow(A, B, C, D, E))
+```
+The performance of the second `Armadillo` version is close to that of the `R` code, hence we can conclude that the efficiency of the first `Armadillo` version is attributable to the fact that it avoids creating temporary matrices.
+
+To conclude this example, consider its extension to the problem of computing ${\bf A} + {\bf B} + \cdots$, where the number of matrices involve in the sum is arbitrary (that is, not fixed to five as above). If the matrices are contained in a `list`, for example:
+```{r}
+nmat <- 10
+mats <- lapply(1:nmat, function(.nouse) matrix(rnorm(1e6), 1e3, 1e3))
+```
+then one compact way of calculating their sum in `R` is `Reduce("+", M)`. Can we modify our `RcppArmadillo` code to handle any number of matrices? One way of doing this in a way such that the compile-time efficiency tricks of `Armadillo` are exploited is based on some text editing. In particular, consider the following function:
+```{r}
+getMatSumFun <- function(n){
+  args <- paste0("mat& ", paste0("A", 1:n), ",", collapse = ' ')
+  args <- substr(args, 1, nchar(args)-1)
+
+  ret <- paste0(paste0("A", 1:n), " +", collapse = ' ')
+  ret <- substr(ret, 1, nchar(ret)-2)
+
+  funBody <- paste0("
+   // [[Rcpp::depends(RcppArmadillo)]]
+   #include <RcppArmadillo.h>
+   using namespace arma;
+
+   // [[Rcpp::export(name = \"mSum_arma_list\")]]
+   mat mSum_i(", args, "){
+   return ", ret, ";
+  }")
+
+  return(funBody)
+}
+```
+Given `n`, this function creates the text for a `RcppArmadillo` function which sums up `n` matrices, in particular:
+```{r}
+armaCode <- getMatSumFun(nmat)
+cat(armaCode)
+```
+Writing down the sum explicily guarantees that `Armadillo` will avoid create temporary matrices. We can now compare the `R` and `Armadillo` solutions:
+```{r}
+sourceCpp(code = armaCode)
+
+microbenchmark(R = Reduce("+", mats), arma = do.call("mSum_arma_list", mats))
+```
+
+### Basic `RcppArmadillo` usage
+
+Here we describe some commonly used features of `RcppArmadillo` and `Armadillo`. The `Armadillo` library is quite extensive, hence we refer to its [documentation](http://arma.sourceforge.net/docs.html) for more details. The most commonly used object classes are:
+
+   - `Mat<type>` which represent dense matrices, with element types defined via them template argument `type`. In the 
+      examples above we used `mat` which an alias or typedef for `Mat<double>`. 
+   - `Col<type>` and `Row<type>` represents column and row vectors. Shortcuts for `Col<double>` and `Row<double>` are 
+     `colvec` (or just `vec`) and `rowvec`.  
+     
+`Armadillo` provides also 3D matrices, sparse matrices and fields (matrices whose elements can be arbitrary objects, such as matrices), which we will not use here. In order to effectively use an `Armadillo` object class, we need to know (or look in the [documentation](http://arma.sourceforge.net/docs.html) for):
+
+   1. the **constructor** types available for such class. For example, a matrix of doubles `A` could be construted using 
+      `mat A(10, 5)` or `mat A(10, 5, fill::zeros)`, for example. The difference being that in the first case the 
+      entries of the $10 \times 5$ matrix `A` are arbitrary, while in the second they are set to 0. 
+   2. the member **functions and variables** of that class. These are accessed using `object.member_function()` or 
+      `object.variable`. For example, if `y` is a `Col<float>` vector, the `y.n_elem` gives its lengths while `y.ones()` 
+      sets all its elements to 1. The [docs](http://arma.sourceforge.net/docs.html) clearly explain which member functions
+      are available for each object class.
+   3. how the elements of the objects can be accessed. This is documented as part of the "Member Functions & Variables" 
+      section the `Armadillo` docs. An element $ij$ of a matrix `A` of class `Mat` can be accessed via `A(i-1,j-1)`, as 
+      indexing starts at zero. It can also be accessed via `A.at(i-1,j-1)` which is faster but more dangerous as no 
+      bounds check is performed (hence we could read/write outside the memory allocated to `A`).
+   4. the available **operators** and **functions**. Operators are overloaded so if, for example, `A` and `B` are 
+      matrices while `s` is a scalar, then `A * B` will calculate the standard matrix product while `A * s` will 
+      multiply each element of `A` by `s`. Several element-wise functions are provided (e.g., `exp(A)`, `sqrt(A)`, ...), 
+      as well as standard decomposition (e.g, Cholesky, LU, ...) and solvers for linear systems. 
+      
+Some guidance on how standard linear algebra operations in `R` can be translated to `RcppArmadillo` is provided [here](http://arma.sourceforge.net/docs.html). Before moving to a more involved example, we clarify the relation between `Armadillo` objects and `Rcpp` matrices and vectors. Conversion from `Armadillo` object to `Rcpp` object is performed using `Rcpp::wrap`, for example:
+```{r}
+sourceCpp(code = '
+// [[Rcpp::depends(RcppArmadillo)]]
+#include <RcppArmadillo.h>
+using namespace arma;
+
+// [[Rcpp::export(name = "getIntMat")]]
+Mat<int> tmpFun_i(int nr, int nc) {
+  Mat<int> MA(nr, nc);
+  Rcpp::IntegerMatrix MR = Rcpp::wrap(MA);
+  MR[0, 0] = 1;
+  return MA;
+}')
+
+getIntMat(3, 3)
+```
+Here we are creating a $3 \times 3$ un-unitialized integer matrix in `Armadillo` and we are converting it to an `Rcpp::IntegerMatrix` using `wrap`. It is interesting to notice that here `Rcpp::wrap` is copying `MA`, which is demostrated by the fact that changing the top-left element of `MR` does not entail changing `MA`. The following version avoids any copy: 
+```{r}
+sourceCpp(code = '
+// [[Rcpp::depends(RcppArmadillo)]]
+#include <RcppArmadillo.h>
+using namespace arma;
+
+// [[Rcpp::export(name = "getIntMat_noCopy")]]
+Rcpp::IntegerMatrix tmpFun_i(int nr, int nc) {
+  Rcpp::IntegerMatrix MR(nr, nc);
+  Mat<int> MA(MR.begin(), MR.nrow(), MR.ncol(), false);
+  MA(0, 0) = 1;
+  return MR;
+}')
+
+getIntMat_noCopy(3, 3)
+```
+Let's see how this worked step by step:
+
+   - `Rcpp::IntegerMatrix MR(nr, nc)` here we **allocated memory in R** for the matrix `MR`;
+   - `Mat<int> MA(MR.begin(), MR.nrow(), MR.ncol(), false)` here we used the advanced `Armadillo` 
+      [constructor](http://arma.sourceforge.net/docs.html#adv_constructors_col) which constructs an `Mat<int>` 
+      matrix `MA` by reusing the memory allocated to `MR`. Hence no copy is made and changes in `MA` leads to 
+      changes in `MR`.
+   - We return the `IntegerMatrix` `MR`. Given that its memory is allocated in `R`, no copy is made when
+     the object is returns. In particular, recall that `sourceCpp` will create a wrapper around our `C++` function, 
+     and it the wrapper will contained the line `Rcpp::wrap(tmpFun_i(nr, nc))`, as you can verify by calling 
+     `sourceCpp` with `verbose = TRUE`. In `getIntMat`, `Rcpp::wrap` was taking a copy, because the output 
+     of `tmpFun_i` does not use `R` memory, while this is avoided in `getIntMat_noCopy`. 
+     
+In summary `getIntMat` allocates memory outside `R` via `Mat<int> MA(nr, nc);`, than takes one copy when we do `Rcpp::wrap(MA)` and another copy when `Rcpp::wrap` is called withing the wrapper produced by `sourceCpp`. In contrast, 
+`getIntMat_noCopy` allocates `R` memory via `Rcpp::IntegerMatrix MR(nr, nc);` and does no take any copy. This makes the second version much more efficient, in fact: 
+```{r}
+d <- 1e3
+microbenchmark(copy = getIntMat(d, d), noCopy = getIntMat_noCopy(d, d))
+```
+The bottom line is that, when we want to manipulate large matrices or vectors in with `RcppArmadillo`, it is often more efficient to: 
+
+   1. allocate memory in `R` and the pass them by reference (e.g., via `mat&`, `vec&`, ...) to `Rcpp` or to allocate `R` 
+      memory directly in `Rcpp` via one of its data structure (e.g., `NumericMatrix`, `NumericVector`, ...);
+   2. wrap the `R` object into `Armadillo` objects using the advance constructor we have see above;
+   3. manipulate the `Armadillo` objects using the operators and functions provided by `Armadillo`;
+   4. return an `Rcpp` data structure to avoid copies being made by `Rcpp::wrap`.
+   
+The advance constructor provides a way of converting `Rcpp` objects into `Armadillo` objects, without taking a copy. Often talking a copy is acceptable, in which case it is more convenient to perform the conversion using the `Rcpp::as<type>()` function, where the template argument `type` can be an `Armadillo` object class such as `Mat<int>`, `Row<double>` and so on. An example is:
+```{r}
+sourceCpp(code = '
+// [[Rcpp::depends(RcppArmadillo)]]
+#include <RcppArmadillo.h>
+using namespace arma;
+
+// [[Rcpp::export(name = "matVettArma")]]
+Col<double> tmpFun_i(Rcpp::NumericMatrix X, Rcpp::NumericVector y) {
+  Mat<double> Xa = Rcpp::as<Mat<double>>(X);
+  Col<double> ya = Rcpp::as<Col<double>>(y);
+  return Xa*ya;
+}')
+
+matVettArma(matrix(1, 3, 3), 1:3)
+```
+which performs matrix-vector multiplication in `Armadillo`. Notice that `Rcpp::as` generally take a copy of the object being converted.
+
+### References
+
+- Armadillo project: http://arma.sourceforge.net/
+
+- Conrad Sanderson and Ryan Curtin. Armadillo: a template-based C++ library for linear algebra.
+  Journal of Open Source Software, Vol. 1, pp. 26, 2016.
+  
+- Dirk Eddelbuettel and Conrad Sanderson, "RcppArmadillo: Accelerating R with high-performance
+  C++ linear algebra", Computational Statistics and Data Analysis, 2014, 71, March, pages 1054-
+  1063, http://dx.doi.org/10.1016/j.csda.2013.02.005. )

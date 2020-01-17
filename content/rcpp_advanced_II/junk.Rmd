@@ -1,0 +1,190 @@
+---
+title: 3. Rcpp basics
+weight: 3
+output:
+  blogdown::html_page:
+    toc: true
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+### Rcpp via R CMD SHLIB: the old but instructive way
+
+
+<!-- Plan:  -->
+
+<!--     - Ricker Simul in Rcpp -->
+<!--     - Ricker llk in Rcpp -->
+<!--     - Gradient Descent in Rcpp -->
+<!--     - Cancellation error in finite differences -->
+<!--     - Step-length control -->
+
+
+
+<!-- ```{r} -->
+<!-- rickerSimul <- function(n, r){ -->
+
+<!--  y0 <- 1 -->
+
+<!--  y <- numeric(n) -->
+<!--  yx <- y0 -->
+
+<!--  # Simulating and storing -->
+<!--  for(ii in 1:n){ -->
+<!--   yx <- r * yx * exp(-yx) -->
+<!--   y[ii] <- yx -->
+<!--  } -->
+
+<!--  return( y ) -->
+<!-- } -->
+
+<!-- llk <- function(logr, logsig){  -->
+
+<!--  ymod <- rickerSimul(n = n, r = exp(logr)) -->
+
+<!--  out <- sum( dnorm(log(yobs) - log(ymod), 0, exp(logsig), log = TRUE) ) -->
+
+<!--  return( out ) -->
+
+<!-- } -->
+
+<!-- set.seed(986) -->
+<!-- n <- 100 -->
+
+<!-- y0_true <- 1 -->
+<!-- sig_true <- 0.2 -->
+<!-- r_true <- 7 -->
+
+<!-- Ntrue <- rickerSimul(n = n, r = r_true) -->
+<!-- yobs <- Ntrue * exp(rnorm(n, 0, sig_true)) -->
+
+<!-- plot(yobs, type = 'b') -->
+
+<!-- sig_seq <- seq(0.05, 0.8, length.out = 100) -->
+<!-- plot(sig_seq, sapply(sig_seq, function(.x) llk(logr = log(r_true), logsig = log(.x)))) -->
+<!-- abline(v = sig_true) -->
+
+<!-- r_seq <- seq(5, 20, length.out = 100) -->
+<!-- plot(r_seq, sapply(r_seq, function(.x) llk(logr = log(.x), logsig = log(sig_true)))) -->
+<!-- abline(v = r_true) -->
+
+<!-- gradFD <- function(lr, ls, h){ -->
+
+<!--   out <- c(llk(lr + h, ls) - llk(lr, ls),  -->
+<!--            llk(lr, ls + h) - llk(lr, ls)) / h -->
+
+<!--   return( out ) -->
+<!-- } -->
+
+<!-- init <- par_hat <- c(log(8.5), log(0.15)) -->
+<!-- traj <- matrix(NA, 1000, 2) -->
+<!-- for(ii in 1:1000){ -->
+
+<!--   par_hat <- par_hat + 1e-5 * gradFD(par_hat[1], par_hat[2], h = 1e-4) -->
+<!--   traj[ii, ] <- par_hat -->
+
+<!-- } -->
+
+<!-- niter <- 100 -->
+<!-- init <- par_hat <- par_old <- c(log(8.5), log(0.15)) -->
+<!-- traj <- matrix(NA, niter, 2) -->
+<!-- traj[1, ] <- init -->
+<!-- for(ii in 2:niter){ -->
+
+<!--   bad_step <- TRUE -->
+<!--   eps <- 1e-4 -->
+<!--   grad <- gradFD(par_hat[1], par_hat[2], h = 1e-6) -->
+<!--   kk <- 1 -->
+<!--   while(bad_step && kk < 10){ -->
+<!--    par_hat <- par_old + eps  * grad -->
+<!--    bad_step <- (llk(par_hat[1], par_hat[2]) - llk(par_old[1], par_old[2])) < 0 -->
+<!--    eps <- eps / 2 -->
+<!--    kk <- kk+1 -->
+<!--   } -->
+<!--   par_old <- par_hat -->
+<!--   traj[ii, ] <- par_hat -->
+<!-- } -->
+
+<!-- lr_grid <- seq(log(5), log(9), length.out = 100) -->
+<!-- ls_grid <- seq(log(0.1), log(0.5), length.out = 100) -->
+<!-- grd <- expand.grid(lr_grid,ls_grid) -->
+<!-- llk_grid <- apply(grd, 1, function(.par) llk(.par[1], .par[2])) -->
+
+<!-- library(ggplot2) -->
+<!-- ggplot(data = data.frame(logr = grd[ , 1], logsig = grd[ , 2], z = llk_grid),  -->
+<!--        mapping = aes(x = logr, y = logsig, z = z, fill = z)) + geom_raster() + geom_contour(bins = 20) +  -->
+<!--        geom_vline(xintercept=log(r_true)) + geom_hline(yintercept=log(sig_true)) +  -->
+<!--        geom_path(data = data.frame(logr = traj[ , 1], logsig = traj[ , 2]),  -->
+<!--                  mapping = aes(x=logr, y=logsig), colour = "red",  -->
+<!--                  inherit.aes = FALSE) -->
+<!-- ``` -->
+
+```{r}
+# fObj <- function(.x) .x^2
+# 
+# fGrad <- function(.x, h = 1e-3) (fObj(.x+h) - fObj(.x)) / h
+# 
+# x0 <- x1 <- 2
+# xSeq1 <- numeric(500)
+# 
+# for(ii in 1:500){
+#   x1 <- x0 - 0.01 * fGrad(x0)
+#   x0 <- x1
+#   xSeq1[ii] <- x1  
+# }
+# 
+# x0 <- x1 <- 2
+# xSeq2 <- numeric(500)
+# 
+# for(ii in 1:500){
+#   x1 <- x0 - 0.01 * fGrad(x0, h = 1e-15)
+#   x0 <- x1
+#   xSeq2[ii] <- x1  
+# }
+# 
+# 
+# plot(xSeq, fObj(xSeq))
+# lines(xSeq2, fObj(xSeq2), col = 2)
+# 
+# 
+# n <- 1e3
+# 
+# sd <- 1e17
+# x <- rnorm(n, 0, sd*0.71)
+# 
+# plot(dnorm(x, 0, sd)/(dnorm(x, 0, sd*0.71)))
+# 
+# mean(dnorm(x, 0, sd)/(dnorm(x, 0, sd*0.71)))
+# 
+# mean(dnorm(x, 0, sd)/(dnorm(x, 0, sd+1)))
+# 
+# x <- rnorm(n, 0, 1)
+# 
+# 
+# 
+# xseq <- seq(-3, 3, length.out = 100)
+# 
+# fHat <- sapply(xseq, function(.x) mean(dnorm(.x, x, 0.0001)))
+# 
+# plot(xseq, fHat, type = 'l')
+```
+
+
+
+
+
+<!-- See -->
+
+<!-- Rcpp manual -->
+
+<!-- http://adv-r.had.co.nz/C-interface.html -->
+
+<!-- https://github.com/hadley/r-internals -->
+
+<!-- https://cran.r-project.org/doc/manuals/r-release/R-ints.html -->
+
+<!-- https://cran.r-project.org/doc/manuals/R-exts.html -->
+
