@@ -174,7 +174,7 @@ NumericVector rbeta_rcpp(const int n, const int a, const int b) {
 we see that the `C++` wrapper contains the `Rcpp::RNGScope rcpp_rngScope_gen;` which internally calls `GetRNGState`. `PutRNGState` will be called automatically when exiting the `C++` wrapper function. 
 
 One case when we need to worry about the reading and writing the `R`'s RNG state, is when we want to do things manually, that is without using the `// [[Rcpp::export]]` attribute. To provide an example,  define the function:
-```{r engine = 'rcpp', eval = FALSE}
+```{r engine = 'Rcpp', eval = FALSE}
 #include <Rcpp.h>
 using namespace Rcpp;
 

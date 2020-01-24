@@ -13,7 +13,7 @@ text-align: justify}
 
 ```{r, echo = FALSE, message = FALSE}
 system("rm -r mypack")
-remove.packages("mypack")
+if("mypack" %in% rownames(installed.packages())) remove.packages("mypack")
 ```
 
 

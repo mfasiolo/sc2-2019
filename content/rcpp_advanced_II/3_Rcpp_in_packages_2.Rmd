@@ -16,6 +16,7 @@ library(Rcpp)
 system("rm -r mypack")
 system("rm -r secondPack")
 Rcpp.package.skeleton("mypack")
+if("secondPack" %in% rownames(installed.packages())) remove.packages("secondPack")
 ```
 
 ### Using `C++` code from other packages within your package
