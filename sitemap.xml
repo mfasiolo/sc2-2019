@@ -3,6 +3,10 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/1_building_rcpp_apps/</loc>
+  </url>
+  
+  <url>
     <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/1_rcpp_sugar/</loc>
   </url>
   
@@ -19,6 +23,10 @@
   </url>
   
   <url>
+    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/2_rcpp_in_packages/</loc>
+  </url>
+  
+  <url>
     <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/3_kde_armadillo/</loc>
   </url>
   
@@ -27,7 +35,7 @@
   </url>
   
   <url>
-    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/junk/</loc>
+    <loc>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/3_rcpp_in_packages_2/</loc>
   </url>
   
   <url>
