@@ -35,7 +35,7 @@ library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;Rcpp.h&amp;gt; using n
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp/1_r_internals/</guid>
-      <description>Creating C functions that are callable from R Calling expSmooth from R Creating R objects within C code References    body { text-align: justify}  The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the Rcpp package to interface R with C++, but it is useful to know how R’s C API work to have an idea of what is going on under the hood when you use Rcpp.</description>
+      <description>Creating C functions that are callable from R Calling expSmooth from R Creating R objects within C code References    body { text-align: justify}  The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the Rcpp package to interface R with C++, but it is useful to know how R’s C API works to have an idea of what is going on under the hood when you use Rcpp.</description>
     </item>
     
     <item>

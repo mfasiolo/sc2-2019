@@ -137,7 +137,7 @@
 body {
 text-align: justify}
 </style>
-<p>The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the <code>Rcpp</code> package to interface R with C++, but it is useful to know how R’s C API work to have an idea of what is going on under the hood when you use <code>Rcpp</code>. Besides, many of the functions in base R are written in C using the R’s C API and do not use <code>Rcpp</code>. This section assumes that you have some basic knowledge of C.</p>
+<p>The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the <code>Rcpp</code> package to interface R with C++, but it is useful to know how R’s C API works to have an idea of what is going on under the hood when you use <code>Rcpp</code>. Besides, many of the functions in base R are written in C using the R’s C API and do not use <code>Rcpp</code>. This section assumes that you have some basic knowledge of C.</p>
 <div id="creating-c-functions-that-are-callable-from-r" class="section level3">
 <h3>Creating C functions that are callable from R</h3>
 <p>To provide some motivation, consider the following data:</p>
@@ -174,16 +174,16 @@ Which can be fitted using <code>mgcv</code> as follows:</p>
 <pre class="r"><code>fit0 &lt;- bam(death ~ s(time, k = 200) + s(pm10median) + s(so2median) + s(o3median) +
                     s(tmpd),
             data = chicago, family = poisson, discrete = TRUE)</code></pre>
-<p>The we can use <code>mgcViz</code> to plot the effect of the three pollutants and of the daily temperature:</p>
+<p>Then we can use <code>mgcViz</code> to plot the effect of the three pollutants and of the daily temperature:</p>
 <pre class="r"><code>fit0 &lt;- getViz(fit0)
 print(plot(fit0, select = 2:5), pages = 1)</code></pre>
 <p><img src="/sc2-2019/rcpp/1_R_internals_files/figure-html/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" />
-The effect of <code>so2</code> doesn’t seem to be important, hence it might make sense to remove it from the model. Another thing that we could try, it to check whether the number of deaths depends on the temperatures (<code>tmpd</code>) registered in the last few days, rather than only on the temperature on the same day. Rather than simply using lagged values of the temperature, we could consider building a new variable obtained by exponentially smoothing the temperature, that is
+The effect of <code>so2</code> doesn’t seem to be important, hence it might make sense to remove it from the model. Another thing that we could try, is to check whether the number of deaths depends on the temperatures (<code>tmpd</code>) registered in the last few days, rather than only on the temperature on the same day. Rather than simply using lagged values of the temperature, we could consider building a new variable obtained by exponentially smoothing the temperature, that is
 <span class="math display">\[
 \text{tmpdSmooth}_t = \alpha \, \text{tmpdSmooth}_{t-1} + (1 - \alpha) \, \text{tmpd}_t,
 \]</span>
 with <span class="math inline">\(\alpha \in (0, 1)\)</span>.</p>
-<p>Now assume that we want to implement a function, say, <code>expSmooth</code> for obtaining the exponential smooth of an variable in C, and that we want to be able to call it from R. The C code for such a function is:</p>
+<p>Now, assume that we want to implement a function, say, <code>expSmooth</code> for obtaining the exponential smooth of an variable in C, and that we want to be able to call it from R. The C code for such a function is:</p>
 <pre class="cpp"><code>#include &lt;R.h&gt;
 #include &lt;Rinternals.h&gt;
 
@@ -205,7 +205,7 @@ SEXP expSmooth(SEXP y, SEXP ys, SEXP n, SEXP a)
   
   return R_NilValue;
 }</code></pre>
-<p>Before explaing how <code>expSmooth</code> can be called from R, let’s try to break it down. The first two lines are there to include two header files that contain some R-related C functions and macros. For example <code>REAL</code> is defined in <code>Rinternals.h</code> as can be verified by looking at the source code by doing (not shown here):</p>
+<p>Before explaining how <code>expSmooth</code> can be called from R, let’s try to break it down. The first two lines are there to include two header files that contain some R-related C functions and macros. For example <code>REAL</code> is defined in <code>Rinternals.h</code> as can be verified by looking at the source code by doing (not shown here):</p>
 <pre class="r"><code>rinternals &lt;- file.path(R.home(&quot;include&quot;), &quot;Rinternals.h&quot;)
 file.show(rinternals)</code></pre>
 <p>The <code>expSmooth</code> function returns an <code>SEXP</code>, which is also the class of its inputs. A object of class <code>SEXP</code> is a pointer to an S expression, that is a pointer on an object in the R environment. Hence, importantly, the inputs are passed to <code>expSmooth</code> by reference and are not copied. Here our inputs are:</p>
@@ -215,7 +215,7 @@ file.show(rinternals)</code></pre>
 <li><code>n</code>, a scalar indicating the length of <code>y</code> and <code>ys</code>;</li>
 <li><code>a</code>, the <span class="math inline">\(\alpha\)</span> coefficient.</li>
 </ul>
-<p>Even though, all the arguments of <code>expSmooth</code> are of class <code>SEXP</code>, is important to know that <code>SEXP</code> is a variant type, that is a C object whose subtype is known only at runtime, with subtypes that cover all data structures in R. Examples of subtypes are:</p>
+<p>Even though all the arguments of <code>expSmooth</code> are of class <code>SEXP</code>, is important to know that <code>SEXP</code> is a variant type, that is a C object whose subtype is known only at runtime, with subtypes that cover all data structures in R. Examples of subtypes are:</p>
 <ul>
 <li><code>REALSXP</code> a numeric vector such as <code>c(1.2, 0.45)</code>;</li>
 <li><code>LGLSXP</code> a logical vector such as <code>c(TRUE, FALSE, FALSE)</code>;</li>
@@ -240,16 +240,16 @@ for(int i = 1; i &lt; ni; i++){
 }</code></pre>
 <p>In the first line we are initializing by setting <span class="math inline">\(\text{tmpdSmooth}_1 = \text{tmpd}_1\)</span>, than the rest is straighforward C code. Notice that the function returns:</p>
 <pre class="cpp"><code>return R_NilValue;</code></pre>
-<p>where is the C equivalent of R’s <code>NULL</code>. Hence the function is not returning anything useful, but the smoothed variable is obtained by modifying the <span class="math inline">\(xys\)</span> vector in place (that is, without making a copy).</p>
+<p>where is the C equivalent of R’s <code>NULL</code>. Hence the function is not returning anything useful, but the smoothed variable is obtained by modifying the <code>xys</code> vector in place (that is, without making a copy).</p>
 </div>
 <div id="calling-expsmooth-from-r" class="section level3">
 <h3>Calling expSmooth from R</h3>
-<p>Now, assume that <code>expSmooth</code> is contained in a file called <code>expSmooth.c</code>, which in our case can be found in our working directory, as you can see from the following call to the command line:</p>
+<p>Now, assume that <code>expSmooth</code> is contained in a file called <code>expSmooth.c</code>, which in our case can be found in our working directory, as you can see from the following call to the command line (the output is hidden here):</p>
 <pre class="r"><code>system(&quot;ls *.c&quot;)</code></pre>
 <p>Here we will explaing how to call <code>expSmooth</code> using the <code>.Call</code> interface in R. <code>.Call</code> can be use to call C functions that have accept variable of class <code>SEXP</code> as inputs and return and object of class <code>SEXP</code>. Indeed, we created the <code>expSmooth</code> function with this requirement in mind.</p>
 <p>The first thing that we need to do is to compile the C code as follows</p>
 <pre class="r"><code>system(&quot;R CMD SHLIB expSmooth.c&quot;)</code></pre>
-<p>This will create two files, <code>expSmooth.o</code> and <code>expSmooth.so</code>, containing binary code. The <code>.so</code> object is a share object which can be loaded in R by doing:</p>
+<p>This will create two files, <code>expSmooth.o</code> and <code>expSmooth.so</code>, containing binary code. The <code>.so</code> object is a shared object which can be loaded in R by doing:</p>
 <pre class="r"><code>dyn.load(&quot;expSmooth.so&quot;)</code></pre>
 <p>Having done this, the <code>expSmooth</code> function is now available at R level:</p>
 <pre class="r"><code>is.loaded(&quot;expSmooth&quot;)</code></pre>
@@ -259,7 +259,7 @@ for(int i = 1; i &lt; ni; i++){
 <pre class="r"><code>nch &lt;- nrow( chicago )
 tmpSmooth &lt;- numeric(nch)
 
-.Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch, 0.9)</code></pre>
+.Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch, 0.8)</code></pre>
 <pre><code>## NULL</code></pre>
 <p>As expected the function returns ‘NULL’, but the smoothed temperature is now contained in <code>tmpSmooth</code>:</p>
 <pre class="r"><code>plot(chicago$tmpd[1:1000], col = &quot;grey&quot;, ylab = &quot;Temp&quot;)
@@ -279,18 +279,18 @@ To check whether our function actually works, let’s compare it with an R versi
 
 }</code></pre>
 <p>The output of the R and C version is identical:</p>
-<pre class="r"><code>max( abs(tmpSmooth - expSmoothR(chicago$tmpd, 0.9)) )</code></pre>
+<pre class="r"><code>max( abs(tmpSmooth - expSmoothR(chicago$tmpd, 0.8)) )</code></pre>
 <pre><code>## [1] 0</code></pre>
 <p>Having verifying that our C function for exponential smoothing does the right thing, let’s see how it compares with its R version in terms of computing time:</p>
-<pre class="r"><code>smoR &lt;- function() expSmoothR(chicago$tmpd, 0.9)
-smoC &lt;- function() .Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch, 0.9)
+<pre class="r"><code>smoR &lt;- function() expSmoothR(chicago$tmpd, 0.8)
+smoC &lt;- function() .Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch, 0.8)
 
 library(microbenchmark)
 microbenchmark(smoR(), smoC(), times = 500)</code></pre>
 <pre><code>## Unit: microseconds
-##    expr     min      lq      mean   median      uq      max neval
-##  smoR() 532.321 542.792 552.56816 546.7125 552.753 1529.185   500
-##  smoC()  21.566  21.817  26.15543  22.1850  23.573 1445.954   500</code></pre>
+##    expr     min       lq      mean   median       uq      max neval
+##  smoR() 533.395 547.8700 569.93423 554.9385 573.9495 1631.571   500
+##  smoC()  21.535  22.1205  28.63036  23.0180  25.5170 1482.847   500</code></pre>
 <p>So the C version is more than 10 times faster. The comparison it somewhat unfair, because the R function is allocating memory containing the smoothed temperature at every call, while the C version is re-using the memory allocated to the <code>tmpSmooth</code> vector. However, the ability to overwrite R objects without copying them is one of the reasons for interfacing R with C.</p>
 <p>We now go back to our original application, and fit a model which excludes <code>so2</code> with didn’t seem to matter and that includes the effect of smoothed temperature:</p>
 <pre class="r"><code>chicago$tmpSmooth &lt;- tmpSmooth
@@ -305,15 +305,15 @@ The plots shows that the effect of smoothed temperature is quite important, and 
 <pre class="r"><code>AIC(fit0, fit1)</code></pre>
 <pre><code>##            df      AIC
 ## fit0 145.0587 37889.99
-## fit1 141.6854 37955.41</code></pre>
+## fit1 141.5414 37862.83</code></pre>
 </div>
 <div id="creating-r-objects-within-c-code" class="section level3">
 <h3>Creating R objects within C code</h3>
 <p>Here we try to refine the <code>expSmooth</code> function created above. Firstly notice that, while <code>expSmooth</code> does not make any explicit assumption about the subtype of its <code>SEXP</code> input, trying to smooth the number of death leads to:</p>
-<pre class="r"><code>.Call(&quot;expSmooth&quot;, chicago$death, tmpSmooth, nch, 0.9)
+<pre class="r"><code>.Call(&quot;expSmooth&quot;, chicago$death, tmpSmooth, nch, 0.8)
 # Error: REAL() can only be applied to a &#39;numeric&#39;, not a &#39;integer&#39;</code></pre>
 <p>Because <code>xy = REAL(y);</code> triggers an error which signal that <code>y</code> should be a vector of reals, not of integers. To smooth the number of death we must pass <code>as.double(chicago$death)</code>. However, <code>expSmooth</code> does not check for other things, for example there nothing guaranteeing that argument <code>n</code> actually matches the length of the input vectors <code>y</code> and <code>ys</code>. For example, the following code:</p>
-<pre class="r"><code>.Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch + 10L, 0.9) # do NOT run this</code></pre>
+<pre class="r"><code>.Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch + 10L, 0.8) # do NOT run this</code></pre>
 <p>might run without any indication that something wrong has happened. But <span class="math inline">\(n\)</span> is 10 units longer than <code>length(chicago$tmpd)</code>, which mean that the last 10 iterations of this loop:</p>
 <pre class="cpp"><code>for(int i = 1; i &lt; ni; i++){
   xys[i] = ai * xys[i-1] + (1 - ai) * xy[i];
@@ -361,23 +361,23 @@ return ys;</code></pre>
 <pre class="r"><code>system(&quot;R CMD SHLIB expSmooth2.c&quot;)
 dyn.load(&quot;expSmooth2.so&quot;)</code></pre>
 <p>We compare its output with that of the R version:</p>
-<pre class="r"><code>max(abs(.Call(&quot;expSmooth2&quot;, chicago$tmpd, 0.9) - expSmoothR(chicago$tmpd, 0.9)))</code></pre>
+<pre class="r"><code>max(abs(.Call(&quot;expSmooth2&quot;, chicago$tmpd, 0.8) - expSmoothR(chicago$tmpd, 0.8)))</code></pre>
 <pre><code>## [1] 0</code></pre>
 <p>which shows that it is working correctly. The computing time is also comparable to that of the old C function:</p>
-<pre class="r"><code>smoR &lt;- function() expSmoothR(chicago$tmpd, 0.9)
-smoC &lt;- function() .Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch, 0.9)
-smoC2 &lt;- function() .Call(&quot;expSmooth2&quot;, chicago$tmpd, 0.9)
+<pre class="r"><code>smoR &lt;- function() expSmoothR(chicago$tmpd, 0.8)
+smoC &lt;- function() .Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch, 0.8)
+smoC2 &lt;- function() .Call(&quot;expSmooth2&quot;, chicago$tmpd, 0.8)
 
 library(microbenchmark)
 microbenchmark(smoR(), smoC(), smoC2(), times = 500)</code></pre>
 <pre><code>## Unit: microseconds
-##     expr     min      lq      mean   median      uq      max neval
-##   smoR() 540.847 546.038 555.15936 548.3345 555.024 1596.999   500
-##   smoC()  22.103  22.511  26.91093  22.9770  24.067 1484.785   500
-##  smoC2()  26.587  28.082  32.64573  28.7260  30.603 1017.642   500</code></pre>
+##     expr     min       lq      mean   median       uq      max neval
+##   smoR() 532.560 541.0135 555.10580 546.1180 552.5710 1841.456   500
+##   smoC()  22.066  22.6715  26.51011  23.2300  24.3830 1200.011   500
+##  smoC2()  21.924  23.2500  30.44388  27.7875  29.0375 1391.555   500</code></pre>
 <p>despite the fact that is it allocating memory for the output vector at every call. Importanly, <code>expSmooth2</code> is safer and works directly with integer input vectors:</p>
 <pre class="r"><code>plot(chicago$death[1:1000], col = &quot;grey&quot;)
-lines(.Call(&quot;expSmooth2&quot;, chicago$death, 0.9)[1:1000], col = 2)</code></pre>
+lines(.Call(&quot;expSmooth2&quot;, chicago$death, 0.8)[1:1000], col = 2)</code></pre>
 <p><img src="/sc2-2019/rcpp/1_R_internals_files/figure-html/unnamed-chunk-32-1.png" width="528" style="display: block; margin: auto;" /></p>
 </div>
 <div id="references" class="section level3">
