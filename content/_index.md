@@ -11,7 +11,7 @@ text-align: justify}
 
 This website contains teaching materials for part of the second computing unit of the taught component of the [Computational Statistics and Data Science (COMPASS) PhD programme](https://www.bristol.ac.uk/cdt/compass/). The material for the second computing unit can be found [here](https://github.com/mfasiolo/sc2-2019).
 
-The material provided here focuses on how `R` can be interfaced with `C++` via the `Rcpp` package. More specifically, we guide the students through the following steps:
+The material provided here focusses on how `R` can be interfaced with `C++` via the `Rcpp` package. More specifically, we guide the students through the following steps:
 
   1. interfacing `R` with `C++` manually via `.Call()`;
   

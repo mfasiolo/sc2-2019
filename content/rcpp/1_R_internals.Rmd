@@ -11,7 +11,7 @@ body {
 text-align: justify}
 </style>
 
-The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the `Rcpp` package to interface R with C++, but it is useful to know how R’s C API work to have an idea of what is going on under the hood when you use `Rcpp`. Besides, many of the functions in base R are written in C using the R's C API and do not use `Rcpp`. This section assumes that you have some basic knowledge of C.
+The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the `Rcpp` package to interface R with C++, but it is useful to know how R’s C API works to have an idea of what is going on under the hood when you use `Rcpp`. Besides, many of the functions in base R are written in C using the R's C API and do not use `Rcpp`. This section assumes that you have some basic knowledge of C.
 
 ### Creating C functions that are callable from R
 
@@ -37,18 +37,18 @@ fit0 <- bam(death ~ s(time, k = 200) + s(pm10median) + s(so2median) + s(o3median
                     s(tmpd),
             data = chicago, family = poisson, discrete = TRUE)
 ```
-The we can use `mgcViz` to plot the effect of the three pollutants and of the daily temperature:
+Then we can use `mgcViz` to plot the effect of the three pollutants and of the daily temperature:
 ```{r, fig.align='center', fig.height=5.5, fig.width=7}
 fit0 <- getViz(fit0)
 print(plot(fit0, select = 2:5), pages = 1)
 ```
-The effect of `so2` doesn't seem to be important, hence it might make sense to remove it from the model. Another thing that we could try, it to check whether the number of deaths depends on the temperatures (`tmpd`) registered in the last few days, rather than only on the temperature on the same day. Rather than simply using lagged values of the temperature, we could consider building a new variable obtained by exponentially smoothing the temperature, that is
+The effect of `so2` doesn't seem to be important, hence it might make sense to remove it from the model. Another thing that we could try, is to check whether the number of deaths depends on the temperatures (`tmpd`) registered in the last few days, rather than only on the temperature on the same day. Rather than simply using lagged values of the temperature, we could consider building a new variable obtained by exponentially smoothing the temperature, that is
 $$
 \text{tmpdSmooth}_t = \alpha \, \text{tmpdSmooth}_{t-1} + (1 - \alpha) \, \text{tmpd}_t,
 $$
 with $\alpha \in (0, 1)$.
 
-Now assume that we want to implement a function, say, `expSmooth` for obtaining the exponential smooth of an variable in C, and that we want to be able to call it from R. The C code for such a function is:  
+Now, assume that we want to implement a function, say, `expSmooth` for obtaining the exponential smooth of an variable in C, and that we want to be able to call it from R. The C code for such a function is:  
 ```{r engine='Rcpp', eval = FALSE}
 #include <R.h>
 #include <Rinternals.h>
@@ -72,7 +72,7 @@ SEXP expSmooth(SEXP y, SEXP ys, SEXP n, SEXP a)
   return R_NilValue;
 }
 ```
-Before explaing how `expSmooth` can be called from R, let's try to break it down. The first two lines are there to include two header files that contain some R-related C functions and macros. For example `REAL` is defined in `Rinternals.h` as can be verified by looking at the source code by doing (not shown here):
+Before explaining how `expSmooth` can be called from R, let's try to break it down. The first two lines are there to include two header files that contain some R-related C functions and macros. For example `REAL` is defined in `Rinternals.h` as can be verified by looking at the source code by doing (not shown here):
 ```{r, eval = FALSE}
 rinternals <- file.path(R.home("include"), "Rinternals.h")
 file.show(rinternals)
@@ -84,7 +84,7 @@ The `expSmooth` function returns an `SEXP`, which is also the class of its input
    - `n`, a scalar indicating the length of `y` and `ys`;
    - `a`, the $\alpha$ coefficient.
 
-Even though, all the arguments of `expSmooth` are of class `SEXP`, is important to know that `SEXP` is a variant type, that is a C object whose subtype is known only at runtime, with subtypes that cover all data structures in R. Examples of subtypes are:
+Even though all the arguments of `expSmooth` are of class `SEXP`, is important to know that `SEXP` is a variant type, that is a C object whose subtype is known only at runtime, with subtypes that cover all data structures in R. Examples of subtypes are:
    
    - `REALSXP` a numeric vector such as `c(1.2, 0.45)`;
    - `LGLSXP` a logical vector such as `c(TRUE, FALSE, FALSE)`;
@@ -119,11 +119,11 @@ In the first line we are initializing by setting $\text{tmpdSmooth}_1 = \text{tm
 ```{r engine='Rcpp', eval = FALSE}
 return R_NilValue;
 ```
-where is the C equivalent of R's `NULL`. Hence the function is not returning anything useful, but the smoothed variable is obtained by modifying the $xys$ vector in place (that is, without making a copy).
+where is the C equivalent of R's `NULL`. Hence the function is not returning anything useful, but the smoothed variable is obtained by modifying the `xys` vector in place (that is, without making a copy).
 
 ### Calling expSmooth from R
 
-Now, assume that `expSmooth` is contained in a file called `expSmooth.c`, which in our case can be found in our working directory, as you can see from the following call to the command line: 
+Now, assume that `expSmooth` is contained in a file called `expSmooth.c`, which in our case can be found in our working directory, as you can see from the following call to the command line (the output is hidden here): 
 ```{r}
 system("ls *.c")
 ```
@@ -133,7 +133,7 @@ The first thing that we need to do is to compile the C code as follows
 ```{r}
 system("R CMD SHLIB expSmooth.c")
 ```
-This will create two files, `expSmooth.o` and `expSmooth.so`, containing binary code. The `.so` object is a share object which can be loaded in R by doing: 
+This will create two files, `expSmooth.o` and `expSmooth.so`, containing binary code. The `.so` object is a shared object which can be loaded in R by doing: 
 ```{r}
 dyn.load("expSmooth.so")
 ```
@@ -148,7 +148,7 @@ Having loaded `expSmooth` in R, we can now call it using `.Call`:
 nch <- nrow( chicago )
 tmpSmooth <- numeric(nch)
 
-.Call("expSmooth", chicago$tmpd, tmpSmooth, nch, 0.9)
+.Call("expSmooth", chicago$tmpd, tmpSmooth, nch, 0.8)
 ```
 As expected the function returns 'NULL', but the smoothed temperature is now contained in `tmpSmooth`:
 ```{r, fig.align='center', fig.height=4, fig.width=5.5}
@@ -172,13 +172,13 @@ expSmoothR <- function(x, a){
 ```
 The output of the R and C version is identical:
 ```{r}
-max( abs(tmpSmooth - expSmoothR(chicago$tmpd, 0.9)) )
+max( abs(tmpSmooth - expSmoothR(chicago$tmpd, 0.8)) )
 ```
 
 Having verifying that our C function for exponential smoothing does the right thing, let's see how it compares with its R version in terms of computing time: 
 ```{r}
-smoR <- function() expSmoothR(chicago$tmpd, 0.9)
-smoC <- function() .Call("expSmooth", chicago$tmpd, tmpSmooth, nch, 0.9)
+smoR <- function() expSmoothR(chicago$tmpd, 0.8)
+smoC <- function() .Call("expSmooth", chicago$tmpd, tmpSmooth, nch, 0.8)
 
 library(microbenchmark)
 microbenchmark(smoR(), smoC(), times = 500)
@@ -206,12 +206,12 @@ AIC(fit0, fit1)
 
 Here we try to refine the `expSmooth` function created above. Firstly notice that, while `expSmooth` does not make any explicit assumption about the subtype of its `SEXP` input, trying to smooth the number of death leads to:
 ```{r, eval = FALSE}
-.Call("expSmooth", chicago$death, tmpSmooth, nch, 0.9)
+.Call("expSmooth", chicago$death, tmpSmooth, nch, 0.8)
 # Error: REAL() can only be applied to a 'numeric', not a 'integer'
 ```
 Because `xy = REAL(y);` triggers an error which signal that `y` should be a vector of reals, not of integers. To smooth the number of death we must pass `as.double(chicago$death)`. However, `expSmooth` does not check for other things, for example there nothing guaranteeing that argument `n` actually matches the length of the input vectors `y` and `ys`. For example, the following code:
 ```{r, eval = FALSE}
-.Call("expSmooth", chicago$tmpd, tmpSmooth, nch + 10L, 0.9) # do NOT run this
+.Call("expSmooth", chicago$tmpd, tmpSmooth, nch + 10L, 0.8) # do NOT run this
 ```
 might run without any indication that something wrong has happened. But $n$ is 10 units longer than `length(chicago$tmpd)`, which mean that the last 10 iterations of this loop:
 ```{r engine='Rcpp', eval = FALSE}
@@ -276,13 +276,13 @@ dyn.load("expSmooth2.so")
 ```
 We compare its output with that of the R version:
 ```{r}
-max(abs(.Call("expSmooth2", chicago$tmpd, 0.9) - expSmoothR(chicago$tmpd, 0.9)))
+max(abs(.Call("expSmooth2", chicago$tmpd, 0.8) - expSmoothR(chicago$tmpd, 0.8)))
 ```
 which shows that it is working correctly. The computing time is also comparable to that of the old C function:
 ```{r}
-smoR <- function() expSmoothR(chicago$tmpd, 0.9)
-smoC <- function() .Call("expSmooth", chicago$tmpd, tmpSmooth, nch, 0.9)
-smoC2 <- function() .Call("expSmooth2", chicago$tmpd, 0.9)
+smoR <- function() expSmoothR(chicago$tmpd, 0.8)
+smoC <- function() .Call("expSmooth", chicago$tmpd, tmpSmooth, nch, 0.8)
+smoC2 <- function() .Call("expSmooth2", chicago$tmpd, 0.8)
 
 library(microbenchmark)
 microbenchmark(smoR(), smoC(), smoC2(), times = 500)
@@ -290,7 +290,7 @@ microbenchmark(smoR(), smoC(), smoC2(), times = 500)
 despite the fact that is it allocating memory for the output vector at every call. Importanly, `expSmooth2` is safer and works directly with integer input vectors:
 ```{r, fig.align='center', fig.height=4, fig.width=5.5}
 plot(chicago$death[1:1000], col = "grey")
-lines(.Call("expSmooth2", chicago$death, 0.9)[1:1000], col = 2)
+lines(.Call("expSmooth2", chicago$death, 0.8)[1:1000], col = 2)
 
 ```
 
