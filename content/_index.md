@@ -9,11 +9,11 @@ text-align: justify}
 
 # Statistical Computing 2
 
-This website contains teaching materials for part of the second computing unit of the taught component of the [Computational Statistics and Data Science (COMPASS) PhD programme](https://www.bristol.ac.uk/cdt/compass/). The material for the second computing unit can be found [here](https://github.com/mfasiolo/sc2-2019).
+This website contains teaching materials for part of the second computing unit of the taught component of the [Computational Statistics and Data Science (COMPASS) PhD programme](https://www.bristol.ac.uk/cdt/compass/). The source for this website is available [here](https://github.com/mfasiolo/sc2-2019). The website for the first computing unit can be found [here](https://awllee.github.io/sc1-2019/).
 
 The material provided here focusses on how `R` can be interfaced with `C++` via the `Rcpp` package. More specifically, we guide the students through the following steps:
 
-  1. interfacing `R` with `C++` manually via `.Call()`;
+  1. interfacing `R` with `C++` manually via `.Call()`; 
   
   2. using the `Rcpp` package for easier/safer integration between `R` and `C++`;
   
