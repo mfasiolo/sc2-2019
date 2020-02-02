@@ -31,7 +31,7 @@ $$
 \log \lambda_t = f_1(\text{time}_t) + f_2(\text{pm10}_t) + f_3(\text{so2}_t) + f_4(\text{o3}_t) + f_5(\text{tmpd}_t), 
 $$
 Which can be fitted using `mgcv` as follows: 
-```{r, message = FALSE}
+```{r, message = FALSE, warning = FALSE}
 library(mgcViz)
 fit0 <- bam(death ~ s(time, k = 200) + s(pm10median) + s(so2median) + s(o3median) +
                     s(tmpd),
