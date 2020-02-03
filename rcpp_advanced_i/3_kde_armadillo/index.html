@@ -245,8 +245,8 @@ microbenchmark(kdeR = kdeR(dmvnorm, x, x, diag(d)),
                kdeLazy = kdeLazy(dmvnorm, x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
 ##     expr      min       lq     mean   median       uq      max neval
-##     kdeR 171.9638 177.4282 180.1617 179.2491 180.5326 234.1888   100
-##  kdeLazy 201.9833 207.7537 211.9035 210.5526 212.5723 271.4592   100</code></pre>
+##     kdeR 175.5867 180.1893 185.1330 181.9875 186.3483 246.1183   100
+##  kdeLazy 207.0587 211.8567 217.5808 214.2008 217.9765 275.4015   100</code></pre>
 <p>It turns out that the <code>Rcpp</code> version is not faster. This demonstrates that writing part of the code in <code>Rcpp</code> does automatically lead to performance gains. In particularly our <code>Rcpp</code> code:</p>
 <ul>
 <li>calls the <code>dmvnR</code> function to compute the Gaussian kernel. We cannot expect an <code>R</code> function to be any faster when call from <code>C++</code> rather than from <code>R</code>!</li>
@@ -394,16 +394,16 @@ microbenchmark(R = kdeR(dmvnorm, x, x, diag(d)),
                Armadillo = kdeArma(x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
 ##       expr       min        lq      mean    median        uq       max neval
-##          R 173.62869 178.36712 182.15935 180.48854 182.66296 237.32168   100
-##  Armadillo  59.51689  59.68166  59.86617  59.79002  59.97035  60.77414   100</code></pre>
+##          R 175.06202 180.68354 186.32164 182.76428 186.53277 250.22518   100
+##  Armadillo  59.48078  59.74415  60.18069  59.90621  60.37071  63.78553   100</code></pre>
 <p>This is definitely better than the previous version! Notice that the <code>R</code> version (<code>kdeR</code>) is not too inefficient here, because at each iteration of the main <code>for</code> loop the <code>dmvnorm</code> evaluates a Gaussian density at <span class="math inline">\(10^3\)</span> data points. If we reduce that number of points at which the k.d.e. is evaluated, the performance gains increase. For instance:</p>
 <pre class="r"><code>library(microbenchmark)
 microbenchmark(R = kdeR(dmvnorm, x[1:10, ], x, diag(d)),
                Armadillo = kdeArma(x[1:10, ], x, diag(d)))</code></pre>
 <pre><code>## Unit: microseconds
-##       expr       min         lq        mean      median         uq        max
-##          R 98455.243 101805.103 104589.2311 103494.8960 104889.821 161804.073
-##  Armadillo   533.699    541.982    564.5228    559.8935    575.178    662.155
+##       expr        min         lq        mean     median          uq        max
+##          R 100630.320 104755.707 109615.9045 106983.231 113216.9245 176321.881
+##  Armadillo    530.851    539.931    559.6179    560.137    567.8345    666.189
 ##  neval
 ##    100
 ##    100</code></pre>

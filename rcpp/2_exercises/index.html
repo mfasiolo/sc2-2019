@@ -189,10 +189,20 @@ plot(yobs, type = &#39;b&#39;)</code></pre>
 <p><strong>Q2 start</strong>: build a C function for calculating the likelihood of the data. You will need the function</p>
 <pre class="cpp"><code>dnorm(double, double, double, int);</code></pre>
 <p>which is defined in the <code>Rmath.h</code> header. Its arguments are the same as those of the <code>dnorm</code> function in R (see <code>?dnorm</code>). Wrap your C likelihood function into an R function, e.g.</p>
-<pre class="r"><code>myLikR &lt;- function(param){
-  .Call(&quot;myLikC&quot;, param[1], param[2], param[3])
+<pre class="r"><code>myLikR &lt;- function(logr, logsig, logy0, yobs, nburn){
+  n &lt;- length(yobs)
+  r &lt;- exp(logr)
+  sig &lt;- exp(logsig)
+  y0 &lt;- exp(logy0)
+  
+  ysim &lt;- .Call(&quot;rickerSimul_C&quot;, n, nburn, r, y0)
+  
+  llk &lt;- .Call(&quot;rickerLLK_C&quot;, yobs, ysim, sig)
+  
+  return( llk )
+  
 }</code></pre>
-<p>and use it within a Metropolis-Hastings algorithm to sample the posterior of <span class="math inline">\(r\)</span>, <span class="math inline">\(\sigma\)</span> and <span class="math inline">\(y_0\)</span> (e.g. using the <code>metrop</code> function in the <code>mcmc</code> package). Does the marginal posterior distribution of the three parameters look fine? In particular, is the posterior for <span class="math inline">\(y_0\)</span> very dispersed? Try to explain what is going on <strong>Q2 end</strong>.</p>
+<p>and use it within a Metropolis-Hastings algorithm to sample the posterior of <span class="math inline">\(\log(r)\)</span>, <span class="math inline">\(\log(\sigma)\)</span> and <span class="math inline">\(\log(y_0)\)</span> (e.g. using the <code>metrop</code> function in the <code>mcmc</code> package). We work with the log-variables to enforce positivity. Does the marginal posterior distribution of the three parameters look fine? In particular, is the posterior for <span class="math inline">\(y_0\)</span> very dispersed? Try to explain what is going on <strong>Q2 end</strong>.</p>
 <p>Now, assume that the observed data has been simulated as follows:</p>
 <pre class="r"><code>r_true &lt;- 44
 
@@ -201,23 +211,25 @@ yobs &lt;- Ntrue * exp(rnorm(n, 0, sig_true))
 
 plot(yobs, type = &#39;b&#39;)</code></pre>
 <p><img src="/sc2-2019/rcpp/2_Exercises_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
-<p><strong>Q3 start</strong>: try to use Metropolis-Hastings again to sample from the posterior under the new data, are you encountering any problem? If so, try to look as slices of the likelihood w.r.t. each parameter of the model, while keeping the remaining parameter fixed to their true value. Does the likelihood look nice and smooth? What do you think it’s happening? <strong>Q3 end</strong>.</p>
-<p>From the previous question you should have observed that the slices of the likelihood w.r.t. <span class="math inline">\(r\)</span> look horrible from <span class="math inline">\(r\)</span> greater than around 12. Hence, the MH algorithm does not mix. The reason for this behaviour is that the system is chaotic for high <span class="math inline">\(r\)</span>, and the simulated trajectory become highly sensitive to small perturbations of <span class="math inline">\(r\)</span> or of <span class="math inline">\(y_0\)</span>.
-To simplify things, assume that we know the value of <span class="math inline">\(\sigma\)</span> and that we do not care about the value of the initial value <span class="math inline">\(y_0\)</span>. In particular, let us just assume that is <span class="math inline">\(y_0\)</span> a random variable (rather than an unknown parameter) in our model, distributed according to <span class="math inline">\(y_0 \sim \text{Unif}(1, 10)\)</span> (for example). One way to work around the chaotic behaviour of the Ricker map is to build a new likelihood based a new set of summary statistics of the raw data, whose distribution varies smoothly (rather than chaotically) with <span class="math inline">\(r\)</span>.</p>
+<p><strong>Q3 start</strong>: try to use Metropolis-Hastings again to sample from the posterior under the new data, are you encountering any problem? If so, try to look at slices of the likelihood w.r.t. each parameter of the model, while keeping the remaining parameters fixed to their true value. Does the likelihood look nice and smooth? What do you think it’s happening? <strong>Q3 end</strong>.</p>
+<p>From the previous question you should have observed that the slices of the likelihood w.r.t. <span class="math inline">\(r\)</span> look horrible for <span class="math inline">\(r\)</span> greater than around 12. Hence, the MH algorithm does not mix. The reason for this behaviour is that the system is chaotic for high <span class="math inline">\(r\)</span>, and the simulated trajectory become highly sensitive to small perturbations of <span class="math inline">\(r\)</span> or of <span class="math inline">\(y_0\)</span>.
+To simplify things, assume that we know the true value of <span class="math inline">\(\sigma\)</span> and that we do not care about the value of the initial value <span class="math inline">\(y_0\)</span>. In particular, let us just assume that is <span class="math inline">\(y_0\)</span> a random variable (rather than an unknown parameter) in our model, distributed according to <span class="math inline">\(y_0 \sim \text{Unif}(1, 10)\)</span> (for example). One way of working around the chaotic behaviour of the Ricker map is to build a new likelihood based a new set of summary statistics of the raw data, whose distribution varies smoothly (rather than chaotically) with <span class="math inline">\(r\)</span>.</p>
 <p>In particular, consider the sample mean <span class="math inline">\(s_1\)</span> and standard deviation <span class="math inline">\(s_2\)</span> of the observed data, <span class="math inline">\(z_1, \dots, z_n\)</span>. For simplicity, assume that these two statistics are independently normally distributed, that is
 <span class="math display">\[
 s_1 \sim \text{N}(\mu_1, \tau_1^2), \;\;\; s_2 \sim \text{N}(\mu_2, \tau_2^2),
 \]</span>
-with <span class="math inline">\(\text{cov}(s1, s2) = 0\)</span>. Hence, the likelihood of the observed statistics, <span class="math inline">\(p(s_1, s_2|r)\)</span>, is just the product of two normal densities, whose means and variances are unknown functions of <span class="math inline">\(r\)</span>. To sample the posterior corresponding to <span class="math inline">\(p(s_1, s_2|r)\)</span>, we need to be able to estimate this likelihood for any fixed <span class="math inline">\(r\)</span>. This can be achieved by simulation, using the following function:</p>
+with <span class="math inline">\(\text{cov}(s1, s2) = 0\)</span>. Hence, the likelihood of the observed statistics, <span class="math inline">\(p(s_1, s_2|r)\)</span>, is just the product of two normal densities, whose means and variances (<span class="math inline">\(\mu_1\)</span>, <span class="math inline">\(\mu_2\)</span>, <span class="math inline">\(\tau_1\)</span> and <span class="math inline">\(\tau_2\)</span>) are unknown functions of <span class="math inline">\(r\)</span>. To sample the posterior corresponding to <span class="math inline">\(p(s_1, s_2|r)\)</span>, we need to be able to estimate this likelihood for any fixed <span class="math inline">\(r\)</span>. This can be achieved by simulation, using the following function:</p>
 <pre class="r"><code>synllk &lt;- function(logr, nsim){
   
+  r &lt;- exp(logr)
   s1 &lt;- s2 &lt;- numeric(nsim)
   y0 &lt;- runif(nsim, 1, 10)
-
+  
+  # Note: sigma is assumed to be known!
   for(ii in 1:nsim){
-   ysim &lt;- rickerSimul(n = n, nburn = nburn, r = logr, y0 = y0[ii]) * exp(rnorm(n, 0, exp(sig_true)))
-   s1[ii] &lt;- mean(ysim)
-   s2[ii] &lt;- sd(ysim)
+    ysim &lt;- rickerSimul(n = n, nburn = nburn, r = r, y0 = y0[ii]) * exp(rnorm(n, 0, sig_true))
+    s1[ii] &lt;- mean(ysim)
+    s2[ii] &lt;- sd(ysim)
   }
   
   out &lt;- dnorm(mean(yobs), mean(s1), sd(s1), log = TRUE) + 
@@ -226,7 +238,7 @@ with <span class="math inline">\(\text{cov}(s1, s2) = 0\)</span>. Hence, the lik
   return( out )
 }</code></pre>
 <p>For a given value of <span class="math inline">\(\log{r}\)</span>, we estimate <span class="math inline">\(\mu_1\)</span>, <span class="math inline">\(\mu_2\)</span>, <span class="math inline">\(\tau_1\)</span> and <span class="math inline">\(\tau_2\)</span> by simulating <code>nsim</code> trajectories from the model, and then we evaluate the log-likelihood based on such estimates.</p>
-<p><strong>Q4 start</strong>: try to run a MH algorithm to (approximately) sample the posterior <span class="math inline">\(p(r|s_1, s_2)\)</span>, using the <code>synllk</code>. You should get better mixing than under the full posterior <span class="math inline">\(p(y_1, \dots, y_n|r)\)</span>. But <code>synllk</code> is very slow, so try to implement it in C, and compare your C version with the R version above in terms of computing time. You can also try to use different statistics than those used above <strong>Q4 end</strong>.</p>
+<p><strong>Q4 start</strong>: try to run a MH algorithm to (approximately) sample the posterior <span class="math inline">\(p(r|s_1, s_2)\)</span>, using the <code>synllk</code>. You should get better mixing than under the full posterior <span class="math inline">\(p(y_1, \dots, y_n|r)\)</span>. But <code>synllk</code> is very slow, so try to implement it in C, and compare your C version with the R version above in terms of computing time. You can also try to use different statistics than those used above. If you don’t know how to generate random variables in C, you can simply generate them in R and then pass them to your C function <strong>Q4 end</strong>.</p>
 <p><strong>Q5 start</strong>: By now, you should have implemented C versions of the <code>rickerSimul</code> and of the <code>synllk</code> functions. If you have time, write also a C version of the <a href="https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm">basic Metropolis-Hastings algorithm</a>, so that you are able to do the whole thing in C <strong>Q5 end</strong>.</p>
 </div>
 <div id="adaptive-kernel-regression-smoothing" class="section level3">
@@ -267,7 +279,10 @@ plot(x, y, col = &quot;grey&quot;)
 lines(xseq, muSmoothLarge, col = 2)
 lines(xseq, muSmoothSmall, col = 4)</code></pre>
 <p><img src="/sc2-2019/rcpp/2_Exercises_files/figure-html/unnamed-chunk-9-1.png" width="576" style="display: block; margin: auto;" /></p>
-<p><strong>Q1 start</strong>: Produce a C version of <code>meanKRS</code> and compare its computational performance with that of the R version. In practice, we don’t want to select <span class="math inline">\(\lambda\)</span> manually and using <span class="math inline">\(k\)</span>-fold cross validation is generally preferable. Hence, create a cross-validation routine for selecting <span class="math inline">\(\lambda\)</span>, implement it in C and compare its computing time with its R version. Are the gains in performance comparable to those that you got by implementing <code>meanKRS</code> in C? <strong>Q1 end</strong></p>
+<p><strong>Q1a start</strong>: Produce a C version of <code>meanKRS</code> and compare its computational performance with that of the R version above. You will need the function</p>
+<pre class="cpp"><code>dnorm(double, double, double, int);</code></pre>
+<p>which is defined in the <code>Rmath.h</code> header. Its arguments are the same as those of the <code>dnorm</code> function in R (see <code>?dnorm</code>) <strong>Q1a end</strong>.</p>
+<p><strong>Q1b start</strong> (Optional) In practice, we don’t want to select <span class="math inline">\(\lambda\)</span> manually and using <span class="math inline">\(k\)</span>-fold cross validation is generally preferable. Hence, create a cross-validation routine for selecting <span class="math inline">\(\lambda\)</span>, implement it in C and compare its computing time with its R version. Are the gains in performance comparable to those that you got by implementing <code>meanKRS</code> in C? <strong>Q1b start</strong></p>
 <p>From the plot above, it should be clear that no single value of <span class="math inline">\(\lambda\)</span> will lead to a satisfactory fit. The basic problem is that the true <span class="math inline">\(\mu(x)\)</span> is smooth for <span class="math inline">\(x &lt; 0.5\)</span> and quite wiggly for <span class="math inline">\(x &gt; 0.5\)</span>, hence setting <span class="math inline">\(\lambda\)</span> to a high (low) value will produce a good fit in the first (second) interval and a bad fit in the second (first). To solve this issue, we should really let the smoothness depend on <span class="math inline">\(x\)</span>, that is we need to <span class="math inline">\(\lambda = \lambda(x)\)</span>. A simple way of doing this is the following:</p>
 <ul>
 <li>fit the KRS model as before with some fixed value of <span class="math inline">\(\lambda\)</span>;</li>
@@ -279,9 +294,9 @@ with the same <span class="math inline">\(\lambda\)</span>;</li>
 <span class="math display">\[
 \hat{\mu}(x) = \frac{\sum_{i=1}^n\kappa_{\lambda_i}(x, x_i)y_i}{\sum_{i=1}^n\kappa_{\lambda_i}(x, x_i)}
 \]</span>
-where <span class="math inline">\(\lambda_i = \lambda \tilde{w}_i\)</span> with <span class="math inline">\(\tilde{w}_i = \sum_{i=1}^n w_i/n\)</span> and <span class="math inline">\(w_i = 1/(x_i)\)</span>.</li>
+where <span class="math inline">\(\lambda_i = \lambda \tilde{w}_i\)</span> with <span class="math inline">\(\tilde{w}_i = n w_i / \sum_{i=1}^n w_i\)</span> (so that the weights sum to <span class="math inline">\(n\)</span>) and <span class="math inline">\(w_i = 1/\hat{v}(x_i)\)</span>.</li>
 </ul>
-<p>The rationale is that we start with a standard KRS with fixed <span class="math inline">\(\lambda\)</span> determined, for instance, by cross-validation. Then we model the residuals of that model to see where, along <span class="math inline">\(x\)</span>, our fit should have been more flexible. In particular, in the final model we use fit using larger bandwidht where the residuals where larger (in absolute value). The whole procedure is implemented by this function:</p>
+<p>The rationale is that we start with a standard KRS with fixed <span class="math inline">\(\lambda\)</span> determined, for instance, by cross-validation. Then we model the residuals of that model to see where, along <span class="math inline">\(x\)</span>, our fit should have been more flexible. In particular, in the final model we use fit using larger bandwidth where the residuals where larger (in absolute value). The whole procedure is implemented by this function:</p>
 <pre class="r"><code>mean_var_KRS &lt;- function(y, x, x0, lam){
 
  n &lt;- length(x)
@@ -316,7 +331,7 @@ plot(x, y, col = &quot;grey&quot;)
 lines(xseq, muSmoothLarge, col = 2) # red
 lines(xseq, muSmoothSmall, col = 4) # blue
 lines(xseq, muSmoothAdapt, col = 1) # black</code></pre>
-<p><img src="/sc2-2019/rcpp/2_Exercises_files/figure-html/unnamed-chunk-11-1.png" width="672" />
+<p><img src="/sc2-2019/rcpp/2_Exercises_files/figure-html/unnamed-chunk-12-1.png" width="672" />
 <strong>Q2 start</strong>: Produce a C version of <code>mean_var_KRS</code>, possibly including a cross-validation routine for <span class="math inline">\(\lambda\)</span> also implemented in C, and compare its computational performance with that of the R version. Do you think that the adaptive smoother produced here would work well under heteroscedasticity? <strong>Q2 end</strong></p>
 <!-- -->
 <!--     JUNK -->

@@ -2,7 +2,7 @@ Package: mypack
 Type: Package
 Title: What the Package Does in One 'Title Case' Line
 Version: 1.0
-Date: 2020-02-02
+Date: 2020-02-03
 Author: Your Name
 Maintainer: Your Name <your@email.com>
 Description: One paragraph description of what the package does as one
