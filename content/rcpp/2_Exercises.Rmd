@@ -73,11 +73,21 @@ dnorm(double, double, double, int);
 ```
 which is defined in the `Rmath.h` header. Its arguments are the same as those of the `dnorm` function in R (see `?dnorm`). Wrap your C likelihood function into an R function, e.g.
 ```{r}
-myLikR <- function(param){
-  .Call("myLikC", param[1], param[2], param[3])
+myLikR <- function(logr, logsig, logy0, yobs, nburn){
+  n <- length(yobs)
+  r <- exp(logr)
+  sig <- exp(logsig)
+  y0 <- exp(logy0)
+  
+  ysim <- .Call("rickerSimul_C", n, nburn, r, y0)
+  
+  llk <- .Call("rickerLLK_C", yobs, ysim, sig)
+  
+  return( llk )
+  
 }
 ```
-and use it within a Metropolis-Hastings algorithm to sample the posterior of $r$, $\sigma$ and $y_0$ (e.g. using the `metrop` function in the `mcmc` package). Does the marginal posterior distribution of the three parameters look fine? In particular, is the posterior for $y_0$ very dispersed? Try to explain what is going on **Q2 end**.
+and use it within a Metropolis-Hastings algorithm to sample the posterior of $\log(r)$, $\log(\sigma)$ and $\log(y_0)$ (e.g. using the `metrop` function in the `mcmc` package). We work with the log-variables to enforce positivity. Does the marginal posterior distribution of the three parameters look fine? In particular, is the posterior for $y_0$ very dispersed? Try to explain what is going on **Q2 end**.
 
 Now, assume that the observed data has been simulated as follows:
 ```{r}
@@ -89,26 +99,28 @@ yobs <- Ntrue * exp(rnorm(n, 0, sig_true))
 plot(yobs, type = 'b')
 ```
 
-**Q3 start**: try to use Metropolis-Hastings again to sample from the posterior under the new data, are you encountering any problem? If so, try to look as slices of the likelihood w.r.t. each parameter of the model, while keeping the remaining parameter fixed to their true value. Does the likelihood look nice and smooth? What do you think it's happening? **Q3 end**.
+**Q3 start**: try to use Metropolis-Hastings again to sample from the posterior under the new data, are you encountering any problem? If so, try to look at slices of the likelihood w.r.t. each parameter of the model, while keeping the remaining parameters fixed to their true value. Does the likelihood look nice and smooth? What do you think it's happening? **Q3 end**.
 
-From the previous question you should have observed that the slices of the likelihood w.r.t. $r$ look horrible from $r$ greater than around 12. Hence, the MH algorithm does not mix. The reason for this behaviour is that the system is chaotic for high $r$, and the simulated trajectory become highly sensitive to small perturbations of $r$ or of $y_0$. 
-To simplify things, assume that we know the value of $\sigma$ and that we do not care about the value of the initial value $y_0$. In particular, let us just assume that is $y_0$ a random variable (rather than an unknown parameter) in our model, distributed according to $y_0 \sim \text{Unif}(1, 10)$ (for example). One way to work around the chaotic behaviour of the Ricker map is to build a new likelihood based a new set of summary statistics of the raw data, whose distribution varies smoothly (rather than chaotically) with $r$. 
+From the previous question you should have observed that the slices of the likelihood w.r.t. $r$ look horrible for $r$ greater than around 12. Hence, the MH algorithm does not mix. The reason for this behaviour is that the system is chaotic for high $r$, and the simulated trajectory become highly sensitive to small perturbations of $r$ or of $y_0$. 
+To simplify things, assume that we know the true value of $\sigma$ and that we do not care about the value of the initial value $y_0$. In particular, let us just assume that is $y_0$ a random variable (rather than an unknown parameter) in our model, distributed according to $y_0 \sim \text{Unif}(1, 10)$ (for example). One way of working around the chaotic behaviour of the Ricker map is to build a new likelihood based a new set of summary statistics of the raw data, whose distribution varies smoothly (rather than chaotically) with $r$. 
 
 In particular, consider the sample mean $s_1$ and standard deviation $s_2$ of the observed data, $z_1, \dots, z_n$. For simplicity, assume that these two statistics are independently normally distributed, that is
 $$
 s_1 \sim \text{N}(\mu_1, \tau_1^2), \;\;\; s_2 \sim \text{N}(\mu_2, \tau_2^2),
 $$
-with $\text{cov}(s1, s2) = 0$. Hence, the likelihood of the observed statistics, $p(s_1, s_2|r)$, is just the product of two normal densities, whose means and variances are unknown functions of $r$. To sample the posterior corresponding to $p(s_1, s_2|r)$, we need to be able to estimate this likelihood for any fixed $r$. This can be achieved by simulation, using the following function:
+with $\text{cov}(s1, s2) = 0$. Hence, the likelihood of the observed statistics, $p(s_1, s_2|r)$, is just the product of two normal densities, whose means and variances ($\mu_1$, $\mu_2$, $\tau_1$ and $\tau_2$) are unknown functions of $r$. To sample the posterior corresponding to $p(s_1, s_2|r)$, we need to be able to estimate this likelihood for any fixed $r$. This can be achieved by simulation, using the following function:
 ```{r}
 synllk <- function(logr, nsim){
   
+  r <- exp(logr)
   s1 <- s2 <- numeric(nsim)
   y0 <- runif(nsim, 1, 10)
-
+  
+  # Note: sigma is assumed to be known!
   for(ii in 1:nsim){
-   ysim <- rickerSimul(n = n, nburn = nburn, r = logr, y0 = y0[ii]) * exp(rnorm(n, 0, exp(sig_true)))
-   s1[ii] <- mean(ysim)
-   s2[ii] <- sd(ysim)
+    ysim <- rickerSimul(n = n, nburn = nburn, r = r, y0 = y0[ii]) * exp(rnorm(n, 0, sig_true))
+    s1[ii] <- mean(ysim)
+    s2[ii] <- sd(ysim)
   }
   
   out <- dnorm(mean(yobs), mean(s1), sd(s1), log = TRUE) + 
@@ -119,7 +131,7 @@ synllk <- function(logr, nsim){
 ```
 For a given value of $\log{r}$, we estimate $\mu_1$, $\mu_2$, $\tau_1$ and $\tau_2$ by simulating `nsim` trajectories from the model, and then we evaluate the log-likelihood based on such estimates. 
 
-**Q4 start**: try to run a MH algorithm to (approximately) sample the posterior $p(r|s_1, s_2)$, using the `synllk`. You should get better mixing than under the full posterior $p(y_1, \dots, y_n|r)$. But `synllk` is very slow, so try to implement it in C, and compare your C version with the R version above in terms of computing time. You can also try to use different statistics than those used above  **Q4 end**.
+**Q4 start**: try to run a MH algorithm to (approximately) sample the posterior $p(r|s_1, s_2)$, using the `synllk`. You should get better mixing than under the full posterior $p(y_1, \dots, y_n|r)$. But `synllk` is very slow, so try to implement it in C, and compare your C version with the R version above in terms of computing time. You can also try to use different statistics than those used above. If you don't know how to generate random variables in C, you can simply generate them in R and then pass them to your C function  **Q4 end**.
 
 **Q5 start**: By now, you should have implemented C versions of the `rickerSimul` and of the `synllk` functions. If you have time, write also a C version of the [basic Metropolis-Hastings algorithm](https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm), so that you are able to do the whole thing in C **Q5 end**.
 
@@ -167,7 +179,13 @@ lines(xseq, muSmoothLarge, col = 2)
 lines(xseq, muSmoothSmall, col = 4)
 ```
 
-**Q1 start**: Produce a C version of `meanKRS` and compare its computational performance with that of the R version. In practice, we don't want to select $\lambda$ manually and using $k$-fold cross validation is generally preferable. Hence, create a cross-validation routine for selecting $\lambda$, implement it in C and compare its computing time with its R version. Are the gains in performance comparable to those that you got by implementing `meanKRS` in C? **Q1 end**
+**Q1a start**: Produce a C version of `meanKRS` and compare its computational performance with that of the R version above. You will need the function
+```{r engine='Rcpp', eval = FALSE}
+dnorm(double, double, double, int);
+```
+which is defined in the `Rmath.h` header. Its arguments are the same as those of the `dnorm` function in R (see `?dnorm`) **Q1a end**.
+
+**Q1b start** (Optional) In practice, we don't want to select $\lambda$ manually and using $k$-fold cross validation is generally preferable. Hence, create a cross-validation routine for selecting $\lambda$, implement it in C and compare its computing time with its R version. Are the gains in performance comparable to those that you got by implementing `meanKRS` in C? **Q1b start**
 
 From the plot above, it should be clear that no single value of $\lambda$ will lead to a satisfactory fit. The basic problem is that the true $\mu(x)$ is smooth for $x < 0.5$ and quite wiggly for $x > 0.5$, hence setting $\lambda$ to a high (low) value will produce a good fit in the first (second) interval and a bad fit in the second (first). To solve this issue, we should really let the smoothness depend on $x$, that is we need to $\lambda = \lambda(x)$. A simple way of doing this is the following:
 
@@ -180,9 +198,9 @@ From the plot above, it should be clear that no single value of $\lambda$ will l
 $$
 \hat{\mu}(x) = \frac{\sum_{i=1}^n\kappa_{\lambda_i}(x, x_i)y_i}{\sum_{i=1}^n\kappa_{\lambda_i}(x, x_i)}
 $$
-     where $\lambda_i = \lambda \tilde{w}_i$ with $\tilde{w}_i = \sum_{i=1}^n w_i/n$ and $w_i = 1/(x_i)$. 
+     where $\lambda_i = \lambda \tilde{w}_i$ with $\tilde{w}_i = n w_i / \sum_{i=1}^n w_i$ (so that the weights sum to $n$) and $w_i = 1/\hat{v}(x_i)$.
      
-The rationale is that we start with a standard KRS with fixed $\lambda$ determined, for instance, by cross-validation. Then we model the residuals of that model to see where, along $x$, our fit should have been more flexible. In particular, in the final model we use fit using larger bandwidht where the residuals where larger (in absolute value). The whole procedure is implemented by this function: 
+The rationale is that we start with a standard KRS with fixed $\lambda$ determined, for instance, by cross-validation. Then we model the residuals of that model to see where, along $x$, our fit should have been more flexible. In particular, in the final model we use fit using larger bandwidth where the residuals where larger (in absolute value). The whole procedure is implemented by this function: 
 ```{r}
 mean_var_KRS <- function(y, x, x0, lam){
 

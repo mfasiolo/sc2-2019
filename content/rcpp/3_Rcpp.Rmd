@@ -151,13 +151,13 @@ Hence, the function is not using `RcppExport` and its inputs and output are not 
 ```{r}
 sourceCpp("expSmoothRcpp_I.cpp")
 ```
-which compiles `expSmoothRcpp_I`, loads the corresponding dynamic library in `R` (using `dyn.load`) and creates and `R` wrapper called `expSmoothRcpp`. Hence, to test if this worked we do:
+which compiles `expSmoothRcpp_I`, loads the corresponding dynamic library in `R` (using `dyn.load`) and creates an `R` wrapper called `expSmoothRcpp`. Hence, to test if this worked we do:
 ```{r}
 max( abs(expSmoothRcpp(y, 0.9) - .Call("expSmooth2", y, 0.9)) )
 ```
 Perfect agreement.
 
-Now, to understanding how this works, note that:
+Now, to understand how this works, note that:
 ```{r}
 expSmoothRcpp
 ```
@@ -185,7 +185,7 @@ The fact that the definition of `sourceCpp_1_expSmoothRcpp` is preceded by `Rcpp
       
       `const NumericVector y = as<const NumericVector>(ySEXP);`
       
-      As in our original `expSmoothRcpp_manual` function. 
+      as in our original `expSmoothRcpp_manual` function. 
       
 So, to make our `expSmoothRcpp_I` function accessible from `R`, `sourceCpp` has written a `C++` wrapper which is compatible with `.Call` and does all the necessary conversions from `SEXP` to `NumericVector`, `double` and potentially many other `Rcpp` or `C++` classes for us. The next lines in the text output show that `sourceCpp` has:
 
@@ -225,7 +225,7 @@ which creates a `C++` function for computing the $n$-th element of the Fibonacci
 ```{r}
 fiboInline1(6)
 ```
-This is equivalent to having defined the function in, say, `fibo.cpp` and having sourced it using `sourceCpp(fibo.cpp)`. An even more compact approach involves using the `cppFunction` function:
+This is equivalent to having defined the function in, say, `fibo.cpp` and having sourced it using `sourceCpp("fibo.cpp")`. An even more compact approach involves using the `cppFunction` function:
 ```{r}
 cppFunction('
 int fiboInline2(const int x) {
