@@ -139,11 +139,11 @@ text-align: justify}
 </style>
 <div id="introduction" class="section level3">
 <h3>Introduction</h3>
-<p>To provide a more challeging example illustrating the capabilities of <code>RcppArmadillo</code>, here we show how to perform multivariate kernel density estimation (k.d.e.) using this library. In particular, let <span class="math inline">\(\bf x_1^o, \dots, \bf x_n^o\)</span> be <span class="math inline">\(d\)</span>-dimensional vectors, sample from the density <span class="math inline">\(\pi(\bf x)\)</span>. A k.d.e. estimate of <span class="math inline">\(\pi({\bf x})\)</span> is
+<p>To provide a more challeging example illustrating the capabilities of <code>RcppArmadillo</code>, here we show how to perform multivariate kernel density estimation (k.d.e.) using this library. In particular, let <span class="math inline">\({\bf x}_1^o, \dots, {\bf x}_n^o\)</span> be <span class="math inline">\(d\)</span>-dimensional vectors, sampled from the density <span class="math inline">\(\pi(\bf x)\)</span>. A k.d.e. estimate of <span class="math inline">\(\pi({\bf x})\)</span> is
 <span class="math display">\[
 \hat{\pi}_{\bf H}({\bf x}) = \frac{1}{n} \sum_{i=1}^n \kappa_{\bf H}({\bf x} - {\bf x}_i^o),
 \]</span>
-where <span class="math inline">\(\kappa_{\bf H}\)</span> is a kernel with positive definite bandwidth matrix <span class="math inline">\({\bf H}\)</span>. Here we assume that <span class="math inline">\(\kappa_{\bf H}\)</span> is a multivariate Gaussian kernel, with covariance matrix <span class="math inline">\(\kappa_{\bf H}\)</span>. Further, the data is generated the mixture of warped Gaussians of <a href="https://arxiv.org/pdf/1611.06874.pdf">Fasiolo et al. (2018)</a>. The details of this density are unimportant here, what matters is that the example is defined in <span class="math inline">\(d&gt;2\)</span> dimensions and, under such density <span class="math inline">\(\pi({\bf x})\)</span>, the joint distribution of the first two dimensions is far from <span class="math inline">\(Gaussian\)</span> the remaining dimensions are standard i.i.d. Gaussian variables.</p>
+where <span class="math inline">\(\kappa_{\bf H}\)</span> is a kernel with positive definite bandwidth matrix <span class="math inline">\({\bf H}\)</span>. Here we assume that <span class="math inline">\(\kappa_{\bf H}\)</span> is a multivariate Gaussian kernel, with covariance matrix <span class="math inline">\(\kappa_{\bf H}\)</span>. Further, the data is generated from the mixture of warped Gaussians of <a href="https://arxiv.org/pdf/1611.06874.pdf">Fasiolo et al. (2018)</a>. The details of this density are unimportant here, what matters is that the example is defined in <span class="math inline">\(d&gt;2\)</span> dimensions and, under such density <span class="math inline">\(\pi({\bf x})\)</span>, the joint distribution of the first two dimensions is far from Gaussian while the remaining dimensions are standard i.i.d. Gaussian variables.</p>
 <p>Samples from this density can be generated using the following functions:</p>
 <pre class="r"><code>rBanana &lt;- function(n, d, a, b, shi1, shi2){
   out &lt;- matrix(rnorm(d*n), n, d);
@@ -179,7 +179,7 @@ x &lt;- rBanMix(1e3, d, bananaW, sigmaBan, bananicity, banShiftX, banShiftY)
 
 pairs(x)</code></pre>
 <p><img src="/sc2-2019/rcpp_advanced_I/3_KDE_Armadillo_files/figure-html/unnamed-chunk-2-1.png" width="672" />
-The plot demonstrate that only the first tow dimensions of <span class="math inline">\(\bf x\)</span> are far from Gaussian. The next section presents a first attempt at estimating the density using <code>R</code> and <code>Rcpp</code>.</p>
+The plot demonstrates that only the first two dimensions of <span class="math inline">\(\bf x\)</span> are far from Gaussian. The next section presents a first attempt at estimating the density using <code>R</code> and <code>Rcpp</code>.</p>
 </div>
 <div id="an-r-based-and-a-dumb-rcpp-solution" class="section level3">
 <h3>An R-based and a dumb <code>Rcpp</code> solution</h3>
@@ -216,7 +216,7 @@ library(viridis)</code></pre>
        mapping = aes(x = x, y = y, z = z, fill = z)) +
        geom_raster() + geom_contour() + scale_fill_viridis_c()</code></pre>
 <p><img src="/sc2-2019/rcpp_advanced_I/3_KDE_Armadillo_files/figure-html/unnamed-chunk-5-1.png" width="480" style="display: block; margin: auto;" /></p>
-<p>Can we speed the evaluation of the <span class="math inline">\(k.d.e.\)</span> up using <code>RcppArmadillo</code>? We start with a “lazy” version, where we replace <code>kdeR</code> with:</p>
+<p>Can we speed the evaluation of the k.d.e. up using <code>RcppArmadillo</code>? We start with a “lazy” version, where we replace <code>kdeR</code> with:</p>
 <pre class="r"><code>library(Rcpp)
 sourceCpp(code = &#39;
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -239,17 +239,18 @@ Rcpp::NumericVector kde_i(Rcpp::Function dker, mat&amp; y, mat&amp; x, mat&amp; 
      kdeLazy(dmvnorm, x, x, diag(d)))
 abline(0, 1, col = 2)</code></pre>
 <p><img src="/sc2-2019/rcpp_advanced_I/3_KDE_Armadillo_files/figure-html/unnamed-chunk-7-1.png" width="384" style="display: block; margin: auto;" />
-Let us comparing the performance of <code>kdeR</code> and <code>kdeLazy</code>:</p>
+Let us compare the performance of <code>kdeR</code> and <code>kdeLazy</code>:</p>
 <pre class="r"><code>library(microbenchmark)
 microbenchmark(kdeR = kdeR(dmvnorm, x, x, diag(d)),
                kdeLazy = kdeLazy(dmvnorm, x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
-##     expr      min       lq     mean   median       uq      max neval
-##     kdeR 175.5867 180.1893 185.1330 181.9875 186.3483 246.1183   100
-##  kdeLazy 207.0587 211.8567 217.5808 214.2008 217.9765 275.4015   100</code></pre>
-<p>It turns out that the <code>Rcpp</code> version is not faster. This demonstrates that writing part of the code in <code>Rcpp</code> does automatically lead to performance gains. In particularly our <code>Rcpp</code> code:</p>
+##     expr      min       lq     mean   median      uq      max neval
+##     kdeR 181.7787 187.2198 195.1617 191.6184 199.544 271.1974   100
+##  kdeLazy 213.4772 219.6817 226.7518 224.3509 231.038 304.9199   100</code></pre>
+<p>It turns out that the <code>Rcpp</code> version is not faster. This demonstrates that writing part of the code in <code>Rcpp</code> does not automatically lead to performance gains. In particular our <code>Rcpp</code> code:</p>
 <ul>
-<li>calls the <code>dmvnR</code> function to compute the Gaussian kernel. We cannot expect an <code>R</code> function to be any faster when call from <code>C++</code> rather than from <code>R</code>!</li>
+<li>calls the <code>dmvnR</code> function to compute the Gaussian kernel. We cannot expect an <code>R</code> function
+to be any faster when called from <code>C++</code> rather than from <code>R</code>!</li>
 <li>the call to <code>Rcpp::as&lt;vec&gt;</code> in the main <code>for</code> loop makes a copy at each call, which is
 inefficient.</li>
 </ul>
@@ -262,7 +263,7 @@ inefficient.</li>
 \log \phi({\bf x}, \mu, {\bf H}) = -\frac{1}{2}({\bf x} - \mu)^T{\bf H}^{-1}({\bf x} - \mu) - \frac{d}{2} \log (2\pi) - \frac{1}{2}\log\text{det}({\bf H}). 
 \]</span>
 Now, for the purpose of maximizing efficiency, we have to think about how to numerically compute the quadratic form and the determinant. Let’s start with the first.</p>
-<p>Remember that, in our k.d.e. application, <span class="math inline">\({\bf x}_1, \dots, {\bf x}_m\)</span> are the points at which we want to evaluate the k.d.e. and <span class="math inline">\(\mu_1 = {\bf x}^o_1, \dots, \mu_n = {\bf x}^o_n\)</span> represent the centers of the kernel densities. Hence, for any fixed value of <span class="math inline">\(\mu\)</span>, we will have to evaluate the quadratic form <span class="math inline">\(m\)</span> times. For fixed <span class="math inline">\(\mu\)</span>, we could considering two approaches:</p>
+<p>Remember that, in our k.d.e. application, <span class="math inline">\({\bf x}_1, \dots, {\bf x}_m\)</span> are the points at which we want to evaluate the k.d.e. and <span class="math inline">\(\mu_1 = {\bf x}^o_1, \dots, \mu_n = {\bf x}^o_n\)</span> represent the centers of the kernel densities. Hence, for any fixed value of <span class="math inline">\(\mu\)</span>, we will have to evaluate the quadratic form <span class="math inline">\(m\)</span> times. For fixed <span class="math inline">\(\mu\)</span>, we could consider two approaches:</p>
 <ol style="list-style-type: upper-alpha">
 <li><p>calculate the inverse of <span class="math inline">\({\bf H}\)</span> upfront and then calculate
 <span class="math inline">\(({\bf x}_i - \mu)^T{\bf H}^{-1}({\bf x}_i - \mu)\)</span>, for <span class="math inline">\(i = 1, \dots, m\)</span>;</p></li>
@@ -272,13 +273,13 @@ Now, for the purpose of maximizing efficiency, we have to think about how to num
 <p>Approach A seems quite appealing: we pay an upfront <span class="math inline">\(O(d^3)\)</span> cost to get <span class="math inline">\({\bf H}^{-1}\)</span> and the we pay <span class="math inline">\(O(d^2)\)</span> cost <span class="math inline">\(m\)</span> times to evaluate the quadratic forms. So, for <span class="math inline">\(d &lt;&lt; m\)</span>, the dominant cost is <span class="math inline">\(O(md^2)\)</span>. Approach B seems more wasteful: solving the linear system by Gaussian elimination will cost <span class="math inline">\(O(d^3)\)</span> operations, so doing it <span class="math inline">\(m\)</span> times brings the dominant cost to <span class="math inline">\(O(md^3)\)</span>. However, here it is essential to take into account the fact that <span class="math inline">\(\bf H\)</span> is positive definite, which means that approach B can be implemented much more efficiently. In particular, let <span class="math inline">\({\bf L}{\bf L}^T = {\bf H}\)</span> be the Cholesky decomposition of <span class="math inline">\(\bf H\)</span>. Then <span class="math inline">\({\bf H}^{-1}({\bf x}_i - \mu) = ({\bf L}^{-1})^T{\bf L}^{-1}({\bf x}_i - \mu)\)</span> can be computed by:</p>
 <ol style="list-style-type: decimal">
 <li>solving <span class="math inline">\({\bf L}^{-1}({\bf x}_i - \mu) = {\bf z}_i\)</span> by forward-substitution
-(recall that <span class="math inline">\(L\)</span> is lower triangular). This has cost <span class="math inline">\(O(d^2)\)</span>.</li>
+(recall that <span class="math inline">\(\bf L\)</span> is lower triangular). This has cost <span class="math inline">\(O(d^2)\)</span>.</li>
 <li>solving <span class="math inline">\(({\bf L}^{-1})^T {\bf z}_i = \tilde{\bf z}_i\)</span> by back-substitution. Again <span class="math inline">\(O(d^2)\)</span>.</li>
 <li>computing <span class="math inline">\(({\bf x}_i - \mu)^T \tilde{\bf z}_i\)</span> which is <span class="math inline">\(O(d)\)</span>.</li>
 </ol>
-<p>Hence, the cost of approach B is <span class="math inline">\(O(m d^2)\)</span> as well, but has the advantage of avoiding matrix inversion which is generally less inaccurate than solving a linear system.</p>
+<p>Hence, the cost of approach B is <span class="math inline">\(O(m d^2)\)</span> as well, but has the advantage of avoiding matrix inversion, which is generally less accurate than solving a linear system.</p>
 <p>The approach we are going to follow is based on the observation that <span class="math inline">\(({\bf x}_i - \mu)^T {\bf H}^{-1}({\bf x}_i - \mu) = {\bf z}_i^T{\bf z}_i\)</span>, hence once we have obtained <span class="math inline">\({\bf z}_i\)</span> by forward-substitution as in step 1 above, we just need to calculate its squared norm at cost <span class="math inline">\(O(d)\)</span>. Having obtained the cholesky decomposition of <span class="math inline">\(\bf H\)</span>, computing its log-determinant is very cheap because <span class="math inline">\(\log\text{det}({\bf H}) = \log\text{det}({\bf L}{\bf L}^T) = 2\log\text{det}({\bf L}) = 2\log\text{trace}({\bf L})\)</span>.
-Before lookign at the <code>Armadillo</code> function will evaluate the Gaussian log-density, which we call <code>dmvnInt</code>, lets look at the function that will be accessed at R level:</p>
+Before looking at the <code>Armadillo</code> function to evaluate the Gaussian log-density, which we call <code>dmvnInt</code>, lets look at the function that will be accessed at <code>R</code> level:</p>
 <pre class="cpp"><code>Rcpp::NumericVector kde_i(mat&amp; y, mat&amp; x, mat&amp; H) {
   unsigned int n = x.n_rows;
   unsigned int m = y.n_rows;
@@ -288,7 +289,8 @@ Before lookign at the <code>Armadillo</code> function will evaluate the Gaussian
    out += dmvnInt(y, x.row(ii), cholDec);
   }
   out /= n;
-  return Rcpp::wrap(out);</code></pre>
+  return Rcpp::wrap(out);
+}</code></pre>
 <p>This is almost identical to the function that we have used before, the main differences being the following lines:</p>
 <ul>
 <li><code>mat cholDec = chol(H, &quot;lower&quot;);</code> here we are computing the Cholesky decomposition of <span class="math inline">\(\bf H\)</span>
@@ -296,9 +298,9 @@ and we are storing the lower-triangular factor in <code>cholDec</code>;</li>
 <li><code>out += dmvnInt(y, x.row(ii), cholDec);</code> evaluates a multivariate normal density, with mean vector
 <span class="math inline">\(\mu = {\bf x}_i^0\)</span> and covariance <span class="math inline">\(\bf H\)</span>, at <span class="math inline">\({\bf x}_1, \dots, {\bf x}_m\)</span>. Instead of passing
 <span class="math inline">\(\bf H\)</span> to <code>dmvnInt</code>, we pass it directly its lower-triangular factor. We assume that the output
-<code>dmvnInt</code> is an <code>arma::vec</code> which can be accumulated in <code>out</code> without calling <code>Rcpp::as&lt;vec&gt;</code>.</li>
+<code>dmvnInt</code> is an <code>arma::vec</code>, which can be accumulated in <code>out</code> without calling <code>Rcpp::as&lt;vec&gt;</code>.</li>
 </ul>
-<p>Then we examine the function for evaluating the multivariate Gaussian density:</p>
+<p>Then, we examine the function for evaluating the multivariate Gaussian density:</p>
 <pre class="cpp"><code>vec dmvnInt(mat &amp; X, const rowvec &amp; mu, mat &amp; L)
 {
   unsigned int d = X.n_cols;
@@ -331,14 +333,14 @@ and we are storing the lower-triangular factor in <code>cholDec</code>;</li>
 inputs are passed by reference;</li>
 <li><code>vec D = L.diag(); vec out(m); vec z(d);</code> we extract the main diagonal of <code>L</code>, we defined the
 <span class="math inline">\(m\)</span>-dimensional vector <code>out</code> will contain the density values at <span class="math inline">\({\bf x}_1, \dots, {\bf x}_m\)</span>
-and “working” <span class="math inline">\(d\)</span>-dimensional vector <code>z</code> which we will use in the main loop;</li>
+and the “working” <span class="math inline">\(d\)</span>-dimensional vector <code>z</code> which we will use in the main loop;</li>
 <li><code>for(icol = 0; icol &lt; m; icol++)</code> here we loop across <span class="math inline">\({\bf x}_1, \dots, {\bf x}_m\)</span>.
 We calculate <span class="math inline">\({\bf z}_i\)</span> using the nested loop (next bullet point) and then
 we use <code>out.at(icol) = sum(square(z));</code> to compute and store <span class="math inline">\(||{\bf z}_i||^2\)</span>.</li>
 <li><code>for(irow = 0; irow &lt; d; irow++)</code> given <span class="math inline">\({\bf x}_i\)</span> we get
 <span class="math inline">\({\bf z}_i = {\bf L}^{-1}({\bf x}_i - \mu)\)</span> by forward-substitution.</li>
 </ul>
-<p>Let use now compile and load using <code>sourceCpp</code>:</p>
+<p>Let us now compile and load using <code>sourceCpp</code>:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
 // [[Rcpp::depends(RcppArmadillo)]]
 #include &lt;RcppArmadillo.h&gt;
@@ -394,20 +396,20 @@ microbenchmark(R = kdeR(dmvnorm, x, x, diag(d)),
                Armadillo = kdeArma(x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
 ##       expr       min        lq      mean    median        uq       max neval
-##          R 175.06202 180.68354 186.32164 182.76428 186.53277 250.22518   100
-##  Armadillo  59.48078  59.74415  60.18069  59.90621  60.37071  63.78553   100</code></pre>
-<p>This is definitely better than the previous version! Notice that the <code>R</code> version (<code>kdeR</code>) is not too inefficient here, because at each iteration of the main <code>for</code> loop the <code>dmvnorm</code> evaluates a Gaussian density at <span class="math inline">\(10^3\)</span> data points. If we reduce that number of points at which the k.d.e. is evaluated, the performance gains increase. For instance:</p>
+##          R 180.44445 186.36770 192.73912 190.08052 197.61300 256.17578   100
+##  Armadillo  59.59459  59.98904  60.62151  60.58268  60.89065  71.03643   100</code></pre>
+<p>This is definitely better than the previous version! Notice that the <code>R</code> version (<code>kdeR</code>) is not too inefficient here because, at each iteration of the main <code>for</code> loop, the <code>dmvnorm</code> function evaluates a Gaussian density at <span class="math inline">\(10^3\)</span> data points. If we reduce the number of points at which the k.d.e. is evaluated, the performance gains increase. For instance:</p>
 <pre class="r"><code>library(microbenchmark)
 microbenchmark(R = kdeR(dmvnorm, x[1:10, ], x, diag(d)),
                Armadillo = kdeArma(x[1:10, ], x, diag(d)))</code></pre>
 <pre><code>## Unit: microseconds
-##       expr        min         lq        mean     median          uq        max
-##          R 100630.320 104755.707 109615.9045 106983.231 113216.9245 176321.881
-##  Armadillo    530.851    539.931    559.6179    560.137    567.8345    666.189
+##       expr        min         lq        mean      median         uq        max
+##          R 106574.580 109602.810 114466.4639 111260.6260 115961.522 186582.430
+##  Armadillo    531.012    541.315    566.4704    563.7355    579.401    688.825
 ##  neval
 ##    100
 ##    100</code></pre>
-<p>This is attributable to the fact that we are computing the Cholesky decomposition of <span class="math inline">\(\bf H\)</span> only once, rather than <span class="math inline">\(n\)</span> times, to the fact that <code>for</code> loops are much quicker in <code>C++</code> that in <code>R</code> and, hopefully, that our code for computing the multivariate normal density is faster than that used by <code>dmvtnorm</code>.</p>
+<p>This is attributable to a) the fact that we are computing the Cholesky decomposition of <span class="math inline">\(\bf H\)</span> only once rather than <span class="math inline">\(n\)</span> times, b) to the fact that <code>for</code> loops are much quicker in <code>C++</code> that in <code>R</code> and c) (hopefully) that our code for computing the multivariate normal density is faster than that used by <code>dmvtnorm</code>.</p>
 </div>
 <div id="references" class="section level3">
 <h3>References</h3>

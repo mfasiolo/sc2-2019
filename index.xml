@@ -26,7 +26,7 @@ library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;Rcpp.h&amp;gt; using n
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/1_rcpp_sugar/</guid>
-      <description>Vectorized operators and sugar versions of basic R functions Random number generation    body { text-align: justify}  In a previous chapter we explained how Rcpp allows users to interface R with C++ in convenient way. Here we cover Rcpp sugar, which consists of a set of functions and operators which make the C++ code written using Rcpp behave similarly to what would happen in R. In other words Rcpp sugar allows us to write C++ code which is similar to the R equivalent, but often more efficient.</description>
+      <description>Vectorized operators and sugar versions of basic R functions Random number generation    body { text-align: justify}  In a previous chapter we explained how Rcpp allows users to interface R with C++ in a convenient way. Here we cover Rcpp sugar, which consists of a set of functions and operators which make the C++ code written using Rcpp behave similarly to R code. In other words, Rcpp sugar allows us to write C++ code which looks similar to its R equivalent, but often more efficient.</description>
     </item>
     
     <item>
@@ -53,7 +53,7 @@ library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;Rcpp.h&amp;gt; using n
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/2_rcpparmadillo/</guid>
-      <description>Introduction Motivating example 1: matrix-matrix-vector product Motivating example 2: sums of matrices Basic RcppArmadillo usage References    body { text-align: justify}  Introduction Many standard statistical models/algorithms (e.g., linear regression, principal component analysis, …) require using numerical algebra routines, hence this section explains how to perform such computations efficiently using the RcppArmadillo R package. RcppArmadillo provides an interface to the Armadillo C++ numerical linear algebra library, which is highly useful in practice because it provides an interesting balance between performance and ease of use.</description>
+      <description>Introduction Motivating example 1: matrix-matrix-vector product Motivating example 2: sums of matrices Basic RcppArmadillo usage References    body { text-align: justify}  Introduction Many standard statistical models/algorithms (e.g., linear regression, principal component analysis, …) require using numerical linear algebra routines, hence this section explains how to perform such computations efficiently using the RcppArmadillo R package. RcppArmadillo provides an interface to the Armadillo C++ numerical linear algebra library, which is highly useful in practice because it provides an interesting balance between performance and ease of use.</description>
     </item>
     
     <item>
@@ -72,7 +72,7 @@ The Rcpp package provides an extension of the utils::package.skeleton function, 
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/3_kde_armadillo/</guid>
-      <description>Introduction An R-based and a dumb Rcpp solution A better RcppArmadillo solution References    body { text-align: justify}  Introduction To provide a more challeging example illustrating the capabilities of RcppArmadillo, here we show how to perform multivariate kernel density estimation (k.d.e.) using this library. In particular, let \(\bf x_1^o, \dots, \bf x_n^o\) be \(d\)-dimensional vectors, sample from the density \(\pi(\bf x)\). A k.d.e. estimate of \(\pi({\bf x})\) is \[ \hat{\pi}_{\bf H}({\bf x}) = \frac{1}{n} \sum_{i=1}^n \kappa_{\bf H}({\bf x} - {\bf x}_i^o), \] where \(\kappa_{\bf H}\) is a kernel with positive definite bandwidth matrix \({\bf H}\).</description>
+      <description>Introduction An R-based and a dumb Rcpp solution A better RcppArmadillo solution References    body { text-align: justify}  Introduction To provide a more challeging example illustrating the capabilities of RcppArmadillo, here we show how to perform multivariate kernel density estimation (k.d.e.) using this library. In particular, let \({\bf x}_1^o, \dots, {\bf x}_n^o\) be \(d\)-dimensional vectors, sampled from the density \(\pi(\bf x)\). A k.d.e. estimate of \(\pi({\bf x})\) is \[ \hat{\pi}_{\bf H}({\bf x}) = \frac{1}{n} \sum_{i=1}^n \kappa_{\bf H}({\bf x} - {\bf x}_i^o), \] where \(\kappa_{\bf H}\) is a kernel with positive definite bandwidth matrix \({\bf H}\).</description>
     </item>
     
     <item>

@@ -178,7 +178,7 @@ where <span class="math inline">\(\tilde{\bf x} = \{\text{tod}, \text{tod}^2, \t
 \]</span>
 where, in this example, the model matrix is given by:</p>
 <pre class="r"><code>X &lt;- with(solarAU, cbind(1, tod, tod^2, toy, toy^2))</code></pre>
-<p>This about what numerical approach you will use (e.g., cholesky or QR decomposition) and compare the speed of your implementations with <code>lm</code> (of course, first you need to check whether your function gives correct results!).
+<p>Think about what numerical approach you will use (e.g., cholesky or QR decomposition) and compare the speed of your implementations with <code>lm</code> (of course, first you need to check whether your function gives correct results!).
 <strong>Q1 end</strong></p>
 <p>As the following plots show, the polynomial fit is not great:</p>
 <pre class="r"><code>library(gridExtra)
@@ -199,9 +199,9 @@ grid.arrange(pl1, pl2, ncol = 2)</code></pre>
 In particular, the second plot shows a clear non-linear pattern in the residuals. To improve our fit, we make our linear regression model locally adaptive by adopting a local least regression approach (see, e.g., Hastie et al, 2009, section 6.1.2 and 6.3). This consists in letting the estimated regression coefficients depend on <span class="math inline">\(\bf x\)</span>, so that <span class="math inline">\(\hat{\beta} = \hat{\beta}({\bf x})\)</span>. To achieve this, for a fixed value <span class="math inline">\({\bf x}_0\)</span>, we find <span class="math inline">\(\hat{\beta}({\bf x}_0)\)</span> by minimizing the following objective:
 <span class="math display">\[
 \hat{\beta}({\bf x}_0) = \underset{\beta}{\text{argmin}} 
-\sum_{i=1}^n \kappa_{\bf H}({\bf x_0}-{\bf x_i}) (y_i - \tilde{\bf x}_i^T\beta)^2,
+\sum_{i=1}^n \kappa_{\bf H}({\bf x}_0-{\bf x}_i) (y_i - \tilde{\bf x}_i^T\beta)^2,
 \]</span>
-where <span class="math inline">\(\kappa_{\bf H}\)</span> is a density kernel with positive definite bandwidth matrix <span class="math inline">\(\bf H\)</span>. Given that <span class="math inline">\(\kappa_{\bf H}({\bf x_0}-{\bf x_i}) \rightarrow 0\)</span> as <span class="math inline">\(||{\bf x_0}-{\bf x_i}|| \rightarrow \infty\)</span>, we have that <span class="math inline">\(\hat{\beta}({\bf x}_0)\)</span> will depend more strongly on the data points close to <span class="math inline">\({\bf x}_0\)</span> than on those far from it.</p>
+where <span class="math inline">\(\kappa_{\bf H}\)</span> is a density kernel with positive definite bandwidth matrix <span class="math inline">\(\bf H\)</span>. Given that <span class="math inline">\(\kappa_{\bf H}({\bf x}_0-{\bf x}_i) \rightarrow 0\)</span> as <span class="math inline">\(||{\bf x}_0-{\bf x}_i|| \rightarrow \infty\)</span>, we have that <span class="math inline">\(\hat{\beta}({\bf x}_0)\)</span> will depend more strongly on the data points close to <span class="math inline">\({\bf x}_0\)</span> than on those far from it.</p>
 <p>It is quite easy to create a function that does this in <code>R</code>:</p>
 <pre class="r"><code>library(mvtnorm)
 lmLocal &lt;- function(y, x0, X0, x, X, H){
@@ -212,7 +212,7 @@ lmLocal &lt;- function(y, x0, X0, x, X, H){
 <p>where we are using the Gaussian kernel. Notice that this requires re-estimating the model for each location <span class="math inline">\({\bf x}_0\)</span> we are interested in. In our case:</p>
 <pre class="r"><code>nrow(solarAU)</code></pre>
 <pre><code>## [1] 17472</code></pre>
-<p>so we need to fit the local regression model more than <span class="math inline">\(17\)</span> thousands times to get an estimate of <span class="math inline">\(\mathbb{E}(y|{\bf x}_0)\)</span> at each observed location. Hence, we test our local model on a subsample of 2000 data points:</p>
+<p>so we need to fit the local regression model more than <span class="math inline">\(17\)</span> thousands times to get an estimate of <span class="math inline">\(\mathbb{E}(y|{\bf x}_0)\)</span> at each observed location. Hence, we test our local model on a sub-sample of 2000 data points:</p>
 <pre class="r"><code>n &lt;- nrow(X)
 nsub &lt;- 2e3
 sub &lt;- sample(1:n, nsub, replace = FALSE)
@@ -241,8 +241,8 @@ pl2 &lt;- ggplot(solarAU_sub,
 
 grid.arrange(pl1, pl2, ncol = 2)</code></pre>
 <p><img src="/sc2-2019/rcpp_advanced_I/4_Exercises_files/figure-html/unnamed-chunk-11-1.png" width="960" style="display: block; margin: auto;" />
-The left plot look quite similar to the data (first plot of this document) and the residual plots shows no clear residual pattern. However, our code is very slow, so:</p>
-<p><strong>Q2 start</strong> To speed up the local least squares fit, implement is in <code>RcppArmadillo</code> and compare your solutions with the <code>R</code> code above in terms of speed (and correctness). If you wish, you can re-use the code we have described in a previous chapter for evaluating the multivariate normal density. <strong>Q2 end</strong></p>
+The left plot looks quite similar to the data (first plot of this document) and the residual plot shows no clear residual pattern. However, our code is very slow, so:</p>
+<p><strong>Q2 start</strong> To speed up the local least squares fit, implement it in <code>RcppArmadillo</code> and compare your solutions with the <code>R</code> code above in terms of speed (and correctness). If you wish, you can re-use the code we have described in a previous chapter for evaluating the multivariate normal density. <strong>Q2 end</strong></p>
 <p><strong>Q3 start</strong> Above, we have chosen the bandwidth matrix <span class="math inline">\(\bf H\)</span> manually. Once you have created an <code>RcppArmadillo</code> function for local linear regression, set up a cross-validation routine for tuning the bandwidth matrix automatically. <strong>Q3 end</strong></p>
 </div>
 <div id="references" class="section level3">
