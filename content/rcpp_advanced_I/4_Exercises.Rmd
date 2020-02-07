@@ -56,7 +56,7 @@ where, in this example, the model matrix is given by:
 ```{r}
 X <- with(solarAU, cbind(1, tod, tod^2, toy, toy^2))
 ```
-This about what numerical approach you will use (e.g., cholesky or QR decomposition) and compare the speed of your implementations with `lm` (of course, first you need to check whether your function gives correct results!).
+Think about what numerical approach you will use (e.g., cholesky or QR decomposition) and compare the speed of your implementations with `lm` (of course, first you need to check whether your function gives correct results!).
 **Q1 end**
 
 As the following plots show, the polynomial fit is not great:
@@ -79,9 +79,9 @@ grid.arrange(pl1, pl2, ncol = 2)
 In particular, the second plot shows a clear non-linear pattern in the residuals. To improve our fit, we make our linear regression model locally adaptive by adopting a local least regression approach (see, e.g., Hastie et al, 2009, section 6.1.2 and 6.3). This consists in letting the estimated regression coefficients depend on $\bf x$, so that $\hat{\beta} = \hat{\beta}({\bf x})$. To achieve this, for a fixed value ${\bf x}_0$, we find $\hat{\beta}({\bf x}_0)$ by minimizing the following objective:
 $$
 \hat{\beta}({\bf x}_0) = \underset{\beta}{\text{argmin}} 
-\sum_{i=1}^n \kappa_{\bf H}({\bf x_0}-{\bf x_i}) (y_i - \tilde{\bf x}_i^T\beta)^2,
+\sum_{i=1}^n \kappa_{\bf H}({\bf x}_0-{\bf x}_i) (y_i - \tilde{\bf x}_i^T\beta)^2,
 $$
-where $\kappa_{\bf H}$ is a density kernel with positive definite bandwidth matrix $\bf H$. Given that $\kappa_{\bf H}({\bf x_0}-{\bf x_i}) \rightarrow 0$ as $||{\bf x_0}-{\bf x_i}|| \rightarrow \infty$, we have that $\hat{\beta}({\bf x}_0)$ will depend more strongly on the data points close to ${\bf x}_0$ than on those far from it. 
+where $\kappa_{\bf H}$ is a density kernel with positive definite bandwidth matrix $\bf H$. Given that $\kappa_{\bf H}({\bf x}_0-{\bf x}_i) \rightarrow 0$ as $||{\bf x}_0-{\bf x}_i|| \rightarrow \infty$, we have that $\hat{\beta}({\bf x}_0)$ will depend more strongly on the data points close to ${\bf x}_0$ than on those far from it. 
 
 It is quite easy to create a function that does this in `R`:
 ```{r}
@@ -96,7 +96,7 @@ where we are using the Gaussian kernel. Notice that this requires re-estimating 
 ```{r}
 nrow(solarAU)
 ```
-so we need to fit the local regression model more than $17$ thousands times to get an estimate of $\mathbb{E}(y|{\bf x}_0)$ at each observed location. Hence, we test our local model on a subsample of 2000 data points: 
+so we need to fit the local regression model more than $17$ thousands times to get an estimate of $\mathbb{E}(y|{\bf x}_0)$ at each observed location. Hence, we test our local model on a sub-sample of 2000 data points: 
 ```{r}
 n <- nrow(X)
 nsub <- 2e3
@@ -130,9 +130,9 @@ pl2 <- ggplot(solarAU_sub,
 
 grid.arrange(pl1, pl2, ncol = 2)
 ```
-The left plot look quite similar to the data (first plot of this document) and the residual plots shows no clear residual pattern. However, our code is very slow, so:
+The left plot looks quite similar to the data (first plot of this document) and the residual plot shows no clear residual pattern. However, our code is very slow, so:
 
-**Q2 start** To speed up the local least squares fit, implement is in `RcppArmadillo` and compare your solutions with the `R` code above in terms of speed (and correctness). If you wish, you can re-use the code we have described in a previous chapter for evaluating the multivariate normal density. **Q2 end**
+**Q2 start** To speed up the local least squares fit, implement it in `RcppArmadillo` and compare your solutions with the `R` code above in terms of speed (and correctness). If you wish, you can re-use the code we have described in a previous chapter for evaluating the multivariate normal density. **Q2 end**
 
 **Q3 start** Above, we have chosen the bandwidth matrix $\bf H$ manually. Once you have created an `RcppArmadillo` function for local linear regression, set up a cross-validation routine for tuning the bandwidth matrix automatically. **Q3 end**
 
