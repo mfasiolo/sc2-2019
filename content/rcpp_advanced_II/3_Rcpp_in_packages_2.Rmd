@@ -63,7 +63,7 @@ Here we used `RcppArmadillo` as an example, but if you want to depend on a diffe
 
 ### Making your package's `C++` code callable from other packages
 
-Having installed the `mypack` package, we can now use its exported `R` function. For instance, we could do:
+Having installed the `mypack` package, we can now use its exported `R` functions. For instance, we could do:
 ```{r, eval = FALSE}
 # NB do no run this, because we will re-install mypack later in the script, and 
 # loading it here would cause problems
@@ -71,14 +71,16 @@ library(mypack)
 dotArma(5:1, 5:1)
 # 55
 ```
-If we wanted to build another package (say, `secondPack`) that depends on `mypack`, we could of course import `dotArma` from `mypack` by adding the `importFrom(mypack, dotArma)` line to the `NAMESPACE` file of `secondPack`. But what if we wanted to call the `_mypack_dotArma_I` `C++` function directly in the `C++` code contained in `secondPack`? Or what if we wanted to call `_mypack_dotArma_I` in some `R` function containted in `secondPack` by using:
-```{r, eval = FALSE}
-.Call("_mypack_dotArma_I", 1:5, 1:5, PACKAGE = "mypack")
-# 55
-```
-? This section explains how do this using `Rcpp` attributes.
+If we wanted to build another package (say, `secondPack`) that depends on `mypack`, we could of course import `dotArma` from `mypack` by adding the `importFrom(mypack, dotArma)` line to the `NAMESPACE` file of `secondPack`. But what if we wanted to call the `_mypack_dotArma_I` `C++` function directly in the `C++` code contained in `secondPack`? 
+<!-- Or what if we wanted to call `_mypack_dotArma_I` in some `R` function contained in `secondPack` by using: -->
+<!-- ```{r, eval = FALSE} -->
+<!-- .Call("_mypack_dotArma_I", 1:5, 1:5, PACKAGE = "mypack") -->
+<!-- # 55 -->
+<!-- ``` -->
+<!-- ?  -->
+This section explains how do this using `Rcpp` attributes.
 
-Strictly speaking, if we created a package `secondPack` that depended on `mypack` (via `Depends` in descriptions file) and that containted a `.Call` to `_mypack_dotArma_I`, the code would work. But if we were to check the package via `R CMD check secondPack` we would get:
+Strictly speaking, if we created a package `secondPack` that depended on `mypack` (via the `Depends` entry in the Description file) and that containted a `.Call` to `_mypack_dotArma_I`, the code would work. But, if we were to check the package via `R CMD check secondPack`, we would get:
 ```{r, eval = FALSE}
 * checking foreign function calls ... NOTE
 Foreign function call to a different package:
@@ -86,11 +88,15 @@ Foreign function call to a different package:
 See chapter ‘System and foreign language interfaces’ in the ‘Writing R
 Extensions’ manual.
 ```
-This is because we are calling a `C++` function that has not been exported by `mypack`. Only its `R` wrapper (`dotArma()`) has been exported. The `Rcpp::interfaces` attribute provides a simple way of exporting a `C++` function from a package. In particular, consider the following function: 
+This is because calling native (e.g., `C++`) functions belonging to an `R` package from another `R` package via `.Call` is [discouraged by CRAN](https://cran.r-project.org/doc/manuals/R-exts.html#Portable-C-and-C_002b_002b-code): 
+
+"It is not portable to call compiled code in R or other packages via `.Internal`, `.C`, `.Fortran`, `.Call` or .External, since such interfaces are subject to change without notice and will probably result in your code terminating the R process."
+
+`C++` functions contained in another package should be accessed at `C++` level, but the functions need to be exported from that package. The `Rcpp::interfaces` attribute provides a simple way of exporting a `C++` function from a package. In particular, consider the following function: 
 ```{r, comment=NA}
 printFile("dotArma_2.cpp")
 ```
-Here the `// [[Rcpp::interfaces(cpp)]]` makes so that the `dotArma_I` will be exported from the package. To see how this works, we add this file to the source code of `mypack`:  
+Here the `// [[Rcpp::interfaces(cpp)]]` attribute makes so that the `dotArma_I` will be exported from the package. To see how this works, we add this file to the source code of `mypack`:  
 ```{r}
 system("cp dotArma_2.cpp mypack/src/dotArma_2.cpp") 
 ```
@@ -169,12 +175,12 @@ secondDot(1:5, 1:5)
 
 t(1:5) %*% 1:5
 ```
-It works fine! Hence, the `Rcpp::interfaces` attribute allowed us to make the `dotArma_I2` accessible from other packages at `C++` level. There are a few thing to points out:
+It works fine! Hence, the `Rcpp::interfaces` attribute allowed us to make the `dotArma_I2` accessible from other packages at `C++` level. There are a few thing to point out:
 
    - the `Rcpp::interfaces` attribute applies to all the functions that appear in the relevant file, as long as
      they are preceded by the `Rcpp::export` attribute. In our case, the `dotArma_2.cpp` contains only one 
      function that is exported via `Rcpp::export`.
-   - the `Rcpp::interfaces(cpp)` attributes make so that a `C++` wrapper for `dotArma_I2` is created and exported
+   - the `Rcpp::interfaces(cpp)` attributes makes so that a `C++` wrapper for `dotArma_I2` is created and exported
      from the package. The attribute `Rcpp::interfaces(r, cpp)` would lead to the creation of both a `C++` and an 
      `R` wrapper for `dotArma_I2`. That is, the package would export an `R` function called `dotArma2` and a `C++`
      function with the same name would be defined in the `mypack.h` header. `Rcpp::interfaces(r)` does not do 
@@ -210,9 +216,9 @@ Suppose that we have a `C++` library, which consists simply of the following hea
 ```{r, comment = NA}
 printFile("smart/smart.h")
 ```
-This is called a header-only library, because the functions definition and implementation are both found in the header files, which are denoted by `.h` or `.hpp`. In contrasts, standard `C++` libraries use header files to detail the definitions of the main function that will be used by the library's users, while the implementation and the internal functions are contained in `.cpp` files. For our purposes, the advantage of header-only libraries (such as `Armadillo`) is that it is simple to include their code in an `R` package and to make so that code can be used by other `R` packages. 
+This is called a header-only library, because the functions definition and implementation are both found in the header files, which are denoted by `.h` or `.hpp`. In contrasts, standard `C++` libraries use header files to detail the definitions of the main functions that will be used by the library's users, while the implementation and the internal functions are contained in the `.cpp` files. For our purposes, the advantage of header-only libraries (such as `Armadillo`) is that it is simple to include their code in an `R` package and to make so that code can be used by other `R` packages. 
 
-To do this, we first move the folder containing the library to the the `inst/include` sub vounder of our package:
+To do this, we first move the folder containing the library to the `inst/include` sub-folder of our package:
 ```{r}
 system("cp -a smart mypack/inst/include/smart")
 ```
@@ -250,7 +256,7 @@ NumericVector smartSquare_I(NumericVector x)
 
 smartSquare(1:5)
 ```
-It works! This is pretty much the mechanisms used by `RcppArmadillo` to make the `Armadillo` library available to other `R` packages and to `Rcpp` programs compiled via `sourceCpp` (of course, `RcppArmadillo` does more than that, for instance, is extendes the `Rcpp::wrap` and `Rcpp::as` to facilitate conversion between `Armadillo` and `Rcpp` object classes).
+It works! This is pretty much the mechanisms used by `RcppArmadillo` to make the `Armadillo` library available to other `R` packages and to `Rcpp` programs compiled via `sourceCpp` (of course, `RcppArmadillo` does more than that, for instance, it extends the `Rcpp::wrap` and `Rcpp::as` functions to facilitate conversion between `Armadillo` and `Rcpp` objects).
 
 For another simple example on shipping header-only libraries via an `R` package, see [this template](https://github.com/r-pkg-examples/rcpp-shared-cpp-functions). For a more complex example, see the [sitmo](https://github.com/coatless/sitmo) package.
 

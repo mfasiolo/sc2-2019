@@ -36,9 +36,9 @@ NumericVector squareVect_I(NumericVector v) {
   
 }')
 ```
-where the `squareVect_I` `C++` function simply applied the `mySquare` function to each elemente of the vector `v`. When building larger programs, it is often convenient to spread the code over several source files, hence here we explain how to do it using header file.
+where the `squareVect_I` `C++` function simply applies the `mySquare` function to each element of the vector `v`. When building larger programs, it is often convenient to spread the code over several source files, hence here we explain how to do it using header file.
 
-Suppose the we have a source code file, `squareVect.cpp`, containing the function that we want to export to `R`:
+Suppose that we have a source code file, `squareVect.cpp`, containing the function that we want to export to `R`:
 ```{r engine = 'Rcpp', eval = FALSE}
 #include <Rcpp.h>
 #include "utilities.h"
@@ -84,7 +84,7 @@ which seems to work fine.
 
 ### Using `Rcpp` extensions with `sourceCpp`
 
-We have seen in a previous chapter that `sourceCpp` and `cppFunction` take care of the compiler flags and options neeed to compile and link `Rcpp` programs, while such flags need to be handled manually when using `R CMD SHLIB`. For example, if we compile the following `Rcpp` function:
+We have seen in a previous chapter that `sourceCpp` and `cppFunction` take care of the compiler flags and options needed to compile and link `Rcpp` programs, while such flags need to be handled manually when using `R CMD SHLIB`. For example, if we compile the following `Rcpp` function:
 ```{r, output.lines = 1:30}
 sourceCpp(code = '
  #include <Rcpp.h>
@@ -126,6 +126,7 @@ library(Rcpp)
 sourceCpp(code = '
  // [[Rcpp::depends(BH)]]
  #include <Rcpp.h>
+ #include <random>
  #include <boost/random/normal_distribution.hpp>
  using namespace Rcpp;
 
@@ -156,7 +157,7 @@ rnormBoost(6, 3)
 rnormBoost(6, 4)
 ```
 
-The packages listed above are some of the packages on which your `Rcpp` code can depend via the `Rcpp::depends` attribute. Understanding exactly how the latter works is not beyond the scope of this course, but it is useful to be aware of the fact that `sourceCpp` will look for information on the package(s) mentioned in `Rcpp::depends`, which is needed to set up the compilation enviroment. For example, it will look for the path to the header file to be included, which can be found by doing:
+The packages listed above are some of the packages on which your `Rcpp` code can depend via the `Rcpp::depends` attribute. Understanding exactly how the latter works is beyond the scope of this course, but it is useful to be aware of the fact that `sourceCpp` will look for the information on the package(s) mentioned in `Rcpp::depends`, which is needed to set up the compilation enviroment. For example, it will look for the path to the header file to be included, which can be found by doing:
 ```{r}
 system.file("include", package = "RcppArmadillo")
 ```
@@ -164,7 +165,7 @@ Further information can retrieved via the `getPlugin` function, for example:
 ```{r}
 get("inlineCxxPlugin", asNamespace("RcppArmadillo"))()$env
 ```
-gives the additional `RcppArmadillo` environment variables required to successfully compile code depending on `Rcpp`. Again, we don't need to know exactly how this work, but it is good to be aware of the fact that `sourceCpp` is doing some work to set up the compilation environment. Other `Rcpp` functions, such as `cppFunction`, work similarly.
+gives the additional `RcppArmadillo` environment variables required to successfully compile code depending on `Rcpp`. Again, we don't need to know exactly how this works, but it is good to be aware of the fact that `sourceCpp` is doing some work to set up the compilation environment. Other `Rcpp` functions, such as `cppFunction`, work similarly.
 
 In this section we have seen how to you can spread your `Rcpp` code over multiple files to build larger applications. However, a better approach to manage and distribute your `Rcpp` code is building an `R` package. The next section will explain how to do it.
 
