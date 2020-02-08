@@ -159,8 +159,8 @@ NumericVector squareVect_I(NumericVector v) {
   return out;
   
 }&#39;)</code></pre>
-<p>where the <code>squareVect_I</code> <code>C++</code> function simply applied the <code>mySquare</code> function to each elemente of the vector <code>v</code>. When building larger programs, it is often convenient to spread the code over several source files, hence here we explain how to do it using header file.</p>
-<p>Suppose the we have a source code file, <code>squareVect.cpp</code>, containing the function that we want to export to <code>R</code>:</p>
+<p>where the <code>squareVect_I</code> <code>C++</code> function simply applies the <code>mySquare</code> function to each element of the vector <code>v</code>. When building larger programs, it is often convenient to spread the code over several source files, hence here we explain how to do it using header file.</p>
+<p>Suppose that we have a source code file, <code>squareVect.cpp</code>, containing the function that we want to export to <code>R</code>:</p>
 <pre class="cpp"><code>#include &lt;Rcpp.h&gt;
 #include &quot;utilities.h&quot;
 
@@ -199,7 +199,7 @@ squareVect(1:5) </code></pre>
 </div>
 <div id="using-rcpp-extensions-with-sourcecpp" class="section level3">
 <h3>Using <code>Rcpp</code> extensions with <code>sourceCpp</code></h3>
-<p>We have seen in a previous chapter that <code>sourceCpp</code> and <code>cppFunction</code> take care of the compiler flags and options neeed to compile and link <code>Rcpp</code> programs, while such flags need to be handled manually when using <code>R CMD SHLIB</code>. For example, if we compile the following <code>Rcpp</code> function:</p>
+<p>We have seen in a previous chapter that <code>sourceCpp</code> and <code>cppFunction</code> take care of the compiler flags and options needed to compile and link <code>Rcpp</code> programs, while such flags need to be handled manually when using <code>R CMD SHLIB</code>. For example, if we compile the following <code>Rcpp</code> function:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
  #include &lt;Rcpp.h&gt;
  using namespace Rcpp;
@@ -235,6 +235,7 @@ of numerical routines;</li>
 sourceCpp(code = &#39;
  // [[Rcpp::depends(BH)]]
  #include &lt;Rcpp.h&gt;
+ #include &lt;random&gt;
  #include &lt;boost/random/normal_distribution.hpp&gt;
  using namespace Rcpp;
 
@@ -266,7 +267,7 @@ rnormBoost(5, 3)</code></pre>
 <pre><code>## [1] -0.9541617  0.3435606 -1.1171672 -2.0588714  0.1801640 -0.1522290</code></pre>
 <pre class="r"><code>rnormBoost(6, 4)</code></pre>
 <pre><code>## [1] -0.3226455  0.4446485  1.2954095  1.6020953 -1.6903968 -0.2742874</code></pre>
-<p>The packages listed above are some of the packages on which your <code>Rcpp</code> code can depend via the <code>Rcpp::depends</code> attribute. Understanding exactly how the latter works is not beyond the scope of this course, but it is useful to be aware of the fact that <code>sourceCpp</code> will look for information on the package(s) mentioned in <code>Rcpp::depends</code>, which is needed to set up the compilation enviroment. For example, it will look for the path to the header file to be included, which can be found by doing:</p>
+<p>The packages listed above are some of the packages on which your <code>Rcpp</code> code can depend via the <code>Rcpp::depends</code> attribute. Understanding exactly how the latter works is beyond the scope of this course, but it is useful to be aware of the fact that <code>sourceCpp</code> will look for the information on the package(s) mentioned in <code>Rcpp::depends</code>, which is needed to set up the compilation enviroment. For example, it will look for the path to the header file to be included, which can be found by doing:</p>
 <pre class="r"><code>system.file(&quot;include&quot;, package = &quot;RcppArmadillo&quot;)</code></pre>
 <pre><code>## [1] &quot;/home/travis/R/Library/RcppArmadillo/include&quot;</code></pre>
 <p>Further information can retrieved via the <code>getPlugin</code> function, for example:</p>
@@ -279,7 +280,7 @@ rnormBoost(5, 3)</code></pre>
 ## 
 ## $USE_CXX11
 ## [1] &quot;yes&quot;</code></pre>
-<p>gives the additional <code>RcppArmadillo</code> environment variables required to successfully compile code depending on <code>Rcpp</code>. Again, we don’t need to know exactly how this work, but it is good to be aware of the fact that <code>sourceCpp</code> is doing some work to set up the compilation environment. Other <code>Rcpp</code> functions, such as <code>cppFunction</code>, work similarly.</p>
+<p>gives the additional <code>RcppArmadillo</code> environment variables required to successfully compile code depending on <code>Rcpp</code>. Again, we don’t need to know exactly how this works, but it is good to be aware of the fact that <code>sourceCpp</code> is doing some work to set up the compilation environment. Other <code>Rcpp</code> functions, such as <code>cppFunction</code>, work similarly.</p>
 <p>In this section we have seen how to you can spread your <code>Rcpp</code> code over multiple files to build larger applications. However, a better approach to manage and distribute your <code>Rcpp</code> code is building an <code>R</code> package. The next section will explain how to do it.</p>
 </div>
 

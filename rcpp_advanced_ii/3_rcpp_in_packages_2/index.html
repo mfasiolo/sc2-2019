@@ -179,7 +179,7 @@ printFile(&quot;mypack/DESCRIPTION&quot;)</code></pre>
 ## Type: Package
 ## Title: What the Package Does in One &#39;Title Case&#39; Line
 ## Version: 1.0
-## Date: 2020-02-07
+## Date: 2020-02-08
 ## Author: Your Name
 ## Maintainer: Your Name &lt;your@email.com&gt;
 ## Description: One paragraph description of what the package does as one
@@ -209,23 +209,29 @@ system(&quot;R CMD INSTALL mypack_1.0.tar.gz&quot;)</code></pre>
 </div>
 <div id="making-your-packages-c-code-callable-from-other-packages" class="section level3">
 <h3>Making your package’s <code>C++</code> code callable from other packages</h3>
-<p>Having installed the <code>mypack</code> package, we can now use its exported <code>R</code> function. For instance, we could do:</p>
+<p>Having installed the <code>mypack</code> package, we can now use its exported <code>R</code> functions. For instance, we could do:</p>
 <pre class="r"><code># NB do no run this, because we will re-install mypack later in the script, and 
 # loading it here would cause problems
 library(mypack) 
 dotArma(5:1, 5:1)
 # 55</code></pre>
-<p>If we wanted to build another package (say, <code>secondPack</code>) that depends on <code>mypack</code>, we could of course import <code>dotArma</code> from <code>mypack</code> by adding the <code>importFrom(mypack, dotArma)</code> line to the <code>NAMESPACE</code> file of <code>secondPack</code>. But what if we wanted to call the <code>_mypack_dotArma_I</code> <code>C++</code> function directly in the <code>C++</code> code contained in <code>secondPack</code>? Or what if we wanted to call <code>_mypack_dotArma_I</code> in some <code>R</code> function containted in <code>secondPack</code> by using:</p>
-<pre class="r"><code>.Call(&quot;_mypack_dotArma_I&quot;, 1:5, 1:5, PACKAGE = &quot;mypack&quot;)
-# 55</code></pre>
-<p>? This section explains how do this using <code>Rcpp</code> attributes.</p>
-<p>Strictly speaking, if we created a package <code>secondPack</code> that depended on <code>mypack</code> (via <code>Depends</code> in descriptions file) and that containted a <code>.Call</code> to <code>_mypack_dotArma_I</code>, the code would work. But if we were to check the package via <code>R CMD check secondPack</code> we would get:</p>
+<p>If we wanted to build another package (say, <code>secondPack</code>) that depends on <code>mypack</code>, we could of course import <code>dotArma</code> from <code>mypack</code> by adding the <code>importFrom(mypack, dotArma)</code> line to the <code>NAMESPACE</code> file of <code>secondPack</code>. But what if we wanted to call the <code>_mypack_dotArma_I</code> <code>C++</code> function directly in the <code>C++</code> code contained in <code>secondPack</code>?
+<!-- Or what if we wanted to call `_mypack_dotArma_I` in some `R` function contained in `secondPack` by using: -->
+<!-- ```{r, eval = FALSE} -->
+<!-- .Call("_mypack_dotArma_I", 1:5, 1:5, PACKAGE = "mypack") -->
+<!-- # 55 -->
+<!-- ``` -->
+<!-- ?  -->
+This section explains how do this using <code>Rcpp</code> attributes.</p>
+<p>Strictly speaking, if we created a package <code>secondPack</code> that depended on <code>mypack</code> (via the <code>Depends</code> entry in the Description file) and that containted a <code>.Call</code> to <code>_mypack_dotArma_I</code>, the code would work. But, if we were to check the package via <code>R CMD check secondPack</code>, we would get:</p>
 <pre class="r"><code>* checking foreign function calls ... NOTE
 Foreign function call to a different package:
   .Call(&quot;_mypack_dotArma_I&quot;, ..., PACKAGE = &quot;mypack&quot;)
 See chapter ‘System and foreign language interfaces’ in the ‘Writing R
 Extensions’ manual.</code></pre>
-<p>This is because we are calling a <code>C++</code> function that has not been exported by <code>mypack</code>. Only its <code>R</code> wrapper (<code>dotArma()</code>) has been exported. The <code>Rcpp::interfaces</code> attribute provides a simple way of exporting a <code>C++</code> function from a package. In particular, consider the following function:</p>
+<p>This is because calling native (e.g., <code>C++</code>) functions belonging to an <code>R</code> package from another <code>R</code> package via <code>.Call</code> is <a href="https://cran.r-project.org/doc/manuals/R-exts.html#Portable-C-and-C_002b_002b-code">discouraged by CRAN</a>:</p>
+<p>“It is not portable to call compiled code in R or other packages via <code>.Internal</code>, <code>.C</code>, <code>.Fortran</code>, <code>.Call</code> or .External, since such interfaces are subject to change without notice and will probably result in your code terminating the R process.”</p>
+<p><code>C++</code> functions contained in another package should be accessed at <code>C++</code> level, but the functions need to be exported from that package. The <code>Rcpp::interfaces</code> attribute provides a simple way of exporting a <code>C++</code> function from a package. In particular, consider the following function:</p>
 <pre class="r"><code>printFile(&quot;dotArma_2.cpp&quot;)</code></pre>
 <pre><code>// [[Rcpp::depends(RcppArmadillo)]]
 #include &lt;RcppArmadillo.h&gt;
@@ -241,7 +247,7 @@ arma::vec dotArma_I2(arma::vec x1, arma::vec x2)
   out[0] = arma::as_scalar(x1.t() * x2);
   return out;
 }</code></pre>
-<p>Here the <code>// [[Rcpp::interfaces(cpp)]]</code> makes so that the <code>dotArma_I</code> will be exported from the package. To see how this works, we add this file to the source code of <code>mypack</code>:</p>
+<p>Here the <code>// [[Rcpp::interfaces(cpp)]]</code> attribute makes so that the <code>dotArma_I</code> will be exported from the package. To see how this works, we add this file to the source code of <code>mypack</code>:</p>
 <pre class="r"><code>system(&quot;cp dotArma_2.cpp mypack/src/dotArma_2.cpp&quot;) </code></pre>
 <p>we compile the attributes:</p>
 <pre class="r"><code>compileAttributes(&quot;mypack&quot;)</code></pre>
@@ -374,12 +380,12 @@ secondDot(1:5, 1:5)</code></pre>
 <pre class="r"><code>t(1:5) %*% 1:5</code></pre>
 <pre><code>##      [,1]
 ## [1,]   55</code></pre>
-<p>It works fine! Hence, the <code>Rcpp::interfaces</code> attribute allowed us to make the <code>dotArma_I2</code> accessible from other packages at <code>C++</code> level. There are a few thing to points out:</p>
+<p>It works fine! Hence, the <code>Rcpp::interfaces</code> attribute allowed us to make the <code>dotArma_I2</code> accessible from other packages at <code>C++</code> level. There are a few thing to point out:</p>
 <ul>
 <li>the <code>Rcpp::interfaces</code> attribute applies to all the functions that appear in the relevant file, as long as
 they are preceded by the <code>Rcpp::export</code> attribute. In our case, the <code>dotArma_2.cpp</code> contains only one
 function that is exported via <code>Rcpp::export</code>.</li>
-<li>the <code>Rcpp::interfaces(cpp)</code> attributes make so that a <code>C++</code> wrapper for <code>dotArma_I2</code> is created and exported
+<li>the <code>Rcpp::interfaces(cpp)</code> attributes makes so that a <code>C++</code> wrapper for <code>dotArma_I2</code> is created and exported
 from the package. The attribute <code>Rcpp::interfaces(r, cpp)</code> would lead to the creation of both a <code>C++</code> and an
 <code>R</code> wrapper for <code>dotArma_I2</code>. That is, the package would export an <code>R</code> function called <code>dotArma2</code> and a <code>C++</code>
 function with the same name would be defined in the <code>mypack.h</code> header. <code>Rcpp::interfaces(r)</code> does not do
@@ -425,8 +431,8 @@ namespace smart{
 }
 
 #endif</code></pre>
-<p>This is called a header-only library, because the functions definition and implementation are both found in the header files, which are denoted by <code>.h</code> or <code>.hpp</code>. In contrasts, standard <code>C++</code> libraries use header files to detail the definitions of the main function that will be used by the library’s users, while the implementation and the internal functions are contained in <code>.cpp</code> files. For our purposes, the advantage of header-only libraries (such as <code>Armadillo</code>) is that it is simple to include their code in an <code>R</code> package and to make so that code can be used by other <code>R</code> packages.</p>
-<p>To do this, we first move the folder containing the library to the the <code>inst/include</code> sub vounder of our package:</p>
+<p>This is called a header-only library, because the functions definition and implementation are both found in the header files, which are denoted by <code>.h</code> or <code>.hpp</code>. In contrasts, standard <code>C++</code> libraries use header files to detail the definitions of the main functions that will be used by the library’s users, while the implementation and the internal functions are contained in the <code>.cpp</code> files. For our purposes, the advantage of header-only libraries (such as <code>Armadillo</code>) is that it is simple to include their code in an <code>R</code> package and to make so that code can be used by other <code>R</code> packages.</p>
+<p>To do this, we first move the folder containing the library to the <code>inst/include</code> sub-folder of our package:</p>
 <pre class="r"><code>system(&quot;cp -a smart mypack/inst/include/smart&quot;)</code></pre>
 <p>We then have to change the <code>mypack.h</code> header (which was automatically generated by <code>compileAttributes</code>) to:</p>
 <pre class="r"><code>system(&quot;cp -a mypack_v2.h mypack/inst/include/mypack.h&quot;)
@@ -465,7 +471,7 @@ NumericVector smartSquare_I(NumericVector x)
 
 smartSquare(1:5)</code></pre>
 <pre><code>## [1]  1  4  9 16 25</code></pre>
-<p>It works! This is pretty much the mechanisms used by <code>RcppArmadillo</code> to make the <code>Armadillo</code> library available to other <code>R</code> packages and to <code>Rcpp</code> programs compiled via <code>sourceCpp</code> (of course, <code>RcppArmadillo</code> does more than that, for instance, is extendes the <code>Rcpp::wrap</code> and <code>Rcpp::as</code> to facilitate conversion between <code>Armadillo</code> and <code>Rcpp</code> object classes).</p>
+<p>It works! This is pretty much the mechanisms used by <code>RcppArmadillo</code> to make the <code>Armadillo</code> library available to other <code>R</code> packages and to <code>Rcpp</code> programs compiled via <code>sourceCpp</code> (of course, <code>RcppArmadillo</code> does more than that, for instance, it extends the <code>Rcpp::wrap</code> and <code>Rcpp::as</code> functions to facilitate conversion between <code>Armadillo</code> and <code>Rcpp</code> objects).</p>
 <p>For another simple example on shipping header-only libraries via an <code>R</code> package, see <a href="https://github.com/r-pkg-examples/rcpp-shared-cpp-functions">this template</a>. For a more complex example, see the <a href="https://github.com/coatless/sitmo">sitmo</a> package.</p>
 </div>
 
