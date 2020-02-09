@@ -286,9 +286,9 @@ smoC &lt;- function() .Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch,
 library(microbenchmark)
 microbenchmark(smoR(), smoC(), times = 500)</code></pre>
 <pre><code>## Unit: microseconds
-##    expr     min       lq      mean   median       uq      max neval
-##  smoR() 560.153 572.2565 582.15435 575.6415 581.7705 1848.499   500
-##  smoC()  21.558  21.7665  25.26834  22.0935  22.9125 1195.846   500</code></pre>
+##    expr     min      lq      mean  median      uq      max neval
+##  smoR() 538.459 551.846 576.97629 562.365 585.866 1753.709   500
+##  smoC()  21.546  22.291  31.52143  23.256  28.495 2139.444   500</code></pre>
 <p>So the C version is more than 10 times faster. The comparison it somewhat unfair, because the R function is allocating memory containing the smoothed temperature at every call, while the C version is re-using the memory allocated to the <code>tmpSmooth</code> vector. However, the ability to overwrite R objects without copying them is one of the reasons for interfacing R with C.</p>
 <p>We now go back to our original application, and fit a model which excludes <code>so2</code> with didn’t seem to matter and that includes the effect of smoothed temperature:</p>
 <pre class="r"><code>chicago$tmpSmooth &lt;- tmpSmooth
@@ -369,10 +369,10 @@ smoC2 &lt;- function() .Call(&quot;expSmooth2&quot;, chicago$tmpd, 0.8)
 library(microbenchmark)
 microbenchmark(smoR(), smoC(), smoC2(), times = 500)</code></pre>
 <pre><code>## Unit: microseconds
-##     expr     min       lq      mean   median       uq      max neval
-##   smoR() 563.361 576.4120 599.17146 585.4550 606.9465 1796.434   500
-##   smoC()  22.107  22.7475  30.06783  23.5545  26.7560 1512.111   500
-##  smoC2()  21.748  24.6580  32.44445  28.2915  30.4085 1279.785   500</code></pre>
+##     expr     min       lq      mean   median      uq      max neval
+##   smoR() 534.696 548.4765 572.07027 558.1470 578.606 1626.324   500
+##   smoC()  22.162  22.8575  30.88152  23.8210  27.707 1516.667   500
+##  smoC2()  21.817  24.5060  32.99727  28.6695  31.382 1265.802   500</code></pre>
 <p>despite the fact that it is allocating memory for the output vector at every call. Importantly, <code>expSmooth2</code> is safer and works directly with integer input vectors:</p>
 <pre class="r"><code>plot(chicago$death[1:1000], col = &quot;grey&quot;)
 lines(.Call(&quot;expSmooth2&quot;, chicago$death, 0.8)[1:1000], col = 2)</code></pre>
