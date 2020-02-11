@@ -222,7 +222,8 @@ vec dmvnInt(mat & X, const rowvec & mu, mat & L)
 the important lines are:
 
    - `vec dmvnInt(mat & X, const rowvec & mu, mat & L)` we return an `arma::vec` and all 
-     inputs are passed by reference;
+     inputs are passed by reference. **NOTE** that `L` is the lower triangular factor of the 
+     Cholesky decomposition of the covariance matrix;
    - `vec D = L.diag(); vec out(m); vec z(d);` we extract the main diagonal of `L`, we defined the
       $m$-dimensional vector `out` will contain the density values at ${\bf x}_1, \dots, {\bf x}_m$ 
       and the "working" $d$-dimensional vector `z` which we will use in the main loop;

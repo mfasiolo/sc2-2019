@@ -132,7 +132,7 @@ grid.arrange(pl1, pl2, ncol = 2)
 ```
 The left plot looks quite similar to the data (first plot of this document) and the residual plot shows no clear residual pattern. However, our code is very slow, so:
 
-**Q2 start** To speed up the local least squares fit, implement it in `RcppArmadillo` and compare your solutions with the `R` code above in terms of speed (and correctness). If you wish, you can re-use the code we have described in a previous chapter for evaluating the multivariate normal density. **Q2 end**
+**Q2 start** To speed up the local least squares fit, implement it in `RcppArmadillo` and compare your solutions with the `R` code above in terms of speed (and correctness). If you wish, you can re-use the code we have described in a previous chapter for evaluating the multivariate normal density (but **note** that that function is taking as input the lower triagular factor of the Cholesky decomposition of the covariance matrix). **Q2 end**
 
 **Q3 start** Above, we have chosen the bandwidth matrix $\bf H$ manually. Once you have created an `RcppArmadillo` function for local linear regression, set up a cross-validation routine for tuning the bandwidth matrix automatically. **Q3 end**
 
