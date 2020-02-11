@@ -242,7 +242,7 @@ pl2 &lt;- ggplot(solarAU_sub,
 grid.arrange(pl1, pl2, ncol = 2)</code></pre>
 <p><img src="/sc2-2019/rcpp_advanced_I/4_Exercises_files/figure-html/unnamed-chunk-11-1.png" width="960" style="display: block; margin: auto;" />
 The left plot looks quite similar to the data (first plot of this document) and the residual plot shows no clear residual pattern. However, our code is very slow, so:</p>
-<p><strong>Q2 start</strong> To speed up the local least squares fit, implement it in <code>RcppArmadillo</code> and compare your solutions with the <code>R</code> code above in terms of speed (and correctness). If you wish, you can re-use the code we have described in a previous chapter for evaluating the multivariate normal density. <strong>Q2 end</strong></p>
+<p><strong>Q2 start</strong> To speed up the local least squares fit, implement it in <code>RcppArmadillo</code> and compare your solutions with the <code>R</code> code above in terms of speed (and correctness). If you wish, you can re-use the code we have described in a previous chapter for evaluating the multivariate normal density (but <strong>note</strong> that that function is taking as input the lower triagular factor of the Cholesky decomposition of the covariance matrix). <strong>Q2 end</strong></p>
 <p><strong>Q3 start</strong> Above, we have chosen the bandwidth matrix <span class="math inline">\(\bf H\)</span> manually. Once you have created an <code>RcppArmadillo</code> function for local linear regression, set up a cross-validation routine for tuning the bandwidth matrix automatically. <strong>Q3 end</strong></p>
 </div>
 <div id="references" class="section level3">
