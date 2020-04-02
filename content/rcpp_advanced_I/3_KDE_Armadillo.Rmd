@@ -17,7 +17,7 @@ To provide a more challeging example illustrating the capabilities of `RcppArmad
 $$
 \hat{\pi}_{\bf H}({\bf x}) = \frac{1}{n} \sum_{i=1}^n \kappa_{\bf H}({\bf x} - {\bf x}_i^o),
 $$
-where $\kappa_{\bf H}$ is a kernel with positive definite bandwidth matrix ${\bf H}$. Here we assume that $\kappa_{\bf H}$ is a multivariate Gaussian kernel, with covariance matrix $\kappa_{\bf H}$. Further, the data is generated from the mixture of warped Gaussians of [Fasiolo et al. (2018)](https://arxiv.org/pdf/1611.06874.pdf). The details of this density are unimportant here, what matters is that the example is defined in $d>2$ dimensions and, under such density $\pi({\bf x})$, the joint distribution of the first two dimensions is far from Gaussian while the remaining dimensions are standard i.i.d. Gaussian variables.
+where $\kappa_{\bf H}$ is a kernel with positive definite bandwidth matrix ${\bf H}$. Here we assume that $\kappa_{\bf H}$ is a multivariate Gaussian kernel, with covariance matrix ${\bf H}$. Further, the data is generated from the mixture of warped Gaussians of [Fasiolo et al. (2018)](https://arxiv.org/pdf/1611.06874.pdf). The details of this density are unimportant here, what matters is that the example is defined in $d>2$ dimensions and, under such density $\pi({\bf x})$, the joint distribution of the first two dimensions is far from Gaussian while the remaining dimensions are standard i.i.d. Gaussian variables.
 
 Samples from this density can be generated using the following functions:
 ```{r}
