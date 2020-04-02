@@ -143,7 +143,7 @@ text-align: justify}
 <span class="math display">\[
 \hat{\pi}_{\bf H}({\bf x}) = \frac{1}{n} \sum_{i=1}^n \kappa_{\bf H}({\bf x} - {\bf x}_i^o),
 \]</span>
-where <span class="math inline">\(\kappa_{\bf H}\)</span> is a kernel with positive definite bandwidth matrix <span class="math inline">\({\bf H}\)</span>. Here we assume that <span class="math inline">\(\kappa_{\bf H}\)</span> is a multivariate Gaussian kernel, with covariance matrix <span class="math inline">\(\kappa_{\bf H}\)</span>. Further, the data is generated from the mixture of warped Gaussians of <a href="https://arxiv.org/pdf/1611.06874.pdf">Fasiolo et al. (2018)</a>. The details of this density are unimportant here, what matters is that the example is defined in <span class="math inline">\(d&gt;2\)</span> dimensions and, under such density <span class="math inline">\(\pi({\bf x})\)</span>, the joint distribution of the first two dimensions is far from Gaussian while the remaining dimensions are standard i.i.d. Gaussian variables.</p>
+where <span class="math inline">\(\kappa_{\bf H}\)</span> is a kernel with positive definite bandwidth matrix <span class="math inline">\({\bf H}\)</span>. Here we assume that <span class="math inline">\(\kappa_{\bf H}\)</span> is a multivariate Gaussian kernel, with covariance matrix <span class="math inline">\({\bf H}\)</span>. Further, the data is generated from the mixture of warped Gaussians of <a href="https://arxiv.org/pdf/1611.06874.pdf">Fasiolo et al. (2018)</a>. The details of this density are unimportant here, what matters is that the example is defined in <span class="math inline">\(d&gt;2\)</span> dimensions and, under such density <span class="math inline">\(\pi({\bf x})\)</span>, the joint distribution of the first two dimensions is far from Gaussian while the remaining dimensions are standard i.i.d. Gaussian variables.</p>
 <p>Samples from this density can be generated using the following functions:</p>
 <pre class="r"><code>rBanana &lt;- function(n, d, a, b, shi1, shi2){
   out &lt;- matrix(rnorm(d*n), n, d);
@@ -245,8 +245,8 @@ microbenchmark(kdeR = kdeR(dmvnorm, x, x, diag(d)),
                kdeLazy = kdeLazy(dmvnorm, x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
 ##     expr      min       lq     mean   median       uq      max neval
-##     kdeR 183.9583 200.5237 203.6941 203.5446 206.3128 272.8536   100
-##  kdeLazy 218.2244 234.3519 239.7890 237.3297 240.8119 312.5887   100</code></pre>
+##     kdeR 179.0331 185.3126 190.7587 188.6306 192.5467 266.6743   100
+##  kdeLazy 211.2105 217.5591 223.8299 220.9087 226.2182 295.2111   100</code></pre>
 <p>It turns out that the <code>Rcpp</code> version is not faster. This demonstrates that writing part of the code in <code>Rcpp</code> does not automatically lead to performance gains. In particular our <code>Rcpp</code> code:</p>
 <ul>
 <li>calls the <code>dmvnR</code> function to compute the Gaussian kernel. We cannot expect an <code>R</code> function
@@ -397,16 +397,16 @@ microbenchmark(R = kdeR(dmvnorm, x, x, diag(d)),
                Armadillo = kdeArma(x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
 ##       expr       min        lq      mean    median        uq       max neval
-##          R 179.70702 196.63739 203.49710 203.70240 209.78856 266.78859   100
-##  Armadillo  59.69295  60.93982  61.48509  61.45663  62.14481  64.79258   100</code></pre>
+##          R 181.19182 186.69469 192.34532 189.39429 193.91990 263.46240   100
+##  Armadillo  59.65939  60.02855  60.66134  60.41518  60.88226  66.67636   100</code></pre>
 <p>This is definitely better than the previous version! Notice that the <code>R</code> version (<code>kdeR</code>) is not too inefficient here because, at each iteration of the main <code>for</code> loop, the <code>dmvnorm</code> function evaluates a Gaussian density at <span class="math inline">\(10^3\)</span> data points. If we reduce the number of points at which the k.d.e. is evaluated, the performance gains increase. For instance:</p>
 <pre class="r"><code>library(microbenchmark)
 microbenchmark(R = kdeR(dmvnorm, x[1:10, ], x, diag(d)),
                Armadillo = kdeArma(x[1:10, ], x, diag(d)))</code></pre>
 <pre><code>## Unit: microseconds
-##       expr        min         lq        mean      median         uq        max
-##          R 108242.706 119189.444 123242.0138 121658.0895 124004.172 191940.518
-##  Armadillo    534.417    550.127    571.6438    570.3865    587.286    652.266
+##       expr        min         lq        mean     median         uq        max
+##          R 102647.588 107081.747 110766.4204 108701.091 111487.120 181029.581
+##  Armadillo    530.379    538.492    564.6856    561.718    574.385    906.645
 ##  neval
 ##    100
 ##    100</code></pre>

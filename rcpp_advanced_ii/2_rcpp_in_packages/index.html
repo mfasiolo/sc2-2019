@@ -251,7 +251,7 @@ system(&quot;R CMD INSTALL mypack&quot;)</code></pre>
 [1] &quot;_mypack_rcpp_hello_world&quot;
 
 $address
-&lt;pointer: 0x5167a70&gt;
+&lt;pointer: 0x3e27750&gt;
 attr(,&quot;class&quot;)
 [1] &quot;RegisteredNativeSymbol&quot;
 
@@ -279,13 +279,13 @@ attr(,&quot;class&quot;)
 Type: Package
 Title: What the Package Does in One &#39;Title Case&#39; Line
 Version: 1.0
-Date: 2020-02-11
+Date: 2020-04-02
 Author: Your Name
 Maintainer: Your Name &lt;your@email.com&gt;
 Description: One paragraph description of what the package does as one
         or more full sentences.
 License: GPL (&gt;= 2)
-Imports: Rcpp (&gt;= 1.0.3)
+Imports: Rcpp (&gt;= 1.0.4)
 LinkingTo: Rcpp</code></pre>
 <p>This is fairly standard, the only thing to notice is that <code>Rcpp</code> appear both in <code>LinkingTo</code> and in <code>Imports</code>. Once the above-mentioned bug will be solved, <code>Rcpp</code> will need to appear only in <code>LinkingTo</code> (unless we genuinely need to import <code>R</code> functions from <code>Rcpp</code> in our package). The latter is a declaration which allows <code>R</code> to retrieve the header file of the target package (<code>Rcpp</code> in this case) and to link them to the compiled code in our package. Hence, it cannot be used to link to a <code>C++</code> library (e.g., the <code>MKL</code> library) which is not contained in a <code>R</code> package. Linking to external libraries must be done manually using makefiles and it is not covered here.</p>
 </div>
