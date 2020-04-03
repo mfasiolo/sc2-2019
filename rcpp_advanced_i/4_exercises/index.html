@@ -171,7 +171,7 @@ As expected, there are more hours of daylight in Austral winter, hence more prod
 \mathbb{E}(y|{\bf x}) = \beta_0 + \beta_1\text{tod} + \beta_2\text{tod}^2 + \beta_3\text{toy} + \beta_4\text{toy}^2 = \tilde{\bf x}^T\beta.
 \]</span>
 where <span class="math inline">\(\tilde{\bf x} = \{\text{tod}, \text{tod}^2, \text{toy}, \text{toy}^2\}\)</span>. It is quite simple to fit this model in <code>R</code>:</p>
-<pre class="r"><code>fit &lt;- lm(logprod ~ tod + I(tod^2) + toy + toy^2, data = solarAU) </code></pre>
+<pre class="r"><code>fit &lt;- lm(logprod ~ tod + I(tod^2) + toy + I(toy^2), data = solarAU) </code></pre>
 <p><strong>Q1 start</strong> Use <code>RcppArmadillo</code> to fit a linear regression model, that is to solve the minimization problem:
 <span class="math display">\[
 \hat{\beta} = \underset{\beta}{\text{argmin}} ||{\bf y} - {\bf X}\beta||^2,
