@@ -45,7 +45,7 @@ $$
 $$
 where $\tilde{\bf x} = \{\text{tod}, \text{tod}^2, \text{toy}, \text{toy}^2\}$. It is quite simple to fit this model in `R`:
 ```{r}
-fit <- lm(logprod ~ tod + I(tod^2) + toy + toy^2, data = solarAU) 
+fit <- lm(logprod ~ tod + I(tod^2) + toy + I(toy^2), data = solarAU) 
 ```
 
 **Q1 start** Use `RcppArmadillo` to fit a linear regression model, that is to solve the minimization problem:
