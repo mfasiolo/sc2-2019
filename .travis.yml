@@ -17,6 +17,7 @@ r_packages:
     - mvtnorm
     - hexbin
     - sitmo
+    - RhpcBLASctl
 
 r_github_packages:
     - rstudio/blogdown
