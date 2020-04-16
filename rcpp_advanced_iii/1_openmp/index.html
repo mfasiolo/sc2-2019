@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>1. Using OpenMP in Rcpp - SC2</title>
+    <meta property="og:title" content="1. Using OpenMP in Rcpp - SC2">
+    
+    <meta name="twitter:card" content="summary">
+
+    
+      
+    
+
+    
+      
+      <meta property="description" content="library(RhpcBLASctl) omp_set_num_threads(4) library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;unistd.h&amp;gt; #include &amp;lt;Rcpp.h&amp;gt; // [[Rcpp::plugins(openmp)]] // [[Rcpp::export(wait_a_second)]] bool &amp;hellip;">
+      <meta property="og:description" content="library(RhpcBLASctl) omp_set_num_threads(4) library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;unistd.h&amp;gt; #include &amp;lt;Rcpp.h&amp;gt; // [[Rcpp::plugins(openmp)]] // [[Rcpp::export(wait_a_second)]] bool &amp;hellip;">
+      
+    
+
+    
+    
+
+    
+
+    
+    
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
+    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+
+<link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="breadcrumbs">
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/">rcpp_advanced_iii / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/1_openmp/">1_openmp / </a>
+    
+</nav>
+
+  </head>
+
+  
+  <body class="sc2-2019">
+    <header class="masthead">
+      <h1><a href="/sc2-2019/">SC2</a></h1>
+
+<p class="tagline">Statistical Computing 2</p>
+
+      <nav class="menu">
+  <input id="menu-check" type="checkbox" />
+  <label id="menu-label" for="menu-check" class="unselectable">
+    <span class="icon close-icon">✕</span>
+    <span class="icon open-icon">☰</span>
+    <span class="text">Menu</span>
+  </label>
+  <ul>
+  
+  
+  <li><a href="/sc2-2019/">Home</a></li>
+  
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_iii/">Parallel Rcpp</a></li>
+  
+  
+  </ul>
+</nav>
+
+    </header>
+
+    <article class="main">
+      <header class="title">
+      
+<h1>1. Using OpenMP in Rcpp</h1>
+
+<h3>
+</h3>
+<hr>
+
+
+      </header>
+
+
+
+
+
+<div id="TOC">
+<ul>
+<li><a href="#basic-examples">Basic examples</a></li>
+<li><a href="#parallel-random-number-generation">Parallel random number generation</a></li>
+<li><a href="#using-omp-in-r-packages">Using OMP in R packages</a></li>
+</ul>
+</div>
+
+<style>
+body {
+text-align: justify}
+</style>
+<div id="basic-examples" class="section level3">
+<h3>Basic examples</h3>
+<pre class="r"><code>library(RhpcBLASctl)
+omp_set_num_threads(4)</code></pre>
+<pre class="r"><code>library(Rcpp)
+sourceCpp(code = &#39;
+#include &lt;unistd.h&gt;
+#include &lt;Rcpp.h&gt;
+
+// [[Rcpp::plugins(openmp)]]
+
+// [[Rcpp::export(wait_a_second)]]
+bool wait_a_second(int ncores)
+{
+
+ #if defined(_OPENMP)
+  #pragma omp parallel for num_threads(ncores)
+ #endif
+ for(size_t ii = 0; ii &lt; 8; ii++)
+ { 
+  sleep(1);
+ }
+ 
+ return 1;
+
+ }
+&#39;)</code></pre>
+<pre class="r"><code>system.time(wait_a_second(1))[3]</code></pre>
+<pre><code>## elapsed 
+##   8.001</code></pre>
+<pre class="r"><code>system.time(wait_a_second(4))[3]</code></pre>
+<pre><code>## elapsed 
+##   2.013</code></pre>
+<pre class="r"><code>system.time(wait_a_second(8))[3]</code></pre>
+<pre><code>## elapsed 
+##       1</code></pre>
+<pre class="r"><code>sourceCpp(code = &#39;
+#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+// [[Rcpp::export(allFiniteSeq)]]
+bool allFiniteCpp(NumericVector x)
+{
+
+ size_t n = x.size();
+ double out = 0;
+ 
+ for(size_t ii = 0; ii &lt; n; ii++)
+ {
+  out += x[ii];
+ }
+ 
+ return R_FINITE(out);
+
+ }
+&#39;)</code></pre>
+<pre class="r"><code>sourceCpp(code = &#39;
+#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+// [[Rcpp::plugins(openmp)]]
+
+// [[Rcpp::export(allFiniteOMP)]]
+bool allFiniteCpp(NumericVector x, int ncores)
+{
+
+ size_t n = x.size();
+ double out = 0;
+ 
+ #if defined(_OPENMP)
+  #pragma omp parallel for num_threads(ncores)
+ #endif
+ for(size_t ii = 0; ii &lt; n; ii++)
+ {
+  out += x[ii];
+ }
+ 
+ return R_FINITE(out);
+
+ }
+&#39;)</code></pre>
+<pre class="r"><code>x &lt;- rnorm(1e7)
+
+library(microbenchmark)
+microbenchmark(allFiniteSeq(x),
+               allFiniteOMP(x, 1), 
+               allFiniteOMP(x, 2),
+               allFiniteOMP(x, 4),
+               allFiniteOMP(x, 8),
+               all(is.finite(x)))</code></pre>
+<pre><code>## Unit: milliseconds
+##                expr       min        lq      mean    median        uq      max
+##     allFiniteSeq(x) 12.825090 12.966708 13.170273 13.076306 13.264581 15.73213
+##  allFiniteOMP(x, 1) 13.192671 13.405119 13.589366 13.569057 13.663625 14.29982
+##  allFiniteOMP(x, 2)  7.157599  7.368618  7.779967  7.452484  7.655594 12.35964
+##  allFiniteOMP(x, 4)  7.247023  7.422949  7.717550  7.488703  7.645117 11.89382
+##  allFiniteOMP(x, 8)  7.329287  7.491592  8.038977  7.594626  7.984699 11.70556
+##   all(is.finite(x)) 42.498755 42.994095 45.594357 46.200937 47.051215 89.33204
+##  neval
+##    100
+##    100
+##    100
+##    100
+##    100
+##    100</code></pre>
+<pre class="r"><code>x &lt;- rnorm(1e3)
+
+library(microbenchmark)
+microbenchmark(allFiniteSeq(x),
+               allFiniteOMP(x, 1), 
+               allFiniteOMP(x, 2),
+               allFiniteOMP(x, 4),
+               allFiniteOMP(x, 8),
+               all(is.finite(x)))</code></pre>
+<pre><code>## Unit: microseconds
+##                expr    min      lq      mean  median       uq      max neval
+##     allFiniteSeq(x)  2.998  4.0070   5.24207  4.8700   5.7505   28.961   100
+##  allFiniteOMP(x, 1)  3.840  4.9460   6.32442  5.8760   6.8325   14.707   100
+##  allFiniteOMP(x, 2)  3.391  5.9525 351.89647 24.1260  57.4310 4347.154   100
+##  allFiniteOMP(x, 4) 18.472 33.0645 500.17873 57.4500  95.8690 4367.363   100
+##  allFiniteOMP(x, 8) 28.097 49.1145 717.48923 73.7265 162.1075 4424.545   100
+##   all(is.finite(x))  3.007  5.9545   7.07551  6.6455   8.0935   14.460   100</code></pre>
+</div>
+<div id="parallel-random-number-generation" class="section level3">
+<h3>Parallel random number generation</h3>
+<p>aaa</p>
+<pre class="r"><code>sourceCpp(code = &#39;
+#include &lt;Rcpp.h&gt;
+#include &lt;sitmo.h&gt;
+
+#ifdef _OPENMP
+#include &lt;omp.h&gt;
+#endif
+
+// [[Rcpp::depends(sitmo)]]
+// [[Rcpp::plugins(openmp)]]
+
+// [[Rcpp::export(runif_sitmo_omp)]]
+Rcpp::NumericVector runif_sitmo_omp(unsigned int n,
+                                    unsigned int nstep,
+                                    Rcpp::NumericVector seeds) {
+  Rcpp::NumericVector out(n);
+  
+  unsigned int ncores = seeds.size();
+  
+  #ifdef _OPENMP
+  #pragma omp parallel num_threads(ncores) if(ncores &gt; 1)
+  {
+  #endif
+  
+   double mx = sitmo::prng::max();
+   double tmp = 0;
+   
+   uint32_t coreseed = static_cast&lt;uint32_t&gt;(seeds[0]);
+   
+   #ifdef _OPENMP
+    coreseed = static_cast&lt;uint32_t&gt;(seeds[omp_get_thread_num()]);
+   #endif
+   
+   // Create a prng engine
+   sitmo::prng eng(coreseed);
+  
+   #ifdef _OPENMP
+    #pragma omp for schedule(static)
+   #endif
+   for(unsigned int ii = 0; ii &lt; n; ++ii) {
+     tmp = 0.0;
+     for(unsigned int kk = 0; kk &lt; nstep; ++kk){
+      tmp += ((double) eng()) / mx;
+     }
+     out[ii] = tmp;
+   }
+    
+  #ifdef _OPENMP
+  }
+  #endif
+  
+  return out;
+}
+&#39;)</code></pre>
+<pre class="r"><code>n &lt;- 1e3
+nstep &lt;- 100
+
+hist(runif_sitmo_omp(n, nstep = nstep, seeds = c(1.0)))</code></pre>
+<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<pre class="r"><code>hist(runif_sitmo_omp(n, nstep = nstep, seeds = c(1.0, 2)))</code></pre>
+<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
+<pre class="r"><code>hist(rowSums(matrix(runif(n*nstep), n, nstep)))</code></pre>
+<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-9-3.png" width="672" /></p>
+<pre class="r"><code>library(microbenchmark)
+microbenchmark(rowSums(matrix(runif(n*nstep), n, nstep)),
+               runif_sitmo_omp(n, nstep = nstep, seeds = 1),
+               runif_sitmo_omp(n, nstep = nstep, seeds = 1:4)
+               )</code></pre>
+<pre><code>## Unit: microseconds
+##                                            expr      min        lq      mean
+##     rowSums(matrix(runif(n * nstep), n, nstep)) 3050.409 3542.4415 3609.8699
+##    runif_sitmo_omp(n, nstep = nstep, seeds = 1)  378.736  387.9195  399.9286
+##  runif_sitmo_omp(n, nstep = nstep, seeds = 1:4)  350.874  399.1220  499.1910
+##     median        uq      max neval
+##  3552.4365 3573.1960 7872.494   100
+##   392.6990  397.6050  614.200   100
+##   412.3995  428.5295 7052.458   100</code></pre>
+</div>
+<div id="using-omp-in-r-packages" class="section level3">
+<h3>Using OMP in R packages</h3>
+</div>
+
+
+  <footer>
+  
+
+<script src="//yihui.name/js/math-code.js"></script>
+<script async src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script async src="//yihui.name/js/center-img.js"></script>
+
+
+<script type="text/javascript">
+var sc_project=12110974;
+var sc_invisible=1;
+var sc_security="9b171880";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12110974/0/9b171880/1/"
+alt="Web Analytics"></a></div></noscript>
+
+
+
+
+
+
+
+
+  
+
+
+<p align=right>
+
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp_advanced_III/1_OpenMP.Rmd'>View source</a>
+
+|
+
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp_advanced_III/1_OpenMP.Rmd'>Edit source</a>
+
+</p>
+
+
+
+
+
+<script src="https://utteranc.es/client.js"
+        repo="awllee/sc1-2019"
+        issue-term="pathname"
+        label="utterance"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+
+  
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+  
+  <hr>
+  <div class="copyright">© 2020 <a href="https://mfasiolo.github.io/">Matteo Fasiolo</a></div>
+  
+  </footer>
+  </article>
+  
+  </body>
+</html>
+

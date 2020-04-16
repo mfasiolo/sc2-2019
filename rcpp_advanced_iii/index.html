@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    <title>Advanced Rcpp I - SC2</title>
-    <meta property="og:title" content="Advanced Rcpp I - SC2">
+    <title>Parallel Rcpp - SC2</title>
+    <meta property="og:title" content="Parallel Rcpp - SC2">
     
     <meta name="twitter:card" content="summary">
 
@@ -15,8 +15,12 @@
 
     
       
-      <meta property="description" content="In the previous chapter we have seen how R can be easily interfaced with C&#43;&#43; via the Rcpp package. Here we will explore the capabilities of Rcpp more in details. In particular, we will show how Rcpp &amp;hellip;">
-      <meta property="og:description" content="In the previous chapter we have seen how R can be easily interfaced with C&#43;&#43; via the Rcpp package. Here we will explore the capabilities of Rcpp more in details. In particular, we will show how Rcpp &amp;hellip;">
+      <meta property="description" content="This chapter explains how to perform parallel computation in Rcpp, with a particular focus on the RcppParallel R package.
+The chapter consists of the following sections:
+">
+      <meta property="og:description" content="This chapter explains how to perform parallel computation in Rcpp, with a particular focus on the RcppParallel R package.
+The chapter consists of the following sections:
+">
       
     
 
@@ -26,7 +30,7 @@
     
 
     
-    <link href="/sc2-2019/rcpp_advanced_i/index.xml" rel="alternate" type="application/rss+xml" title="SC2" />
+    <link href="/sc2-2019/rcpp_advanced_iii/index.xml" rel="alternate" type="application/rss+xml" title="SC2" />
     
     
 
@@ -60,7 +64,7 @@
     
         <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
     
-        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/">rcpp_advanced_i / </a>
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/">rcpp_advanced_iii / </a>
     
 </nav>
 
@@ -87,11 +91,11 @@
   
   <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
   
-  <li class="active"><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
   
   <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
   
-  <li><a href="/sc2-2019/rcpp_advanced_iii/">Parallel Rcpp</a></li>
+  <li class="active"><a href="/sc2-2019/rcpp_advanced_iii/">Parallel Rcpp</a></li>
   
   
   </ul>
@@ -102,7 +106,7 @@
     <article class="main">
       <header class="title">
       
-<h1>Advanced Rcpp I</h1>
+<h1>Parallel Rcpp</h1>
 
 <h3>
 </h3>
@@ -114,7 +118,7 @@
 
 <!-- raw HTML omitted -->
 <!-- raw HTML omitted -->
-<p>In the previous chapter we have seen how <code>R</code> can be easily interfaced with <code>C++</code> via the <code>Rcpp</code> package. Here we will explore the capabilities of <code>Rcpp</code> more in details. In particular, we will show how <code>Rcpp sugar</code> allows us to write <code>C++</code> code that looks like <code>R</code> code, but that is often much faster. We will then consider the <code>RcppArmadillo</code> package, which is an interface to the <code>Armadillo</code> <code>C++</code> linear algebra library, and we will demostrate that it can lead to superior performance, relative to base <code>R</code>, in the context of statistical computing.</p>
+<p>This chapter explains how to perform parallel computation in Rcpp, with a particular focus on the RcppParallel R package.</p>
 <p>The chapter consists of the following sections:</p>
 
 
@@ -122,19 +126,7 @@
 <ul>
     
         <li>
-            <a href="/sc2-2019/rcpp_advanced_i/1_rcpp_sugar/"> 1. Rcpp sugar</a>
-        </li>
-    
-        <li>
-            <a href="/sc2-2019/rcpp_advanced_i/2_rcpparmadillo/"> 2. RcppArmadillo</a>
-        </li>
-    
-        <li>
-            <a href="/sc2-2019/rcpp_advanced_i/3_kde_armadillo/"> 3. Example on multivariate KDE with RcppArmadillo</a>
-        </li>
-    
-        <li>
-            <a href="/sc2-2019/rcpp_advanced_i/4_exercises/"> 4. Exercise on local polynomial regression</a>
+            <a href="/sc2-2019/rcpp_advanced_iii/1_openmp/"> 1. Using OpenMP in Rcpp</a>
         </li>
     
 </ul>
@@ -175,11 +167,11 @@ alt="Web Analytics"></a></div></noscript>
 
 <p align=right>
 
-<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp_advanced_I/_index.md'>View source</a>
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp_advanced_III/_index.md'>View source</a>
 
 |
 
-<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp_advanced_I/_index.md'>Edit source</a>
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp_advanced_III/_index.md'>Edit source</a>
 
 </p>
 
