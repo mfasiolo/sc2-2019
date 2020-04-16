@@ -13,8 +13,10 @@ r_packages:
     - tweedie
     - Rcpp
     - RcppArmadillo
+    - RcppParallel
     - mvtnorm
     - hexbin
+    - sitmo
 
 r_github_packages:
     - rstudio/blogdown

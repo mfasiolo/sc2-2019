@@ -1,0 +1,214 @@
+---
+title: 1. Using OpenMP in Rcpp
+weight: 1
+output:
+  blogdown::html_page:
+    toc: true
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+### Basic examples
+
+```{r}
+library(RhpcBLASctl)
+omp_set_num_threads(4)
+```
+
+```{r}
+library(Rcpp)
+sourceCpp(code = '
+#include <unistd.h>
+#include <Rcpp.h>
+
+// [[Rcpp::plugins(openmp)]]
+
+// [[Rcpp::export(wait_a_second)]]
+bool wait_a_second(int ncores)
+{
+
+ #if defined(_OPENMP)
+  #pragma omp parallel for num_threads(ncores)
+ #endif
+ for(size_t ii = 0; ii < 8; ii++)
+ { 
+  sleep(1);
+ }
+ 
+ return 1;
+
+ }
+')
+```
+
+```{r, cache = TRUE}
+system.time(wait_a_second(1))[3]
+
+system.time(wait_a_second(4))[3]
+
+system.time(wait_a_second(8))[3]
+```
+
+
+```{r}
+sourceCpp(code = '
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::export(allFiniteSeq)]]
+bool allFiniteCpp(NumericVector x)
+{
+
+ size_t n = x.size();
+ double out = 0;
+ 
+ for(size_t ii = 0; ii < n; ii++)
+ {
+  out += x[ii];
+ }
+ 
+ return R_FINITE(out);
+
+ }
+')
+```
+
+```{r}
+sourceCpp(code = '
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::plugins(openmp)]]
+
+// [[Rcpp::export(allFiniteOMP)]]
+bool allFiniteCpp(NumericVector x, int ncores)
+{
+
+ size_t n = x.size();
+ double out = 0;
+ 
+ #if defined(_OPENMP)
+  #pragma omp parallel for num_threads(ncores)
+ #endif
+ for(size_t ii = 0; ii < n; ii++)
+ {
+  out += x[ii];
+ }
+ 
+ return R_FINITE(out);
+
+ }
+')
+```
+
+```{r}
+x <- rnorm(1e7)
+
+library(microbenchmark)
+microbenchmark(allFiniteSeq(x),
+               allFiniteOMP(x, 1), 
+               allFiniteOMP(x, 2),
+               allFiniteOMP(x, 4),
+               allFiniteOMP(x, 8),
+               all(is.finite(x)))
+```
+
+```{r}
+x <- rnorm(1e3)
+
+library(microbenchmark)
+microbenchmark(allFiniteSeq(x),
+               allFiniteOMP(x, 1), 
+               allFiniteOMP(x, 2),
+               allFiniteOMP(x, 4),
+               allFiniteOMP(x, 8),
+               all(is.finite(x)))
+```
+
+### Parallel random number generation
+
+aaa
+
+
+```{r}
+sourceCpp(code = '
+#include <Rcpp.h>
+#include <sitmo.h>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+// [[Rcpp::depends(sitmo)]]
+// [[Rcpp::plugins(openmp)]]
+
+// [[Rcpp::export(runif_sitmo_omp)]]
+Rcpp::NumericVector runif_sitmo_omp(unsigned int n,
+                                    unsigned int nstep,
+                                    Rcpp::NumericVector seeds) {
+  Rcpp::NumericVector out(n);
+  
+  unsigned int ncores = seeds.size();
+  
+  #ifdef _OPENMP
+  #pragma omp parallel num_threads(ncores) if(ncores > 1)
+  {
+  #endif
+  
+   double mx = sitmo::prng::max();
+   double tmp = 0;
+   
+   uint32_t coreseed = static_cast<uint32_t>(seeds[0]);
+   
+   #ifdef _OPENMP
+    coreseed = static_cast<uint32_t>(seeds[omp_get_thread_num()]);
+   #endif
+   
+   // Create a prng engine
+   sitmo::prng eng(coreseed);
+  
+   #ifdef _OPENMP
+    #pragma omp for schedule(static)
+   #endif
+   for(unsigned int ii = 0; ii < n; ++ii) {
+     tmp = 0.0;
+     for(unsigned int kk = 0; kk < nstep; ++kk){
+      tmp += ((double) eng()) / mx;
+     }
+     out[ii] = tmp;
+   }
+    
+  #ifdef _OPENMP
+  }
+  #endif
+  
+  return out;
+}
+')
+
+
+```
+
+
+```{r}
+n <- 1e3
+nstep <- 100
+
+hist(runif_sitmo_omp(n, nstep = nstep, seeds = c(1.0)))
+hist(runif_sitmo_omp(n, nstep = nstep, seeds = c(1.0, 2)))
+
+hist(rowSums(matrix(runif(n*nstep), n, nstep)))
+
+library(microbenchmark)
+microbenchmark(rowSums(matrix(runif(n*nstep), n, nstep)),
+               runif_sitmo_omp(n, nstep = nstep, seeds = 1),
+               runif_sitmo_omp(n, nstep = nstep, seeds = 1:4)
+               )
+```
+
+### Using OMP in R packages
+
+
