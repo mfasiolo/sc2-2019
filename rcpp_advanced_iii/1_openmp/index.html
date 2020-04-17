@@ -129,8 +129,8 @@
 <div id="TOC">
 <ul>
 <li><a href="#basic-examples">Basic examples</a></li>
-<li><a href="#parallel-random-number-generation">Parallel random number generation</a></li>
-<li><a href="#using-omp-in-r-packages">Using OMP in R packages</a></li>
+<li><a href="#parallel-random-number-generation-using-openmp">Parallel random number generation using OpenMP</a></li>
+<li><a href="#using-openmp-in-r-packages">Using OpenMP in R packages</a></li>
 </ul>
 </div>
 
@@ -192,10 +192,10 @@ bool wait_a_second_omp(int sec, int ncores)
 <p>which tell the compiler that the <code>for</code> loop can be run in parallel. Let try if this works:</p>
 <pre class="r"><code>system.time(wait_a_second_omp(4, 1))[3]</code></pre>
 <pre><code>## elapsed 
-##   4.001</code></pre>
+##       4</code></pre>
 <pre class="r"><code>system.time(wait_a_second_omp(4, 4))[3]</code></pre>
 <pre><code>## elapsed 
-##   1.014</code></pre>
+##   1.013</code></pre>
 <pre class="r"><code>system.time(wait_a_second_omp(16, 16))[3]</code></pre>
 <pre><code>## elapsed 
 ##   1.001</code></pre>
@@ -256,9 +256,8 @@ microbenchmark(all(is.finite(x)),
                allFiniteOMP(x, 4),
                allFiniteOMP(x, 8), 
                allFiniteOMP(x, 16),
-               unit = &#39;relative&#39;)
-
-# Unit: relative
+               unit = &#39;relative&#39;)</code></pre>
+<pre class="r"><code># Unit: relative
 #                 expr       min        lq       mean    median         uq       max neval
 #    all(is.finite(x)) 18.837335 17.926310 13.9724439 17.217159 12.5035659 6.9339805   100
 #      allFiniteSeq(x)  4.456039  4.290143  3.2039422  4.094480  2.5073357 1.9833380   100
@@ -267,14 +266,70 @@ microbenchmark(all(is.finite(x)),
 #   allFiniteOMP(x, 8)  1.000000  1.000000  1.0000000  1.000000  1.0000000 1.0000000   100
 #  allFiniteOMP(x, 16)  1.052189  1.122954  1.0166792  1.191262  0.9286961 0.6897481   100</code></pre>
 <p>Note that the <code>Rcpp</code> version is around 4 times fast that the <code>R</code> code, and that with 4 threads we get more or less are linear speed-up. However, the speed-up gains are negligible after that, and using 16 threads is actually detrimental. This is because a processor with 4 core has probably 4 physical floating-point (FLOP) units, hence trying to parallelise numerical computations on more than 4 threads does not make sense (the threads will start to compete for the same FLOP units). Note that above we used:</p>
-<pre class="r"><code>#pragma omp parallel for num_threads(ncores)</code></pre>
+<pre class="cpp"><code>#pragma omp parallel for num_threads(ncores)</code></pre>
 <p>which is a shortcut for:</p>
-<pre class="r"><code>#pragma omp parallel num_threads(ncores)
+<pre class="cpp"><code>#pragma omp parallel num_threads(ncores)
 #pragma omp for</code></pre>
+<p>One important thing to point out is that R’s C API and the Rcpp API are not thread-safe in generally. Hence, doing things such as:</p>
+<pre class="cpp"><code>#pragma omp parallel
+NumericVector x(10);</code></pre>
+<p>(which creates a vector of length 10 on every thread) is not safe and might behave unexpectedly. Hence, it is preferrable to use the thread-safe data structures provided by the [RcppParallel R package]{<a href="https://cran.r-project.org/web/packages/RcppParallel/index.html" class="uri">https://cran.r-project.org/web/packages/RcppParallel/index.html</a>}, which will be discussed later in these notes. In the following section we show of to perform parallel randon number generation using OpenMP and a thread-safe RNG.</p>
 </div>
-<div id="parallel-random-number-generation" class="section level3">
-<h3>Parallel random number generation</h3>
-<p>aaa</p>
+<div id="parallel-random-number-generation-using-openmp" class="section level3">
+<h3>Parallel random number generation using OpenMP</h3>
+<p>As other parts of R’s C API, the R’s RNG is not thread safe. Hence <code>Rcpp</code> code such as:</p>
+<pre class="cpp"><code>#pragma omp parallel
+x = R::rbeta(a, b);</code></pre>
+<p>will produce invalid results and might crash you R session. Hence, we must adopt a thread-safe RNG, such as the one provided by the [sitmo R package]{<a href="https://cran.r-project.org/web/packages/sitmo/index.html" class="uri">https://cran.r-project.org/web/packages/sitmo/index.html</a>}.</p>
+<p>Before explaining how to use <code>sitmo</code> in parallel, let us consider the following sequential function:</p>
+<pre class="r"><code>sourceCpp(code = &#39;
+#include &lt;Rcpp.h&gt;
+#include &lt;sitmo.h&gt;
+
+// [[Rcpp::depends(sitmo)]]
+
+// [[Rcpp::export(sumunif_sitmo)]]
+Rcpp::NumericVector sumunif_sitmo(unsigned int n,
+                                  unsigned int nstep,
+                                  double seed) {
+  Rcpp::NumericVector out(n);
+
+  uint32_t coreseed = static_cast&lt;uint32_t&gt;(seed);
+  sitmo::prng eng(coreseed);
+  
+  double mx = sitmo::prng::max();
+  double tmp = 0;
+
+   for(unsigned int ii = 0; ii &lt; n; ++ii) {
+     tmp = 0.0;
+     for(unsigned int kk = 0; kk &lt; nstep; ++kk){
+      tmp += eng() / mx;
+     }
+     out[ii] = tmp;
+   }
+    
+  return out;
+}
+&#39;)</code></pre>
+<p>This function simply simulates <code>n</code> sums of <code>nstep</code> uniforms (0, 1) random variables. Hence, it is equivalent to the following R code:</p>
+<pre class="r"><code>rowSums(matrix(runif(n*nstep), n, nstep))</code></pre>
+<p>Let us examine the key steps in <code>runif_sitmo_omp</code>:</p>
+<ul>
+<li>we state that our code depends on the <code>sitmo</code> package via the <code>Rcpp::depends</code> attribute;</li>
+<li>we convert the seed provided by R to type <code>uint32_t</code> via <code>uint32_t coreseed = static_cast&lt;uint32_t&gt;(seed);</code></li>
+<li>we set up an RNG via <code>sitmo::prng eng(coreseed);</code></li>
+<li>having done this, calling <code>eng()</code> will generate an uniform random number between 0 and <code>sitmo::prng::max()</code>,
+hence we use <code>((double) eng()) / mx</code> to rescale the output of <code>eng()</code> to (0, 1).</li>
+</ul>
+<pre class="r"><code>n &lt;- 1e3
+nstep &lt;- 100
+
+par(mfrow = c(1, 2))
+hist(rowSums(matrix(runif(n*nstep), n, nstep)), main = &quot;R&quot;, xlab = &quot;x&quot;)
+hist(sumunif_sitmo(n, nstep = nstep, seed = 1), main = &quot;Sitmo&quot;, xlab = &quot;x&quot;)</code></pre>
+<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-16-1.png" width="576" style="display: block; margin: auto;" />
+The histograms show the Central Limit Theorem kicking in.</p>
+<p>Let us not look at an parallel version:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
 #include &lt;Rcpp.h&gt;
 #include &lt;sitmo.h&gt;
@@ -286,38 +341,37 @@ microbenchmark(all(is.finite(x)),
 // [[Rcpp::depends(sitmo)]]
 // [[Rcpp::plugins(openmp)]]
 
-// [[Rcpp::export(runif_sitmo_omp)]]
-Rcpp::NumericVector runif_sitmo_omp(unsigned int n,
-                                    unsigned int nstep,
-                                    Rcpp::NumericVector seeds) {
+// [[Rcpp::export(sumunif_sitmo_omp)]]
+Rcpp::NumericVector sumunif_sitmo_omp(unsigned int n,
+                                      unsigned int nstep,
+                                      Rcpp::NumericVector seeds) {
   Rcpp::NumericVector out(n);
   
   unsigned int ncores = seeds.size();
   
   #ifdef _OPENMP
-  #pragma omp parallel num_threads(ncores) if(ncores &gt; 1)
+  #pragma omp parallel num_threads(ncores)
   {
   #endif
   
-   double mx = sitmo::prng::max();
-   double tmp = 0;
-   
    uint32_t coreseed = static_cast&lt;uint32_t&gt;(seeds[0]);
    
    #ifdef _OPENMP
     coreseed = static_cast&lt;uint32_t&gt;(seeds[omp_get_thread_num()]);
    #endif
    
-   // Create a prng engine
    sitmo::prng eng(coreseed);
+   
+   double mx = sitmo::prng::max();
+   double tmp = 0;
   
    #ifdef _OPENMP
-    #pragma omp for schedule(static)
+    #pragma omp for
    #endif
    for(unsigned int ii = 0; ii &lt; n; ++ii) {
      tmp = 0.0;
      for(unsigned int kk = 0; kk &lt; nstep; ++kk){
-      tmp += ((double) eng()) / mx;
+      tmp += eng() / mx;
      }
      out[ii] = tmp;
    }
@@ -329,32 +383,40 @@ Rcpp::NumericVector runif_sitmo_omp(unsigned int n,
   return out;
 }
 &#39;)</code></pre>
-<pre class="r"><code>n &lt;- 1e3
-nstep &lt;- 100
-
-hist(runif_sitmo_omp(n, nstep = nstep, seeds = c(1.0)))</code></pre>
-<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
-<pre class="r"><code>hist(runif_sitmo_omp(n, nstep = nstep, seeds = c(1.0, 2)))</code></pre>
-<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
-<pre class="r"><code>hist(rowSums(matrix(runif(n*nstep), n, nstep)))</code></pre>
-<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-12-3.png" width="672" /></p>
-<pre class="r"><code>library(microbenchmark)
-microbenchmark(rowSums(matrix(runif(n*nstep), n, nstep)),
-               runif_sitmo_omp(n, nstep = nstep, seeds = 1),
-               runif_sitmo_omp(n, nstep = nstep, seeds = 1:4)
+<p>Note that this code:</p>
+<pre class="cpp"><code>#ifdef _OPENMP
+#pragma omp parallel num_threads(ncores)
+{
+#endif</code></pre>
+<p>marks the beginning of a parallel section of the code, hence the variable declared in this section (e.g, <code>coreseed</code>, <code>mx</code>) and the RNG <code>eng</code> is private to each parallel thread. This code:</p>
+<pre class="cpp"><code>#ifdef _OPENMP
+  coreseed = static_cast&lt;uint32_t&gt;(seeds[omp_get_thread_num()]);
+#endif</code></pre>
+<p>Provides the seed to each RNG instance using the ID number of each thread (<code>omp_get_thread_num()</code> is defined in <code>omp.h</code>). The rest of the code should be relative clear. Let us test it:</p>
+<pre class="r"><code>par(mfrow = c(1, 2))
+hist(rowSums(matrix(runif(n*nstep), n, nstep)), main = &quot;R&quot;, xlab = &quot;x&quot;)
+hist(sumunif_sitmo_omp(n, nstep = nstep, seed = 1:4), main = &quot;Sitmo&quot;, xlab = &quot;x&quot;)</code></pre>
+<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-20-1.png" width="576" style="display: block; margin: auto;" />
+It seems to work fine. Let’s look at the CPU time:</p>
+<pre class="r"><code>microbenchmark(R = rowSums(matrix(runif(n*nstep), n, nstep)),
+               sitmo = sumunif_sitmo(n, nstep = nstep, seed = 1),
+               sitmo_omp1 = sumunif_sitmo_omp(n, nstep = nstep, seeds = 1),
+               sitmo_omp4 = sumunif_sitmo_omp(n, nstep = nstep, seeds = 1:4), 
+               sitmo_omp16 = sumunif_sitmo_omp(n, nstep = nstep, seeds = 1:16), 
+               unit = &quot;relative&quot;, 
+               times = 1000
                )</code></pre>
-<pre><code>## Unit: microseconds
-##                                            expr      min        lq      mean
-##     rowSums(matrix(runif(n * nstep), n, nstep)) 2940.740 2991.6115 3340.5192
-##    runif_sitmo_omp(n, nstep = nstep, seeds = 1)  377.893  384.4810  391.9192
-##  runif_sitmo_omp(n, nstep = nstep, seeds = 1:4)  354.929  395.9395  419.4215
-##     median        uq      max neval
-##  3574.6395 3598.4325 5390.918   100
-##   390.1595  395.6795  430.722   100
-##   413.9935  436.6965  519.920   100</code></pre>
+<p>On the system described above, I get</p>
+<pre class="r"><code>Unit: relative
+        expr       min        lq     mean   median       uq       max neval
+           R 15.064965 9.9710359 8.126831 9.398850 9.537932 2.7370000  1000
+       sitmo  3.903483 2.5839086 2.054123 2.350338 2.430880 0.4575572  1000
+  sitmo_omp1  3.891468 2.5765881 2.052102 2.341904 2.421889 0.4737860  1000
+  sitmo_omp4  1.000000 1.0000000 1.000000 1.000000 1.000000 1.0000000  1000
+ sitmo_omp16  1.108871 0.9717565 1.569470 1.386362 1.822677 1.1224609  1000</code></pre>
 </div>
-<div id="using-omp-in-r-packages" class="section level3">
-<h3>Using OMP in R packages</h3>
+<div id="using-openmp-in-r-packages" class="section level3">
+<h3>Using OpenMP in R packages</h3>
 </div>
 
 

@@ -187,9 +187,9 @@ max( abs(y - (x1+x2)) )</code></pre>
 microbenchmark(R = x1 + x2, Rcpp = vsum(x1, x2), RcppSugar = vsumVett(x1, x2))</code></pre>
 <pre><code>## Unit: microseconds
 ##       expr     min       lq     mean   median       uq       max neval
-##          R 411.098 424.5645 482.8929 428.7415 435.1650  5667.020   100
-##       Rcpp 431.554 441.1280 651.0294 444.5235 450.0705 13723.023   100
-##  RcppSugar 304.043 402.6510 455.4799 409.5340 417.3615  3909.035   100</code></pre>
+##          R 112.334 120.6750 230.4190 125.2445 277.2260  2017.948   100
+##       Rcpp 159.215 175.9165 376.1207 182.5720 194.8505 12432.200   100
+##  RcppSugar 106.132 120.0975 227.9827 125.4945 133.6050  3960.997   100</code></pre>
 <p>This is because basic arithmetic operations in <code>R</code> are computed using internal code, which is written in <code>C</code> or <code>C++</code>. Calling <code>C++</code> from <code>R</code> has also some overheads, so the <code>C++</code> code can actually become much slower than the <code>R</code> version, for instance:</p>
 <pre class="r"><code>d &lt;- 1e2
 x1 &lt;- rnorm(d)
@@ -197,9 +197,9 @@ x2 &lt;- rnorm(d)
 microbenchmark(R = x1 + x2, Rcpp = vsum(x1, x2), RcppSugar = vsumVett(x1, x2))</code></pre>
 <pre><code>## Unit: nanoseconds
 ##       expr  min     lq    mean median     uq   max neval
-##          R  279  440.5  583.41    510  637.5  2932   100
-##       Rcpp 1741 2046.0 2718.80   2410 2823.5 23728   100
-##  RcppSugar 1706 2011.0 2455.60   2370 2800.5  6036   100</code></pre>
+##          R  337  418.0  594.92  488.5  574.5  5942   100
+##       Rcpp 1725 2027.5 2313.77 2180.0 2345.5  6787   100
+##  RcppSugar 1561 1918.0 2350.90 2078.0 2365.0 17521   100</code></pre>
 <p>Here <code>Rcpp</code> is much slower than <code>R</code>, because the computational effort is limited (the vectors <code>x1</code> and <code>x2</code> are short) and it is dominated by the cost of calling <code>C++</code> from <code>R</code>. Closing this brief digression on the dangers of using <code>Rcpp</code> without a clear idea of where the performance gains will come from, we go back to <code>Rcpp sugar</code>.</p>
 <p><code>Rcpp sugar</code> provide vectorized versions of the main logical operators <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code>, <code>==</code>, <code>&amp;</code>, <code>|</code> and <code>!</code>. For instance, we can define the function:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
@@ -333,7 +333,7 @@ NumericVector rbeta_rcpp(const int n, const int a, const int b) {
 ## Generated R functions 
 ## -------------------------------------------------------
 ## 
-## `.sourceCpp_9_DLLInfo` &lt;- dyn.load(&#39;/tmp/RtmpYvkFpR/sourceCpp-x86_64-pc-linux-gnu-1.0.4.6/sourcecpp_4163235f4f75/sourceCpp_13.so&#39;)
+## `.sourceCpp_9_DLLInfo` &lt;- dyn.load(&#39;/tmp/Rtmp6HtYoi/sourceCpp-x86_64-pc-linux-gnu-1.0.4.6/sourcecpp_421e14bdf5af/sourceCpp_13.so&#39;)
 ## 
 ## rbeta_rcpp &lt;- Rcpp:::sourceCppFunction(function(n, a, b) {}, FALSE, `.sourceCpp_9_DLLInfo`, &#39;sourceCpp_9_rbeta_rcpp&#39;)
 ## 
@@ -342,9 +342,9 @@ NumericVector rbeta_rcpp(const int n, const int a, const int b) {
 ## Building shared library
 ## --------------------------------------------------------
 ## 
-## DIR: /tmp/RtmpYvkFpR/sourceCpp-x86_64-pc-linux-gnu-1.0.4.6/sourcecpp_4163235f4f75
+## DIR: /tmp/Rtmp6HtYoi/sourceCpp-x86_64-pc-linux-gnu-1.0.4.6/sourcecpp_421e14bdf5af
 ## 
-## /home/travis/R-bin/lib/R/bin/R CMD SHLIB --preclean -o &#39;sourceCpp_13.so&#39; &#39;file41634c40247f.cpp&#39;</code></pre>
+## /home/travis/R-bin/lib/R/bin/R CMD SHLIB --preclean -o &#39;sourceCpp_13.so&#39; &#39;file421e4c66a89b.cpp&#39;</code></pre>
 <p>we see that the <code>C++</code> wrapper contains the line <code>Rcpp::RNGScope rcpp_rngScope_gen;</code> which internally calls <code>GetRNGState</code>. <code>PutRNGState</code> will be called automatically when exiting the <code>C++</code> wrapper function.</p>
 <p>One case when we need to worry about the reading and writing the <code>R</code>’s RNG state, is when we want to do things manually, that is without using the <code>// [[Rcpp::export]]</code> attribute. To provide an example, define the function:</p>
 <pre class="cpp"><code>#include &lt;Rcpp.h&gt;
