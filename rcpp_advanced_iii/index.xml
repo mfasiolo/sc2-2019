@@ -16,7 +16,8 @@
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/1_openmp/</guid>
-      <description>Basic examples Parallel random number generation Using OMP in R packages    body { text-align: justify}  Basic examples library(RhpcBLASctl) omp_set_num_threads(4) library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;unistd.h&amp;gt; #include &amp;lt;Rcpp.h&amp;gt; // [[Rcpp::plugins(openmp)]] // [[Rcpp::export(wait_a_second)]] bool wait_a_second(int ncores) { #if defined(_OPENMP) #pragma omp parallel for num_threads(ncores) #endif for(size_t ii = 0; ii &amp;lt; 8; ii++) { sleep(1); } return 1; } &amp;#39;) system.time(wait_a_second(1))[3] ## elapsed ## 8.001 system.time(wait_a_second(4))[3] ## elapsed ## 2.</description>
+      <description>Basic examples Parallel random number generation Using OMP in R packages    body { text-align: justify}  Here we describe some basic examples on the use of OpenMP to parallelise Rcpp code. We assume that the reader has some basic familiarity with OpenMP. If you need a refresher, have a look at these notes from the Chris Wood.
+Basic examples The following Rcpp program simply pauses the system for a sec seconds:</description>
     </item>
     
   </channel>

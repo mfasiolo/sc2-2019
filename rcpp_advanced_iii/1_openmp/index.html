@@ -15,8 +15,8 @@
 
     
       
-      <meta property="description" content="library(RhpcBLASctl) omp_set_num_threads(4) library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;unistd.h&amp;gt; #include &amp;lt;Rcpp.h&amp;gt; // [[Rcpp::plugins(openmp)]] // [[Rcpp::export(wait_a_second)]] bool &amp;hellip;">
-      <meta property="og:description" content="library(RhpcBLASctl) omp_set_num_threads(4) library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;unistd.h&amp;gt; #include &amp;lt;Rcpp.h&amp;gt; // [[Rcpp::plugins(openmp)]] // [[Rcpp::export(wait_a_second)]] bool &amp;hellip;">
+      <meta property="description" content="Here we describe some basic examples on the use of OpenMP to parallelise Rcpp code. We assume that the reader has some basic familiarity with OpenMP. If you need a refresher, have a look at these &amp;hellip;">
+      <meta property="og:description" content="Here we describe some basic examples on the use of OpenMP to parallelise Rcpp code. We assume that the reader has some basic familiarity with OpenMP. If you need a refresher, have a look at these &amp;hellip;">
       
     
 
@@ -138,25 +138,45 @@
 body {
 text-align: justify}
 </style>
+<p>Here we describe some basic examples on the use of OpenMP to parallelise Rcpp code. We assume that the reader has some basic familiarity with OpenMP. If you need a refresher, have a look at <a href="http://chryswoods.com/beginning_openmp/">these notes</a> from the Chris Wood.</p>
 <div id="basic-examples" class="section level3">
 <h3>Basic examples</h3>
-<pre class="r"><code>library(RhpcBLASctl)
-omp_set_num_threads(4)</code></pre>
+<p>The following <code>Rcpp</code> program simply pauses the system for a <code>sec</code> seconds:</p>
 <pre class="r"><code>library(Rcpp)
 sourceCpp(code = &#39;
 #include &lt;unistd.h&gt;
 #include &lt;Rcpp.h&gt;
 
+// [[Rcpp::export(wait_a_second)]]
+bool wait_a_second(int sec)
+{
+ for(size_t ii = 0; ii &lt; sec; ii++)
+ { 
+  sleep(1);
+ }
+ return 1;
+}
+&#39;)
+
+system.time( wait_a_second(2) )[3]</code></pre>
+<pre><code>## elapsed 
+##       2</code></pre>
+<p>Where <code>sleep</code> is defined in <code>unistd.h</code>. The following function uses OpenMP to wait <code>sec</code> seconds on <code>ncores</code> in parallel:</p>
+<pre class="r"><code>sourceCpp(code = &#39;
+#include &lt;unistd.h&gt;
+#include &lt;Rcpp.h&gt;
+
 // [[Rcpp::plugins(openmp)]]
 
-// [[Rcpp::export(wait_a_second)]]
-bool wait_a_second(int ncores)
+// [[Rcpp::export(wait_a_second_omp)]]
+bool wait_a_second_omp(int sec, int ncores)
 {
 
  #if defined(_OPENMP)
-  #pragma omp parallel for num_threads(ncores)
+  #pragma omp parallel num_threads(ncores)
+  #pragma omp for
  #endif
- for(size_t ii = 0; ii &lt; 8; ii++)
+ for(size_t ii = 0; ii &lt; sec; ii++)
  { 
   sleep(1);
  }
@@ -165,15 +185,21 @@ bool wait_a_second(int ncores)
 
  }
 &#39;)</code></pre>
-<pre class="r"><code>system.time(wait_a_second(1))[3]</code></pre>
+<p>Not that we use the <code>Rcpp::plugins</code> to use OpenMP in the compilation of the function. The key OpenMP directives are</p>
+<pre class="r"><code>#pragma omp parallel num_threads(ncores)</code></pre>
+<p>which indicates the beginning of a parallel section, to be executed on <code>ncores</code> parallel thread and</p>
+<pre class="r"><code>#pragma omp for</code></pre>
+<p>which tell the compiler that the <code>for</code> loop can be run in parallel. Let try if this works:</p>
+<pre class="r"><code>system.time(wait_a_second_omp(4, 1))[3]</code></pre>
 <pre><code>## elapsed 
-##   8.001</code></pre>
-<pre class="r"><code>system.time(wait_a_second(4))[3]</code></pre>
+##   4.001</code></pre>
+<pre class="r"><code>system.time(wait_a_second_omp(4, 4))[3]</code></pre>
 <pre><code>## elapsed 
-##   2.013</code></pre>
-<pre class="r"><code>system.time(wait_a_second(8))[3]</code></pre>
+##   1.014</code></pre>
+<pre class="r"><code>system.time(wait_a_second_omp(16, 16))[3]</code></pre>
 <pre><code>## elapsed 
-##       1</code></pre>
+##   1.001</code></pre>
+<p>It seems so! Note that the speed up is linear in the number of threads in this case, because each thread is essentially doing nothing. That is, there is no competition for computing resources (i.e., floating-point processing units). To illustrate this, let us consider the following <code>Rcpp</code> function:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
 #include &lt;Rcpp.h&gt;
 using namespace Rcpp;
@@ -194,6 +220,7 @@ bool allFiniteCpp(NumericVector x)
 
  }
 &#39;)</code></pre>
+<p>which returns <code>TRUE</code> is all the elements of <code>x</code> are finite, <code>FALSE</code> otherwise. We can use OpenMP to parallelise it as follows:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
 #include &lt;Rcpp.h&gt;
 using namespace Rcpp;
@@ -201,7 +228,7 @@ using namespace Rcpp;
 // [[Rcpp::plugins(openmp)]]
 
 // [[Rcpp::export(allFiniteOMP)]]
-bool allFiniteCpp(NumericVector x, int ncores)
+bool allFiniteOMP(NumericVector x, int ncores)
 {
 
  size_t n = x.size();
@@ -219,47 +246,31 @@ bool allFiniteCpp(NumericVector x, int ncores)
 
  }
 &#39;)</code></pre>
+<p>On my Intel i7-3820 3.60GHz CPU with 4 cores 8 threads I get the following timing:</p>
 <pre class="r"><code>x &lt;- rnorm(1e7)
 
 library(microbenchmark)
-microbenchmark(allFiniteSeq(x),
+microbenchmark(all(is.finite(x)),
+               allFiniteSeq(x),
                allFiniteOMP(x, 1), 
-               allFiniteOMP(x, 2),
                allFiniteOMP(x, 4),
-               allFiniteOMP(x, 8),
-               all(is.finite(x)))</code></pre>
-<pre><code>## Unit: milliseconds
-##                expr       min        lq      mean    median        uq      max
-##     allFiniteSeq(x) 12.825090 12.966708 13.170273 13.076306 13.264581 15.73213
-##  allFiniteOMP(x, 1) 13.192671 13.405119 13.589366 13.569057 13.663625 14.29982
-##  allFiniteOMP(x, 2)  7.157599  7.368618  7.779967  7.452484  7.655594 12.35964
-##  allFiniteOMP(x, 4)  7.247023  7.422949  7.717550  7.488703  7.645117 11.89382
-##  allFiniteOMP(x, 8)  7.329287  7.491592  8.038977  7.594626  7.984699 11.70556
-##   all(is.finite(x)) 42.498755 42.994095 45.594357 46.200937 47.051215 89.33204
-##  neval
-##    100
-##    100
-##    100
-##    100
-##    100
-##    100</code></pre>
-<pre class="r"><code>x &lt;- rnorm(1e3)
+               allFiniteOMP(x, 8), 
+               allFiniteOMP(x, 16),
+               unit = &#39;relative&#39;)
 
-library(microbenchmark)
-microbenchmark(allFiniteSeq(x),
-               allFiniteOMP(x, 1), 
-               allFiniteOMP(x, 2),
-               allFiniteOMP(x, 4),
-               allFiniteOMP(x, 8),
-               all(is.finite(x)))</code></pre>
-<pre><code>## Unit: microseconds
-##                expr    min      lq      mean  median       uq      max neval
-##     allFiniteSeq(x)  2.998  4.0070   5.24207  4.8700   5.7505   28.961   100
-##  allFiniteOMP(x, 1)  3.840  4.9460   6.32442  5.8760   6.8325   14.707   100
-##  allFiniteOMP(x, 2)  3.391  5.9525 351.89647 24.1260  57.4310 4347.154   100
-##  allFiniteOMP(x, 4) 18.472 33.0645 500.17873 57.4500  95.8690 4367.363   100
-##  allFiniteOMP(x, 8) 28.097 49.1145 717.48923 73.7265 162.1075 4424.545   100
-##   all(is.finite(x))  3.007  5.9545   7.07551  6.6455   8.0935   14.460   100</code></pre>
+# Unit: relative
+#                 expr       min        lq       mean    median         uq       max neval
+#    all(is.finite(x)) 18.837335 17.926310 13.9724439 17.217159 12.5035659 6.9339805   100
+#      allFiniteSeq(x)  4.456039  4.290143  3.2039422  4.094480  2.5073357 1.9833380   100
+#   allFiniteOMP(x, 1)  4.474725  4.296961  3.1659560  4.097613  2.5063335 1.8042596   100
+#   allFiniteOMP(x, 4)  1.198264  1.243619  0.9922528  1.210484  0.7580539 1.0319743   100
+#   allFiniteOMP(x, 8)  1.000000  1.000000  1.0000000  1.000000  1.0000000 1.0000000   100
+#  allFiniteOMP(x, 16)  1.052189  1.122954  1.0166792  1.191262  0.9286961 0.6897481   100</code></pre>
+<p>Note that the <code>Rcpp</code> version is around 4 times fast that the <code>R</code> code, and that with 4 threads we get more or less are linear speed-up. However, the speed-up gains are negligible after that, and using 16 threads is actually detrimental. This is because a processor with 4 core has probably 4 physical floating-point (FLOP) units, hence trying to parallelise numerical computations on more than 4 threads does not make sense (the threads will start to compete for the same FLOP units). Note that above we used:</p>
+<pre class="r"><code>#pragma omp parallel for num_threads(ncores)</code></pre>
+<p>which is a shortcut for:</p>
+<pre class="r"><code>#pragma omp parallel num_threads(ncores)
+#pragma omp for</code></pre>
 </div>
 <div id="parallel-random-number-generation" class="section level3">
 <h3>Parallel random number generation</h3>
@@ -322,11 +333,11 @@ Rcpp::NumericVector runif_sitmo_omp(unsigned int n,
 nstep &lt;- 100
 
 hist(runif_sitmo_omp(n, nstep = nstep, seeds = c(1.0)))</code></pre>
-<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
 <pre class="r"><code>hist(runif_sitmo_omp(n, nstep = nstep, seeds = c(1.0, 2)))</code></pre>
-<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
+<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
 <pre class="r"><code>hist(rowSums(matrix(runif(n*nstep), n, nstep)))</code></pre>
-<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-9-3.png" width="672" /></p>
+<p><img src="/sc2-2019/rcpp_advanced_III/1_OpenMP_files/figure-html/unnamed-chunk-12-3.png" width="672" /></p>
 <pre class="r"><code>library(microbenchmark)
 microbenchmark(rowSums(matrix(runif(n*nstep), n, nstep)),
                runif_sitmo_omp(n, nstep = nstep, seeds = 1),
@@ -334,13 +345,13 @@ microbenchmark(rowSums(matrix(runif(n*nstep), n, nstep)),
                )</code></pre>
 <pre><code>## Unit: microseconds
 ##                                            expr      min        lq      mean
-##     rowSums(matrix(runif(n * nstep), n, nstep)) 3050.409 3542.4415 3609.8699
-##    runif_sitmo_omp(n, nstep = nstep, seeds = 1)  378.736  387.9195  399.9286
-##  runif_sitmo_omp(n, nstep = nstep, seeds = 1:4)  350.874  399.1220  499.1910
+##     rowSums(matrix(runif(n * nstep), n, nstep)) 2940.740 2991.6115 3340.5192
+##    runif_sitmo_omp(n, nstep = nstep, seeds = 1)  377.893  384.4810  391.9192
+##  runif_sitmo_omp(n, nstep = nstep, seeds = 1:4)  354.929  395.9395  419.4215
 ##     median        uq      max neval
-##  3552.4365 3573.1960 7872.494   100
-##   392.6990  397.6050  614.200   100
-##   412.3995  428.5295 7052.458   100</code></pre>
+##  3574.6395 3598.4325 5390.918   100
+##   390.1595  395.6795  430.722   100
+##   413.9935  436.6965  519.920   100</code></pre>
 </div>
 <div id="using-omp-in-r-packages" class="section level3">
 <h3>Using OMP in R packages</h3>
