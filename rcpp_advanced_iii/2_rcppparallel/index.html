@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>2. RcppParallel - SC2</title>
+    <meta property="og:title" content="2. RcppParallel - SC2">
+    
+    <meta name="twitter:card" content="summary">
+
+    
+      
+    
+
+    
+      
+      <meta property="description" content="Here we briefly introduce the RcppParallel R package. As explained in the previous section, Rcpp and R’s C API are not guaranteed to be thread-safe, hence calling them within parallel code is ‘for &amp;hellip;">
+      <meta property="og:description" content="Here we briefly introduce the RcppParallel R package. As explained in the previous section, Rcpp and R’s C API are not guaranteed to be thread-safe, hence calling them within parallel code is ‘for &amp;hellip;">
+      
+    
+
+    
+    
+
+    
+
+    
+    
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
+    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+
+<link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="breadcrumbs">
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/">rcpp_advanced_iii / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/2_rcppparallel/">2_rcppparallel / </a>
+    
+</nav>
+
+  </head>
+
+  
+  <body class="sc2-2019">
+    <header class="masthead">
+      <h1><a href="/sc2-2019/">SC2</a></h1>
+
+<p class="tagline">Statistical Computing 2</p>
+
+      <nav class="menu">
+  <input id="menu-check" type="checkbox" />
+  <label id="menu-label" for="menu-check" class="unselectable">
+    <span class="icon close-icon">✕</span>
+    <span class="icon open-icon">☰</span>
+    <span class="text">Menu</span>
+  </label>
+  <ul>
+  
+  
+  <li><a href="/sc2-2019/">Home</a></li>
+  
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_iii/">Parallel Rcpp</a></li>
+  
+  
+  </ul>
+</nav>
+
+    </header>
+
+    <article class="main">
+      <header class="title">
+      
+<h1>2. RcppParallel</h1>
+
+<h3>
+</h3>
+<hr>
+
+
+      </header>
+
+
+
+
+
+<div id="TOC">
+<ul>
+<li><a href="#thread-safe-accessors">Thread-safe accessors</a></li>
+<li><a href="#parallel-for-loops-with-rcppparallel">Parallel for loops with RcppParallel</a></li>
+</ul>
+</div>
+
+<style>
+body {
+text-align: justify}
+</style>
+<p>Here we briefly introduce the <code>RcppParallel</code> R package. As explained in the previous section, Rcpp and R’s C API are not guaranteed to be thread-safe, hence calling them within parallel code is ‘for experts only’. <code>RcppParallel</code> provides tools to access R vectors and matrices in a thread-safe ways, thus making parallel coding easier. It also provides simple tools to parallelise your code at a higher level of abstractions, e.g. without explicitly handling parallel threads. Here we introduce the library via some basic examples, for more details see <a href="https://rcppcore.github.io/RcppParallel/">RcppParallel’s website</a>.</p>
+<div id="thread-safe-accessors" class="section level3">
+<h3>Thread-safe accessors</h3>
+<p>Consider the problem of computing the <a href="https://en.wikipedia.org/wiki/Error_function">error function</a>. In <code>R</code> this can be done by:</p>
+<pre class="r"><code>x &lt;- rnorm(1e5)
+2 * pnorm(x * sqrt(2)) - 1</code></pre>
+<p>An Rcpp function for doing this is:</p>
+<pre class="r"><code>library(Rcpp)
+sourceCpp(code = &#39;
+#include &lt;boost/math/special_functions/erf.hpp&gt;
+#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+// [[Rcpp::depends(BH)]]
+
+// [[Rcpp::export(erf)]]
+NumericVector erf(NumericVector x)
+{
+
+ size_t n = x.size();
+ NumericVector out(n);
+ 
+ for(size_t ii = 0; ii &lt; n; ii++)
+ {
+  out[ii] = boost::math::erf(x[ii]);
+ }
+ 
+ return out;
+
+ }
+&#39;)</code></pre>
+<p>Note that we use the error function defined in the <code>Boost</code> C++ library, which shipped via the <code>BH</code> package. Let’s see whether it works:</p>
+<pre class="r"><code>x &lt;- rnorm(1e5)
+max(abs( (2 * pnorm(x * sqrt(2)) - 1) - erf(x)))</code></pre>
+<pre><code>## [1] 4.440892e-16</code></pre>
+<p>The numerical differences seems tolerable. However:</p>
+<pre class="r"><code>library(microbenchmark)
+microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
+               erf(x), 
+               times = 100, 
+               unit = &quot;relative&quot;)</code></pre>
+<pre><code>## Unit: relative
+##    expr      min       lq     mean   median       uq      max neval
+##       R 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000   100
+##  erf(x) 1.552641 1.552314 1.511558 1.533811 1.439118 2.246672   100</code></pre>
+<p>our <code>Rcpp</code> function does not seem very efficient. Let’s see whether we can do any better by parallelising the code via <code>RcppParalel</code> and OpenMP. In particular, consider the function:</p>
+<pre class="r"><code>library(Rcpp)
+sourceCpp(code = &#39;
+#include &lt;boost/math/special_functions/erf.hpp&gt;
+#include &lt;Rcpp.h&gt;
+#include &lt;RcppParallel.h&gt;
+using namespace Rcpp;
+
+// [[Rcpp::depends(BH)]]
+// [[Rcpp::depends(RcppParallel)]]
+// [[Rcpp::plugins(openmp)]]
+
+// [[Rcpp::export(erfOmp)]]
+NumericVector erfOmp(NumericVector x, int ncores)
+{
+
+ size_t n = x.size();
+ NumericVector out(n);
+ RcppParallel::RVector&lt;double&gt; wo(out);
+ RcppParallel::RVector&lt;double&gt; wx(x);
+ 
+ #if defined(_OPENMP)
+  #pragma omp parallel for num_threads(ncores)
+ #endif
+ for(size_t ii = 0; ii &lt; n; ii++)
+ {
+  wo[ii] = boost::math::erf(wx[ii]);
+ }
+ 
+ return out;
+
+ }
+&#39;)</code></pre>
+<p>Note that the main loop has been parallelised via the <code>OpenMP</code> directive:</p>
+<pre class="cpp"><code>#pragma omp parallel for num_threads(ncores)</code></pre>
+<p>which we have already seen in a previous section. However, within the parallel for loop, we access the input (<code>x</code>) and output (<code>out</code>) vectors via two wrappers of class <code>RVector&lt;double&gt;</code>. The <code>RVector</code> class provides a wrapper around an Rcpp vector, which can be accessed in a thread-safe way. Importantly, no copy is taken. Let us test the function:</p>
+<pre class="r"><code>x &lt;- rnorm(1e6)
+max(abs( (2 * pnorm(x * sqrt(2)) - 1) - erfOmp(x, 4)))</code></pre>
+<pre><code>## [1] 4.440892e-16</code></pre>
+<p>Looks close enough. On my Intel i7-3820 3.60GHz CPU with 4 cores 8 threads I get the following relative performance:</p>
+<pre class="r"><code>microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
+               erfOmp(x, 1), 
+               erfOmp(x, 4),
+               erfOmp(x, 8),
+               times = 100, 
+               unit = &#39;relative&#39;)</code></pre>
+<pre class="r"><code>Unit: relative
+         expr      min       lq     mean   median       uq       max neval
+            R 3.917945 3.730506 2.670977 3.640551 2.311171 1.0804159   100
+ erfOmp(x, 1) 5.655606 5.364018 3.614429 4.920997 3.071247 1.2622486   100
+ erfOmp(x, 4) 1.455907 1.849221 1.203794 1.673076 1.073541 0.4431302   100
+ erfOmp(x, 8) 1.000000 1.000000 1.000000 1.000000 1.000000 1.0000000   100</code></pre>
+<p>So our Rcpp code is not very efficient, but using 8 threads reduces the computational time by a factor of over 3, relative to the basic R code.</p>
+<p>Here we simply used the <code>RVector</code> class from <code>RcppParallel</code>, but the offers also a <code>RMatrix</code> class, which is thread-safe accessor for Rcpp matrices (e.g., <code>NumericMatrix</code>). See <a href="https://gallery.rcpp.org/articles/parallel-matrix-transform/">here</a> for an example.</p>
+</div>
+<div id="parallel-for-loops-with-rcppparallel" class="section level3">
+<h3>Parallel for loops with RcppParallel</h3>
+<p>So far we simply used <code>RVector</code> wrapper provided by <code>RcppParallel</code>, now we aim at exploiting also its parallelisation tools. Before doing that, consider the following function:</p>
+<pre class="r"><code>sourceCpp(code = &#39;
+#include &lt;boost/math/special_functions/erf.hpp&gt;
+#include &lt;Rcpp.h&gt;
+
+// [[Rcpp::depends(BH)]]
+
+double myFun(double y){
+  return boost::math::erf(y);
+} 
+
+// [[Rcpp::export(erfStd)]]
+Rcpp::NumericVector erfStd(Rcpp::NumericVector x) {
+  
+  Rcpp::NumericVector out(x.length());
+  
+  std::transform(x.begin(), x.end(), out.begin(), myFun);
+  
+  return out;
+}
+&#39;)</code></pre>
+<p>which is analogous to our original <code>erf</code> function, but now we use <code>std::trasform</code> in place of the explicit for loop. The performance is not much different:</p>
+<pre class="r"><code>microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
+               erfStd(x),
+               times = 100, 
+               unit = &#39;relative&#39;)</code></pre>
+<pre class="r"><code>Unit: relative
+      expr      min       lq     mean  median     uq      max neval
+         R 1.000000 1.000000 1.000000 1.00000 1.0000 1.000000  1000
+ erfStd(x) 1.441561 1.441671 1.413499 1.44087 1.4398 1.244145  1000</code></pre>
+<p>but now its easier to explain the next step, which entains using <code>RcppParallel</code> to parallelise the computation. In particular, consider the following function:</p>
+<pre class="r"><code>sourceCpp(code = &#39;
+#include &lt;boost/math/special_functions/erf.hpp&gt;
+#include &lt;Rcpp.h&gt;
+#include &lt;RcppParallel.h&gt;
+using namespace RcppParallel;
+
+// [[Rcpp::depends(BH)]]
+// [[Rcpp::depends(RcppParallel)]]
+
+double myFun(double y){
+  
+  return boost::math::erf(y);
+
+} 
+
+struct ErfVec : public Worker
+{
+   const RVector&lt;double&gt; in;
+   
+   RVector&lt;double&gt; out;
+   
+   ErfVec(const Rcpp::NumericVector in_, Rcpp::NumericVector out_) 
+      : in(in_), out(out_) {}
+   
+   void operator()(std::size_t begin, std::size_t end) {
+      std::transform(in.begin() + begin, 
+                     in.begin() + end, 
+                     out.begin() + begin, 
+                     myFun);
+   }
+};
+
+// [[Rcpp::export(erfPar)]]
+Rcpp::NumericVector erfPar(Rcpp::NumericVector x) {
+  
+  Rcpp::NumericVector out(x.length());
+  
+  ErfVec obj(x, out);
+  
+  parallelFor(0, x.length(), obj);
+  
+  return out;
+}
+&#39;)</code></pre>
+<p>Before explaining how this works, let’s check whether it gives correct results:</p>
+<pre class="r"><code>max(abs( (2 * pnorm(x * sqrt(2)) - 1) - erfPar(x)))</code></pre>
+<pre><code>## [1] 4.440892e-16</code></pre>
+<p>and let’s check its computational performance:</p>
+<pre class="r"><code>microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
+               erfOmp(x, 4),
+               erfPar(x),
+               times = 100, 
+               unit = &#39;relative&#39;)</code></pre>
+<pre class="r"><code>Unit: relative
+         expr      min       lq     mean   median       uq      max neval
+            R 3.796436 3.690092 3.292871 3.620027 2.779049 1.767327  1000
+ erfOmp(x, 4) 1.406560 1.403641 1.485432 1.792938 1.381837 1.221522  1000
+    erfPar(x) 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000  1000</code></pre>
+<p>which seems quite good!</p>
+<p>Gaussian log-likelihood:</p>
+<pre class="r"><code>sourceCpp(code = &#39; 
+#include &lt;Rcpp.h&gt;
+#include &lt;cmath&gt;
+using namespace Rcpp;
+
+double gld(double x1, double x2){
+
+ return x1 - x2 * x2 / 2.0;
+
+}
+
+// [[Rcpp::export]]
+double dnormSeq(NumericVector x) {
+
+  double out = std::accumulate(x.begin(), x.end(), 0.0, gld);
+  
+  out -= x.length() * ::log(2 * M_PI) / 2;
+  
+  return out;
+}
+&#39;)
+
+x &lt;- rnorm(1e6)
+dnormSeq(x)</code></pre>
+<pre><code>## [1] -1419654</code></pre>
+<pre class="r"><code>sum(dnorm(x, log = TRUE))</code></pre>
+<pre><code>## [1] -1419654</code></pre>
+<pre class="r"><code>library(microbenchmark)
+microbenchmark(sum(dnorm(x, log = TRUE)), 
+               dnormSeq(x))</code></pre>
+<pre><code>## Unit: milliseconds
+##                       expr       min        lq      mean    median        uq
+##  sum(dnorm(x, log = TRUE)) 19.607889 23.226383 22.808089 23.422201 23.515666
+##                dnormSeq(x)  1.833589  1.941836  1.988338  1.986762  2.013786
+##        max neval
+##  24.013625   100
+##   3.048576   100</code></pre>
+<p>parallelReduce version</p>
+<pre class="r"><code>sourceCpp(code = &#39; 
+#include &lt;boost/math/special_functions/erf.hpp&gt;
+#include &lt;Rcpp.h&gt;
+#include &lt;RcppParallel.h&gt;
+using namespace RcppParallel;
+
+// [[Rcpp::depends(BH)]]
+// [[Rcpp::depends(RcppParallel)]]
+
+double gld(double x1, double x2){
+
+ return x1 - x2 * x2 / 2.0;
+
+}
+
+struct Sum : public Worker
+{
+   // source vector
+   const RVector&lt;double&gt; input;
+
+   // accumulated value
+   double value;
+
+   // constructors
+   Sum(const Rcpp::NumericVector input) : input(input), value(0) {}
+   Sum(const Sum&amp; sum, Split) : input(sum.input), value(0) {}
+
+   void operator()(std::size_t begin, std::size_t end) {
+      value += std::accumulate(input.begin() + begin, input.begin() + end, 0.0, gld);
+   }
+
+   // join my value with that of another Sum
+   void join(const Sum&amp; rhs) {
+      value += rhs.value;
+   }
+};
+
+// [[Rcpp::export]]
+double parallelVectorSum(Rcpp::NumericVector x) {
+
+   // declare the SumBody instance
+   Sum sum(x);
+
+   // call parallel_reduce to start the work
+   parallelReduce(0, x.length(), sum);
+
+   // return the computed sum
+   return sum.value -= x.length() * ::log(2 * M_PI) / 2;
+}
+
+&#39;)
+
+
+sum(dnorm(x, log = TRUE))</code></pre>
+<pre><code>## [1] -1419654</code></pre>
+<pre class="r"><code>parallelVectorSum(x)</code></pre>
+<pre><code>## [1] -1419654</code></pre>
+<pre class="r"><code>microbenchmark(sum(dnorm(x, log = TRUE)), 
+               dnormSeq(x), 
+               parallelVectorSum(x))</code></pre>
+<pre><code>## Unit: milliseconds
+##                       expr       min        lq      mean    median        uq
+##  sum(dnorm(x, log = TRUE)) 19.590216 23.157440 22.843710 23.370250 23.498983
+##                dnormSeq(x)  1.823195  1.883070  1.947010  1.964745  2.001692
+##       parallelVectorSum(x)  1.977280  2.049134  2.093503  2.087781  2.116452
+##        max neval
+##  24.044138   100
+##   2.115934   100
+##   3.168850   100</code></pre>
+</div>
+
+
+  <footer>
+  
+
+<script src="//yihui.name/js/math-code.js"></script>
+<script async src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script async src="//yihui.name/js/center-img.js"></script>
+
+
+<script type="text/javascript">
+var sc_project=12110974;
+var sc_invisible=1;
+var sc_security="9b171880";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12110974/0/9b171880/1/"
+alt="Web Analytics"></a></div></noscript>
+
+
+
+
+
+
+
+
+  
+
+
+<p align=right>
+
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp_advanced_III/2_RcppParallel.Rmd'>View source</a>
+
+|
+
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp_advanced_III/2_RcppParallel.Rmd'>Edit source</a>
+
+</p>
+
+
+
+
+
+<script src="https://utteranc.es/client.js"
+        repo="awllee/sc1-2019"
+        issue-term="pathname"
+        label="utterance"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+
+  
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+  
+  <hr>
+  <div class="copyright">© 2020 <a href="https://mfasiolo.github.io/">Matteo Fasiolo</a></div>
+  
+  </footer>
+  </article>
+  
+  </body>
+</html>
+
