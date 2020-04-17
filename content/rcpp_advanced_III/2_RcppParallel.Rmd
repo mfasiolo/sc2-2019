@@ -1,0 +1,335 @@
+---
+title: 2. RcppParallel
+weight: 2
+output:
+  blogdown::html_page:
+    toc: true
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+
+Here we briefly introduce the `RcppParallel` R package. As explained in the previous section, Rcpp and R's C API are not guaranteed to be thread-safe, hence calling them within parallel code is 'for experts only'. `RcppParallel` provides tools to access R vectors and matrices in a thread-safe ways, thus making parallel coding easier. It also provides simple tools to parallelise your code at a higher level of abstractions, e.g. without explicitly handling parallel threads. Here we introduce the library via some basic examples, for more details see [RcppParallel's website](https://rcppcore.github.io/RcppParallel/).
+
+### Thread-safe accessors
+
+Consider the problem of computing the [error function](https://en.wikipedia.org/wiki/Error_function). In `R` this can be done by:
+```{r, eval = FALSE}
+x <- rnorm(1e5)
+2 * pnorm(x * sqrt(2)) - 1
+```
+An Rcpp function for doing this is:
+```{r}
+library(Rcpp)
+sourceCpp(code = '
+#include <boost/math/special_functions/erf.hpp>
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::depends(BH)]]
+
+// [[Rcpp::export(erf)]]
+NumericVector erf(NumericVector x)
+{
+
+ size_t n = x.size();
+ NumericVector out(n);
+ 
+ for(size_t ii = 0; ii < n; ii++)
+ {
+  out[ii] = boost::math::erf(x[ii]);
+ }
+ 
+ return out;
+
+ }
+')
+```
+Note that we use the error function defined in the `Boost` C++ library, which shipped via the `BH` package. Let's see whether it works:
+```{r}
+x <- rnorm(1e5)
+max(abs( (2 * pnorm(x * sqrt(2)) - 1) - erf(x)))
+```
+The numerical differences seems tolerable. However:
+```{r}
+library(microbenchmark)
+microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
+               erf(x), 
+               times = 100, 
+               unit = "relative")
+```
+our `Rcpp` function does not seem very efficient. Let's see whether we can do any better by parallelising the code via `RcppParalel` and OpenMP. In particular, consider the function:
+```{r}
+library(Rcpp)
+sourceCpp(code = '
+#include <boost/math/special_functions/erf.hpp>
+#include <Rcpp.h>
+#include <RcppParallel.h>
+using namespace Rcpp;
+
+// [[Rcpp::depends(BH)]]
+// [[Rcpp::depends(RcppParallel)]]
+// [[Rcpp::plugins(openmp)]]
+
+// [[Rcpp::export(erfOmp)]]
+NumericVector erfOmp(NumericVector x, int ncores)
+{
+
+ size_t n = x.size();
+ NumericVector out(n);
+ RcppParallel::RVector<double> wo(out);
+ RcppParallel::RVector<double> wx(x);
+ 
+ #if defined(_OPENMP)
+  #pragma omp parallel for num_threads(ncores)
+ #endif
+ for(size_t ii = 0; ii < n; ii++)
+ {
+  wo[ii] = boost::math::erf(wx[ii]);
+ }
+ 
+ return out;
+
+ }
+')
+```
+Note that the main loop has been parallelised via the `OpenMP` directive:
+```{r engine='Rcpp', eval = FALSE}
+#pragma omp parallel for num_threads(ncores)
+```
+which we have already seen in a previous section. However, within the parallel for loop, we access the input (`x`) and output (`out`) vectors via two wrappers of class `RVector<double>`. The `RVector` class provides a wrapper around an Rcpp vector, which can be accessed in a thread-safe way. Importantly, no copy is taken. Let us test the function:
+```{r}
+x <- rnorm(1e6)
+max(abs( (2 * pnorm(x * sqrt(2)) - 1) - erfOmp(x, 4)))
+```
+Looks close enough. On my Intel i7-3820 3.60GHz CPU with 4 cores 8 threads I get the following relative performance: 
+```{r, results = 'hide'}
+microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
+               erfOmp(x, 1), 
+               erfOmp(x, 4),
+               erfOmp(x, 8),
+               times = 100, 
+               unit = 'relative')
+```
+```{r, eval = FALSE}
+Unit: relative
+         expr      min       lq     mean   median       uq       max neval
+            R 3.917945 3.730506 2.670977 3.640551 2.311171 1.0804159   100
+ erfOmp(x, 1) 5.655606 5.364018 3.614429 4.920997 3.071247 1.2622486   100
+ erfOmp(x, 4) 1.455907 1.849221 1.203794 1.673076 1.073541 0.4431302   100
+ erfOmp(x, 8) 1.000000 1.000000 1.000000 1.000000 1.000000 1.0000000   100
+```
+So our Rcpp code is not very efficient, but using 8 threads reduces the computational time by a factor of over 3, relative to the basic R code. 
+
+Here we simply used the `RVector` class from `RcppParallel`, but the offers also a `RMatrix` class, which is thread-safe accessor for Rcpp matrices (e.g., `NumericMatrix`). See [here](https://gallery.rcpp.org/articles/parallel-matrix-transform/) for an example.
+
+### Parallel for loops with RcppParallel
+
+So far we simply used `RVector` wrapper provided by `RcppParallel`, now we aim at exploiting also its parallelisation tools. Before doing that, consider the following function:
+```{r}
+sourceCpp(code = '
+#include <boost/math/special_functions/erf.hpp>
+#include <Rcpp.h>
+
+// [[Rcpp::depends(BH)]]
+
+double myFun(double y){
+  return boost::math::erf(y);
+} 
+
+// [[Rcpp::export(erfStd)]]
+Rcpp::NumericVector erfStd(Rcpp::NumericVector x) {
+  
+  Rcpp::NumericVector out(x.length());
+  
+  std::transform(x.begin(), x.end(), out.begin(), myFun);
+  
+  return out;
+}
+')
+```
+which is analogous to our original `erf` function, but now we use `std::trasform` in place of the explicit for loop. The performance is not much different:
+```{r, results = 'hide'}
+microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
+               erfStd(x),
+               times = 100, 
+               unit = 'relative')
+```
+```{r, eval = FALSE}
+Unit: relative
+      expr      min       lq     mean  median     uq      max neval
+         R 1.000000 1.000000 1.000000 1.00000 1.0000 1.000000  1000
+ erfStd(x) 1.441561 1.441671 1.413499 1.44087 1.4398 1.244145  1000
+```
+but now its easier to explain the next step, which entains using `RcppParallel` to parallelise the computation. In particular, consider the following function:
+```{r}
+sourceCpp(code = '
+#include <boost/math/special_functions/erf.hpp>
+#include <Rcpp.h>
+#include <RcppParallel.h>
+using namespace RcppParallel;
+
+// [[Rcpp::depends(BH)]]
+// [[Rcpp::depends(RcppParallel)]]
+
+double myFun(double y){
+  
+  return boost::math::erf(y);
+
+} 
+
+struct ErfVec : public Worker
+{
+   const RVector<double> in;
+   
+   RVector<double> out;
+   
+   ErfVec(const Rcpp::NumericVector in_, Rcpp::NumericVector out_) 
+      : in(in_), out(out_) {}
+   
+   void operator()(std::size_t begin, std::size_t end) {
+      std::transform(in.begin() + begin, 
+                     in.begin() + end, 
+                     out.begin() + begin, 
+                     myFun);
+   }
+};
+
+// [[Rcpp::export(erfPar)]]
+Rcpp::NumericVector erfPar(Rcpp::NumericVector x) {
+  
+  Rcpp::NumericVector out(x.length());
+  
+  ErfVec obj(x, out);
+  
+  parallelFor(0, x.length(), obj);
+  
+  return out;
+}
+')
+```
+Before explaining how this works, let's check whether it gives correct results:
+```{r}
+max(abs( (2 * pnorm(x * sqrt(2)) - 1) - erfPar(x)))
+```
+and let's check its computational performance:
+```{r, results='hide'}
+microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
+               erfOmp(x, 4),
+               erfPar(x),
+               times = 100, 
+               unit = 'relative')
+```
+```{r, eval = FALSE}
+Unit: relative
+         expr      min       lq     mean   median       uq      max neval
+            R 3.796436 3.690092 3.292871 3.620027 2.779049 1.767327  1000
+ erfOmp(x, 4) 1.406560 1.403641 1.485432 1.792938 1.381837 1.221522  1000
+    erfPar(x) 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000  1000
+```
+which seems quite good!
+
+Gaussian log-likelihood:
+```{r}
+sourceCpp(code = ' 
+#include <Rcpp.h>
+#include <cmath>
+using namespace Rcpp;
+
+double gld(double x1, double x2){
+
+ return x1 - x2 * x2 / 2.0;
+
+}
+
+// [[Rcpp::export]]
+double dnormSeq(NumericVector x) {
+
+  double out = std::accumulate(x.begin(), x.end(), 0.0, gld);
+  
+  out -= x.length() * ::log(2 * M_PI) / 2;
+  
+  return out;
+}
+')
+
+x <- rnorm(1e6)
+dnormSeq(x)
+sum(dnorm(x, log = TRUE))
+
+library(microbenchmark)
+microbenchmark(sum(dnorm(x, log = TRUE)), 
+               dnormSeq(x))
+```
+
+
+parallelReduce version
+```{r}
+sourceCpp(code = ' 
+#include <boost/math/special_functions/erf.hpp>
+#include <Rcpp.h>
+#include <RcppParallel.h>
+using namespace RcppParallel;
+
+// [[Rcpp::depends(BH)]]
+// [[Rcpp::depends(RcppParallel)]]
+
+double gld(double x1, double x2){
+
+ return x1 - x2 * x2 / 2.0;
+
+}
+
+struct Sum : public Worker
+{
+   // source vector
+   const RVector<double> input;
+
+   // accumulated value
+   double value;
+
+   // constructors
+   Sum(const Rcpp::NumericVector input) : input(input), value(0) {}
+   Sum(const Sum& sum, Split) : input(sum.input), value(0) {}
+
+   void operator()(std::size_t begin, std::size_t end) {
+      value += std::accumulate(input.begin() + begin, input.begin() + end, 0.0, gld);
+   }
+
+   // join my value with that of another Sum
+   void join(const Sum& rhs) {
+      value += rhs.value;
+   }
+};
+
+// [[Rcpp::export]]
+double parallelVectorSum(Rcpp::NumericVector x) {
+
+   // declare the SumBody instance
+   Sum sum(x);
+
+   // call parallel_reduce to start the work
+   parallelReduce(0, x.length(), sum);
+
+   // return the computed sum
+   return sum.value -= x.length() * ::log(2 * M_PI) / 2;
+}
+
+')
+
+
+sum(dnorm(x, log = TRUE))
+parallelVectorSum(x)
+
+microbenchmark(sum(dnorm(x, log = TRUE)), 
+               dnormSeq(x), 
+               parallelVectorSum(x))
+
+```
+
+
+
+
