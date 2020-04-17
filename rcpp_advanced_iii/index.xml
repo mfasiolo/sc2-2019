@@ -16,8 +16,8 @@
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/1_openmp/</guid>
-      <description>Basic examples Parallel random number generation using OpenMP Using OpenMP in R packages    body { text-align: justify}  Here we describe some basic examples on the use of OpenMP to parallelise Rcpp code. We assume that the reader has some basic familiarity with OpenMP. If you need a refresher, have a look at these notes from the Chris Wood.
-Basic examples The following Rcpp program simply pauses the system for a sec seconds:</description>
+      <description>Basic examples Parallel random number generation using OpenMP    body { text-align: justify}  Here we describe some basic examples on the use of OpenMP to parallelise Rcpp code. We assume that the reader has some basic familiarity with OpenMP. If you need a refresher, have a look at these notes from Chris Wood.
+Basic examples The following Rcpp program simply pauses the system for sec seconds:</description>
     </item>
     
   </channel>
