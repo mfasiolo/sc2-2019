@@ -35,7 +35,7 @@ library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;Rcpp.h&amp;gt; using n
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/1_openmp/</guid>
-      <description>Basic examples Parallel random number generation using OpenMP    body { text-align: justify}  Here we describe some basic examples on the use of OpenMP to parallelise Rcpp code. We assume that the reader has some basic familiarity with OpenMP. If you need a refresher, have a look at these notes from Chris Wood.
+      <description>Basic examples Parallel random number generation using OpenMP References    body { text-align: justify}  Here we describe some basic examples on the use of OpenMP to parallelise Rcpp code. We assume that the reader has some basic familiarity with OpenMP. If you need a refresher, have a look at these notes from Chris Wood.
 Basic examples The following Rcpp program simply pauses the system for sec seconds:</description>
     </item>
     
@@ -72,7 +72,7 @@ Basic examples The following Rcpp program simply pauses the system for sec secon
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/2_rcppparallel/</guid>
-      <description>Thread-safe accessors Parallel for loops with RcppParallel Parallel reductions with RcppParallel    body { text-align: justify}  Here we briefly introduce the RcppParallel R package. As explained in the previous section, Rcpp and R’s C API are not guaranteed to be thread-safe, hence calling them within parallel code is ‘for experts only’. RcppParallel provides tools to access R vectors and matrices in a thread-safe way, thus making parallel coding easier.</description>
+      <description>Thread-safe accessors Parallel for loops with RcppParallel Parallel reductions with RcppParallel References    body { text-align: justify}  Here we briefly introduce the RcppParallel R package. As explained in the previous section, Rcpp and R’s C API are not guaranteed to be thread-safe, hence calling them within parallel code is ‘for experts only’. RcppParallel provides tools to access R vectors and matrices in a thread-safe way, thus making parallel coding easier.</description>
     </item>
     
     <item>
