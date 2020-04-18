@@ -8,7 +8,7 @@ body {
 text-align: justify}
 </style>
 
-This chapter explains how to perform parallel computation in Rcpp, with a particular focus on the RcppParallel R package.
+This chapter explains how to perform parallel computation in Rcpp, with a particular focus on OpenMP API and RcppParallel R package.
 
 The chapter consists of the following sections:
 
