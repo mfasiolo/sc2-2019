@@ -235,7 +235,7 @@ void parallelFor(std::size_t begin,
                  Worker& worker,
                  std::size_t grainSize = 1)
 ```
-defined in the `RcppParallel` namespace. The first two arguments define the beginning and end of the for loop, the second is an object of type `Worker` (which we will discuss below) and the last argument defines determined the minimal chunk size for parallelization. That is, if we set `grainSize = 10`, then each thread will perform at least 10 iterations of the for loop. In the code above, an argument of type `ErfVec` is passed to `RcppParallel`, in the `Worker` argument. Objects of type `ErfVec` are data structures which inherit the `RcppParallel::Worker` type. The structure are two elements or members:
+defined in the `RcppParallel` namespace. The first two arguments define the beginning and end of the `for` loop, the third is an object of type `Worker` (which we will discuss below) and the last argument determines the minimal chunk size for parallelization. That is, if we set `grainSize = 10`, then each thread will perform at least 10 iterations of the for loop. In the code above, an argument of type `ErfVec` is passed to `RcppParallel`, via the `Worker` argument. Objects of type `ErfVec` are data structures which inherit the `RcppParallel::Worker` type. The structure has two elements or members:
 ```{r engine='Rcpp', eval = FALSE}
 const RVector<double> in;
 RVector<double> out;
@@ -250,7 +250,7 @@ which is called when we do:
 Rcpp::NumericVector out(x.length());
 ErfVec obj(x, out);
 ```
-Hence we allocate memory for the output vector and then we pass it to the `ErfVec` constructor, which will wrap it within an `RVector`. Then, the structure contains the operator:
+Hence, we allocate memory for the output vector and then we pass it to the `ErfVec` constructor, which will wrap it within an `RVector`. Then, the structure contains the operator:
 ```{r engine='Rcpp', eval = FALSE}
 void operator()(std::size_t begin, std::size_t end) {
     std::transform(in.begin() + begin, 
@@ -259,14 +259,14 @@ void operator()(std::size_t begin, std::size_t end) {
                    myFun);
 }
 ```
-which will be called by `parallelFor` on a section of the input vector delimited by `being` and `end`. 
+which will be called by `parallelFor` on a section of the input vector delimited by `begin` and `end`. 
 
-Note that `parallelFor` is itself an wrapper around a call to:
+If we look at the source code in `RcppParallel`, we see that `parallelFor` is itself a wrapper around a call to:
 ```{r engine='Rcpp', eval = FALSE}
 tbb::parallel_for(tbb::blocked_range<size_t>(begin, end, grainSize), 
                      tbbWorker);
 ```
-which is defined in Intel's [Threading Building Blocks (TBB)](https://github.com/oneapi-src/oneTBB) C++ library, which is shipped with `RcppParallel`. TBB is available on Windows, OS X, Linux, and Solaris x86, while on other platform will `parallelFor` will fall back on:
+which is defined in Intel's [Threading Building Blocks (TBB)](https://github.com/oneapi-src/oneTBB) C++ library and shipped with `RcppParallel`. TBB is available on Windows, OS X, Linux, and Solaris x86, while on other platforms `parallelFor` will fall back on:
 ```{r engine='Rcpp', eval = FALSE}
 void ttParallelFor(std::size_t begin, std::size_t end, 
                           Worker& worker, std::size_t grainSize = 1)
@@ -311,7 +311,7 @@ Here these lines:
    return x1 - (x2-m_) * (x2-m_) / (s_*s_*2.0); 
   };
 ```
-define a parametrised function, `gld`, with parameters `m_` and `s_`, which evaluates the log-density of a normal at $x_2$ (i.e. `dnorm(x2, m_, s_)`) and adds it to `x1`. In particular, here we are using a C++ [lambda function](https://stackoverflow.com/questions/7627098/what-is-a-lambda-expression-in-c11) to fix parameters `m_` and `s_` and to create a function with explicit arguments `x1` and `x2`, which can then be passed to `std::accumulate`. The equivalent R code is:
+define a parametrised function, `gld`, with parameters `m_` and `s_`, which evaluates the log-density of a normal at $x_2$ (as in `dnorm(x2, m_, s_)`) and adds it to `x1`. In particular, here we are using a C++ [lambda function](https://stackoverflow.com/questions/7627098/what-is-a-lambda-expression-in-c11) to fix parameters `m_` and `s_` and to create a function with explicit arguments `x1` and `x2`, which can then be passed to `std::accumulate`. The equivalent R code is:
 ```{R}
 # Create closure where m_ and s_ are fixed
 funCreator <- function(m_, s_){
@@ -410,7 +410,7 @@ Unit: relative
  RcppSeq  3.820691  3.851518  3.677526  3.635321  3.570393  3.351935   100
  RcppPar  1.000000  1.000000  1.000000  1.000000  1.000000  1.000000   100
 ```
-So on a 4 cores machine we are over 3 times faster. Let's try to understand how this woks. The `dnormPar` function is relatively similar to the `erfPar` example, described above. In particular, `std::accumulate` has been substituted by 
+So on a 4 cores machine we are over 3 times faster. Let's try to understand how this works. The `dnormPar` function is relatively similar to the `erfPar` example, described above. In particular, `std::accumulate` has been substituted by 
 ```{r engine = 'Rcpp', eval = FALSE}
 parallelReduce(0, x.length(), obj);
 ```
@@ -423,13 +423,14 @@ double value;
 ```
 The first is the input vector, the second and third are the mean and standard deviation of the Gaussian, and the last is the value of the log-likelihood accumulated so far. The object has two constructors, the first is:
 ```{r engine = 'Rcpp', eval = FALSE}
-Gau(const Rcpp::NumericVector input, const double m_, const double s_) : input(input), m(m_), s(s_), value(0) { }
+Gau(const Rcpp::NumericVector input, const double m_, const double s_) : 
+  input(input), m(m_), s(s_), value(0) { }
 ```
 This is the constructor being called when we do `Gau obj(x, m, s);` in `dnormPar`. The second constructor is:
 ```{r engine = 'Rcpp', eval = FALSE}
 Gau(const Gau& obj, Split) : input(obj.input), m(obj.m), s(obj.s), value(0) { }
 ```
-and will be called by `parallelReduce`. Note that it takes a reference to an object of type `Gau` as input, and it uses its member (e.g. `obj.input`) to initialise its own members. The `Split` argument is used by `parallelReduce` to split the computation. Then, we have the operator:
+and will be called by `parallelReduce`. Note that it takes a reference to an object of type `Gau` as input, and it uses its members (e.g. `obj.input`) to initialise its own members. The `Split` argument is used by `parallelReduce` to split the computation. Then, we have the operator:
 ```{r engine = 'Rcpp', eval = FALSE}
 void operator()(std::size_t begin, std::size_t end) {
  auto gld = [m1 = m, s1 = s](const double x1, const double x2) { 
@@ -438,13 +439,15 @@ void operator()(std::size_t begin, std::size_t end) {
  value += std::accumulate(input.begin() + begin, input.begin() + end, 0.0, gld);
 }
 ```
-which is used to perform the evaluation and accumulation of the log-likelihood (as done in the sequential version, above) but only on a subsection of the input vector. Note that we create the lambda function `gld` at this point, with argument `m1` and `s1` fixed to their values (`m` and `s`) within the `Gau` object. Then the join operator:
+which is used to perform the evaluation and accumulation of the log-likelihood (as done in the sequential version, above), but only on a subset of the input vector. Note that we create the lambda function `gld` at this point, with argument `m1` and `s1` fixed to their values (`m` and `s`) within the `Gau` object. The join operator:
 ```{r engine = 'Rcpp', eval = FALSE}
 void join(const Gau& rhs) {
     value += rhs.value;
 }
 ```
-is used by `parallelReduce` to perform the reduction. It might be possible to accelerate the `dnormPar` further. In fact, if we sustitute 
+is used by `parallelReduce` to perform the reduction. 
+
+It might be possible to accelerate the `dnormPar` further. In fact, if we substitute 
 ```{r engine = 'Rcpp', eval = FALSE}
 auto gld = [m1 = m, s1 = s]
 ```
@@ -453,7 +456,7 @@ with
 auto gld = [m1 = 0.5, s1 = 2.0]
 ```
 and recompile, we get a much better performance:
-```{r eval = FALSE}
+```{r, eval = FALSE}
 Unit: relative
     expr       min       lq       mean    median         uq       max neval
        R 167.53804 152.9173 123.351021 131.14373 114.322668 29.540746   100
@@ -463,3 +466,16 @@ Unit: relative
 Understanding why this is the case might be a good exercise (I don't know the answer).
 
 Here we illustrated some basic tools provided by `RcppParallel`, see the [package webpage](https://rcppcore.github.io/RcppParallel/index.html) for more details.
+
+### References
+
+- Allaire, J.J., François, R., Ushey, K., Vandenbrouck, G. and Geelnard, M., Intel (2018) 
+  RcppParallel: Parallel Programming Tools for Rcpp. R package version 4.4.2.
+
+- Chandra, R., Dagum, L., Kohr, D., Menon, R., Maydan, D. and McDonald, J., 2001. 
+  Parallel programming in OpenMP. Morgan kaufmann.
+
+- Chapman, B., Jost, G. and Van Der Pas, R., 2008. 
+  Using OpenMP: portable shared memory parallel programming (Vol. 10). MIT press.
+  
+- Eddelbuettel, D., 2019. Parallel Computing With R: A Brief Review. arXiv preprint arXiv:1912.11144.

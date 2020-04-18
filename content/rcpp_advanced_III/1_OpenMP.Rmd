@@ -151,7 +151,7 @@ Unit: relative
   allFiniteOMP(x, 8)  1.000000  1.000000  1.0000000  1.000000  1.0000000 1.000000   100
  allFiniteOMP(x, 16)  1.045107  1.103636  1.0457466  1.165450  1.0583197 1.170184   100
 ```
-Note that the `Rcpp` version is around 4 times fast that the `R` code, and that with 4 threads we get roughly a linear speed-up. However, the speed-up gains are negligible after that, and using 16 threads is actually detrimental. This is because a processor with 4 physical cores has probably 4 floating-point (FLOP) units, hence trying to parallelise numerical computations on more than 4 threads does not make sense (the threads will start to compete for the same FLOP units). Note also that above we used:
+Note that the `Rcpp` version is around 4 times faster that the `R` code, and that with 4 threads we get roughly a linear speed-up. However, the speed-up gains are negligible after that, and using 16 threads is actually detrimental. This is because a processor with 4 physical cores has probably 4 floating-point (FLOP) units, hence trying to parallelise numerical computations on more than 4 threads does not make sense (the threads will start to compete for the same FLOP units). Note also that above we used:
 ```{r engine='Rcpp', eval = FALSE}
 #pragma omp parallel for num_threads(ncores)
 ```
@@ -169,19 +169,19 @@ One important thing to point out is that R's C API and the Rcpp API are not thre
  int u = x.length();
 }
 ```
-is not safe and might behave unexpectedly. In our code for the `allFiniteOMP` function above we do `out += x[ii]`, which selects elements of the `NumericVector` `x` in parallel. This also not guaranteed to be thread-safe, hence it is preferrable to use the thread-safe data structures provided by the [RcppParallel R package](https://cran.r-project.org/web/packages/RcppParallel/index.html), which will be discussed later in these notes. In the following section we show how to perform parallel randon number generation using OpenMP and a thread-safe RNG. 
+is not safe and might behave unexpectedly. In our code for the `allFiniteOMP` function, above, we do `out += x[ii]`, which selects elements of the `NumericVector` `x` in parallel. This also not guaranteed to be thread-safe, hence it is preferrable to use the thread-safe data structures provided by the [RcppParallel R package](https://cran.r-project.org/web/packages/RcppParallel/index.html), which will be discussed later in these notes. In the following section we show how to perform parallel random number generation using OpenMP and a thread-safe RNG. 
 
 
 ### Parallel random number generation using OpenMP 
 
-As other parts of R's C API, R's RNG is not thread safe. Hence `Rcpp` code such as:
+As other parts of R's C API, R's RNG is not thread safe. Hencem `Rcpp` code such as:
 ```{r engine='Rcpp', eval = FALSE}
 #pragma omp parallel
 {
 x = R::rbeta(a, b);
 }
 ```
-will produce invalid results and might crash your R session. Hence, we must adopt a thread-safe RNG, such as the one provided by the [sitmo R package](https://cran.r-project.org/web/packages/sitmo/index.html).
+will produce invalid results and might crash your R session. So, we must adopt a thread-safe RNG, such as the one provided by the [sitmo R package](https://cran.r-project.org/web/packages/sitmo/index.html).
 
 Before explaining how to use `sitmo` in parallel, let us consider the following sequential function:
 ```{r}
@@ -225,7 +225,7 @@ Let us examine the key steps in `runif_sitmo_omp`:
    - we convert the seed provided by R to type `uint32_t` via `uint32_t coreseed = static_cast<uint32_t>(seed);`
    - we set up an RNG via `sitmo::prng eng(coreseed);`
    - having done this, calling `eng()` will generate an uniform random number between 0 and `sitmo::prng::max()`, 
-     hence we use `((double) eng()) / mx` to rescale the output of `eng()` to (0, 1).
+     hence we use `eng() / mx` to rescale the output of `eng()` to (0, 1).
      
 Let's try it:
 ```{r, fig.align='center', fig.width=6, fig.height=3}
@@ -334,7 +334,19 @@ Unit: relative
   sitmo_omp4  1.231661  1.769258  1.467673  1.584121  1.359834  1.210142   100
  sitmo_omp16  1.000000  1.000000  1.000000  1.000000  1.000000  1.000000   100
 ```
-Hence, `Rcpp` is four times faster than `R`, and we get an acceleration of factor of a little bit more than 2 by using 4 cores. The acceleration levels off if we use more than 16 threads, but in this case we seem to be able to get some extra speed gains by using more threads than actual physical cores. It is difficult to know why this is the case.
+Hence, `Rcpp` is four times faster than `R`, and we get an acceleration of factor of a little bit more than 2 by using 4 cores. The acceleration levels off if we use more than 4 threads, but in this case we seem to be able to get some extra speed gains by using more threads than actual physical cores. It is difficult to know why this is the case.
 
+### References
 
+- Allaire, J.J., François, R., Ushey, K., Vandenbrouck, G. and Geelnard, M., Intel (2018) 
+  RcppParallel: Parallel Programming Tools for Rcpp. R package version 4.4.2.
+
+- Chandra, R., Dagum, L., Kohr, D., Menon, R., Maydan, D. and McDonald, J., 2001. 
+  Parallel programming in OpenMP. Morgan kaufmann.
+
+- Chapman, B., Jost, G. and Van Der Pas, R., 2008. 
+  Using OpenMP: portable shared memory parallel programming (Vol. 10). MIT press.
+  
+- Eddelbuettel, D., 2019. Parallel Computing With R: A Brief Review. arXiv preprint arXiv:1912.11144.
+  
 
