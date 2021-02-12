@@ -5,47 +5,6 @@
     <link>https://mfasiolo.github.io/sc2-2019/rcpp/</link>
     <description>Recent content in Interfacing R with C/C&#43;&#43; on SC2</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    
-	<atom:link href="https://mfasiolo.github.io/sc2-2019/rcpp/index.xml" rel="self" type="application/rss+xml" />
-    
-    
-    <item>
-      <title>1. Using R&#39;s C API</title>
-      <link>https://mfasiolo.github.io/sc2-2019/rcpp/1_r_internals/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://mfasiolo.github.io/sc2-2019/rcpp/1_r_internals/</guid>
-      <description>Creating C functions that are callable from R Calling expSmooth from R Creating R objects within C code References    body { text-align: justify}  The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the Rcpp package to interface R with C++, but it is useful to know how R’s C API works to have an idea of what is going on under the hood when you use Rcpp.</description>
-    </item>
-    
-    <item>
-      <title>2. Exercises on chaotic maps and kernel regression smoothing</title>
-      <link>https://mfasiolo.github.io/sc2-2019/rcpp/2_exercises/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://mfasiolo.github.io/sc2-2019/rcpp/2_exercises/</guid>
-      <description>Simulation based inference on the Ricker model Adaptive kernel regression smoothing    body { text-align: justify}  Simulation based inference on the Ricker model Here we consider an extremely simple model for population dynamics, the Ricker map: \[ y_{t+1} = ry_te^{-y_t}, \] where \(y_t&amp;gt;0\) represents the size of the population at time \(t\) and \(r&amp;gt;0\) is its growth rate. The model can show a wide range of dynamics, depending on the value of \(r\).</description>
-    </item>
-    
-    <item>
-      <title>3. Rcpp basics</title>
-      <link>https://mfasiolo.github.io/sc2-2019/rcpp/3_rcpp/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://mfasiolo.github.io/sc2-2019/rcpp/3_rcpp/</guid>
-      <description>Rcpp via R CMD SHLIB: the old but instructive way Rcpp via sourceCpp() Inline Rcpp via cppFunction() and evalCpp() References    body { text-align: justify}  Rcpp via R CMD SHLIB: the old but instructive way To illustrate how Rcpp works, let us consider again our C function for exponential smoothing, that is:
-#include &amp;lt;R.h&amp;gt; #include &amp;lt;Rinternals.h&amp;gt; SEXP expSmooth2(SEXP y, SEXP a) { int ni; double *xy, *xys; double ai; SEXP ys; y = PROTECT(coerceVector(y, REALSXP)); ni = length(y); ys = PROTECT(allocVector(REALSXP, ni)); ai = REAL(a)[0]; xy = REAL(y); xys = REAL(ys); xys[0] = xy[0]; for(int i = 1; i &amp;lt; ni; i++){ xys[i] = ai * xys[i-1] + (1 - ai) * xy[i]; } UNPROTECT(2); return ys; } Now, the same function can be implemented in “raw” Rcpp as follows (as we will explain later this is NOT the recommended way of using Rcpp):</description>
-    </item>
-    
-    <item>
-      <title>4. Exercises on Rcpp</title>
-      <link>https://mfasiolo.github.io/sc2-2019/rcpp/4_exercises/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://mfasiolo.github.io/sc2-2019/rcpp/4_exercises/</guid>
-      <description>Computing the c.d.f. of the Tweedie distribution    body { text-align: justify}  Computing the c.d.f. of the Tweedie distribution Here we consider the Tweedie distribution which includes continuous distributions, such as the normal and gamma, and discrete distributions, such as the Poisson. Its density is \[ p(y|\mu,\phi,p)=a(y,\phi,p)\exp\bigg[\frac{1}{\phi}\{y\theta-\kappa(\theta)\}\bigg], \] where \[ \theta=\frac{\mu^{1-p}}{1-p}\;\;\text{for}\;p\neq1\;\;\;\text{and}\;\;\;\theta=\log\mu\;\;\text{for}\;p=1, \] and \[ \kappa(\theta)=\frac{\mu^{2-p}}{2-p}\;\;\text{for}\;p\neq2\;\;\;\text{and}\;\;\;\theta=\log\mu\;\;\text{for}\;p=2. \] with \(\mu&amp;gt;0\) being the mean, \(\phi&amp;gt;0\) the scale and \(1\leq p\leq2\) is such that \(\text{var}(y)=\mu^{p}\).</description>
-    </item>
-    
+    <language>en-us</language><atom:link href="https://mfasiolo.github.io/sc2-2019/rcpp/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

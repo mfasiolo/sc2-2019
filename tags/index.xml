@@ -5,10 +5,6 @@
     <link>https://mfasiolo.github.io/sc2-2019/tags/</link>
     <description>Recent content in Tags on SC2</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    
-	<atom:link href="https://mfasiolo.github.io/sc2-2019/tags/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <language>en-us</language><atom:link href="https://mfasiolo.github.io/sc2-2019/tags/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>
