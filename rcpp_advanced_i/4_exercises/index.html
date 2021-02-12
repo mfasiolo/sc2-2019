@@ -211,7 +211,7 @@ lmLocal &lt;- function(y, x0, X0, x, X, H){
   fit &lt;- lm(y ~ -1 + X, weights = w)
   return( t(X0) %*% coef(fit) )
 }</code></pre>
-<p>where we are using the Gaussian kernel. Notice that this requires re-estimating the model for each location <span class="math inline">\({\bf x}_0\)</span> we are interested in. In our case:</p>
+<p>where we are using the Gaussian kernel. Note that this requires re-estimating the model for each location <span class="math inline">\({\bf x}_0\)</span> we are interested in. In our case:</p>
 <pre class="r"><code>nrow(solarAU)</code></pre>
 <pre><code>## [1] 17472</code></pre>
 <p>so we need to fit the local regression model more than <span class="math inline">\(17\)</span> thousands times to get an estimate of <span class="math inline">\(\mathbb{E}(y|{\bf x}_0)\)</span> at each observed location. Hence, we test our local model on a sub-sample of 2000 data points:</p>
@@ -228,7 +228,7 @@ X0 &lt;- X[sub, ]</code></pre>
 <pre class="r"><code>predLocal &lt;- sapply(1:nsub, function(ii){
   lmLocal(y = y, x0 = x0[ii, ], X0 = X0[ii, ], x = x, X = X, H = diag(c(1, 0.1)^2))
 })</code></pre>
-<p>Notice that we are setting <span class="math inline">\(\bf H\)</span> to be a diagonal matrix with hand-chosen diagonal entries. Let’s look at the fit.</p>
+<p>Note that we are setting <span class="math inline">\(\bf H\)</span> to be a diagonal matrix with hand-chosen diagonal entries. Let’s look at the fit.</p>
 <pre class="r"><code>solarAU_sub$fitLocal &lt;- predLocal
 
 pl1 &lt;- ggplot(solarAU_sub,

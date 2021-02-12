@@ -247,8 +247,8 @@ microbenchmark(kdeR = kdeR(dmvnorm, x, x, diag(d)),
                kdeLazy = kdeLazy(dmvnorm, x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
 ##     expr      min       lq     mean   median       uq      max neval
-##     kdeR 188.8686 193.6840 198.3887 194.8376 197.6105 272.7080   100
-##  kdeLazy 227.4864 231.0417 233.8399 232.6095 234.4808 307.2628   100</code></pre>
+##     kdeR 198.0588 202.2467 205.7782 203.3223 204.6287 286.8095   100
+##  kdeLazy 234.1260 238.1307 241.8261 240.3627 242.3151 320.9983   100</code></pre>
 <p>It turns out that the <code>Rcpp</code> version is not faster. This demonstrates that writing part of the code in <code>Rcpp</code> does not automatically lead to performance gains. In particular our <code>Rcpp</code> code:</p>
 <ul>
 <li>calls the <code>dmvnR</code> function to compute the Gaussian kernel. We cannot expect an <code>R</code> function
@@ -272,12 +272,11 @@ Now, for the purpose of maximizing efficiency, we have to think about how to num
 <li><p>solve the linear system <span class="math inline">\({\bf H}^{-1}({\bf x}_i - \mu) = {\bf z}_i\)</span> and then do
 <span class="math inline">\(({\bf x}_i - \mu)^T{\bf z}_i\)</span>, for <span class="math inline">\(i = 1, \dots, m\)</span>;</p></li>
 </ol>
-<p>Approach A seems quite appealing: we pay an upfront <span class="math inline">\(O(d^3)\)</span> cost to get <span class="math inline">\({\bf H}^{-1}\)</span> and the we pay <span class="math inline">\(O(d^2)\)</span> cost <span class="math inline">\(m\)</span> times to evaluate the quadratic forms. So, for <span class="math inline">\(d &lt;&lt; m\)</span>, the dominant cost is <span class="math inline">\(O(md^2)\)</span>. Approach B seems more wasteful: solving the linear system by Gaussian elimination will cost <span class="math inline">\(O(d^3)\)</span> operations, so doing it <span class="math inline">\(m\)</span> times brings the dominant cost to <span class="math inline">\(O(md^3)\)</span>. However, here it is essential to take into account the fact that <span class="math inline">\(\bf H\)</span> is positive definite, which means that approach B can be implemented much more efficiently. In particular, let <span class="math inline">\({\bf L}{\bf L}^T = {\bf H}\)</span> be the Cholesky decomposition of <span class="math inline">\(\bf H\)</span>. Then <span class="math inline">\({\bf H}^{-1}({\bf x}_i - \mu) = ({\bf L}^{-1})^T{\bf L}^{-1}({\bf x}_i - \mu)\)</span> can be computed by:</p>
+<p>Approach A seems quite appealing: we pay an upfront <span class="math inline">\(O(d^3)\)</span> cost to get <span class="math inline">\({\bf H}^{-1}\)</span> and the we pay <span class="math inline">\(O(d^2)\)</span> cost <span class="math inline">\(m\)</span> times to evaluate the quadratic forms. So, for <span class="math inline">\(d &lt;&lt; m\)</span>, the dominant cost is <span class="math inline">\(O(md^2)\)</span>. Approach B seems more wasteful: solving the linear system by Gaussian elimination will cost <span class="math inline">\(O(d^3)\)</span> operations, so doing it <span class="math inline">\(m\)</span> times brings the dominant cost to <span class="math inline">\(O(md^3)\)</span>. However, here it is essential to take into account the fact that <span class="math inline">\(\bf H\)</span> is positive definite, which means that approach B can be implemented much more efficiently. In particular, let <span class="math inline">\({\bf L}{\bf L}^T = {\bf H}\)</span> be the Cholesky decomposition of <span class="math inline">\(\bf H\)</span>. Then <span class="math inline">\(({\bf x}_i - \mu)^T{\bf H}^{-1}({\bf x}_i - \mu) = ({\bf x}_i - \mu)^T({\bf L}^{-1})^T{\bf L}^{-1}({\bf x}_i - \mu)\)</span> can be computed by:</p>
 <ol style="list-style-type: decimal">
 <li>solving <span class="math inline">\({\bf L}^{-1}({\bf x}_i - \mu) = {\bf z}_i\)</span> by forward-substitution
 (recall that <span class="math inline">\(\bf L\)</span> is lower triangular). This has cost <span class="math inline">\(O(d^2)\)</span>.</li>
-<li>solving <span class="math inline">\(({\bf L}^{-1})^T {\bf z}_i = \tilde{\bf z}_i\)</span> by back-substitution. Again <span class="math inline">\(O(d^2)\)</span>.</li>
-<li>computing <span class="math inline">\(({\bf x}_i - \mu)^T \tilde{\bf z}_i\)</span> which is <span class="math inline">\(O(d)\)</span>.</li>
+<li>computing <span class="math inline">\({\bf z}_i^T {\bf z}_i\)</span> which is <span class="math inline">\(O(d)\)</span>.</li>
 </ol>
 <p>Hence, the cost of approach B is <span class="math inline">\(O(m d^2)\)</span> as well, but has the advantage of avoiding matrix inversion, which is generally less accurate than solving a linear system.</p>
 <p>The approach we are going to follow is based on the observation that <span class="math inline">\(({\bf x}_i - \mu)^T {\bf H}^{-1}({\bf x}_i - \mu) = {\bf z}_i^T{\bf z}_i\)</span>, hence once we have obtained <span class="math inline">\({\bf z}_i\)</span> by forward-substitution as in step 1 above, we just need to calculate its squared norm at cost <span class="math inline">\(O(d)\)</span>. Having obtained the cholesky decomposition of <span class="math inline">\(\bf H\)</span>, computing its log-determinant is very cheap because <span class="math inline">\(\log\text{det}({\bf H}) = \log\text{det}({\bf L}{\bf L}^T) = 2\log\text{det}({\bf L}) = 2\log\text{trace}({\bf L})\)</span>.
@@ -388,7 +387,7 @@ Rcpp::NumericVector kde_i(mat&amp; y, mat&amp; x, mat&amp; H) {
   out /= n;
   return Rcpp::wrap(out);
 }&#39;)</code></pre>
-<p>Notice that we are not exporting <code>dmvnInt</code>, which is used only internally by <code>kde_i</code>. Let’s test whether our <code>Armadillo</code> version works:</p>
+<p>Note that we are not exporting <code>dmvnInt</code>, which is used only internally by <code>kde_i</code>. Let’s test whether our <code>Armadillo</code> version works:</p>
 <pre class="r"><code>plot(kdeR(dmvnorm, x, x, diag(d)),
      kdeArma(x, x, diag(d)))
 abline(0, 1, col = 2)</code></pre>
@@ -399,19 +398,19 @@ microbenchmark(R = kdeR(dmvnorm, x, x, diag(d)),
                Armadillo = kdeArma(x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
 ##       expr       min        lq      mean    median        uq       max neval
-##          R 189.43650 193.71145 197.33731 194.86510 196.80334 273.93262   100
-##  Armadillo  59.44857  59.70283  59.85676  59.78184  59.91687  61.61917   100</code></pre>
-<p>This is definitely better than the previous version! Notice that the <code>R</code> version (<code>kdeR</code>) is not too inefficient here because, at each iteration of the main <code>for</code> loop, the <code>dmvnorm</code> function evaluates a Gaussian density at <span class="math inline">\(10^3\)</span> data points. If we reduce the number of points at which the k.d.e. is evaluated, the performance gains increase. For instance:</p>
+##          R 197.52018 202.16085 205.87275 203.34869 205.28382 284.50855   100
+##  Armadillo  59.68601  60.00145  60.21174  60.12264  60.36308  61.64132   100</code></pre>
+<p>This is definitely better than the previous version! Note that the <code>R</code> version (<code>kdeR</code>) is not too inefficient here because, at each iteration of the main <code>for</code> loop, the <code>dmvnorm</code> function evaluates a Gaussian density at <span class="math inline">\(10^3\)</span> data points. If we reduce the number of points at which the k.d.e. is evaluated, the performance gain increases. For instance:</p>
 <pre class="r"><code>library(microbenchmark)
 microbenchmark(R = kdeR(dmvnorm, x[1:10, ], x, diag(d)),
                Armadillo = kdeArma(x[1:10, ], x, diag(d)))</code></pre>
 <pre><code>## Unit: microseconds
-##       expr        min          lq        mean     median         uq        max
-##          R 112871.655 115483.3260 118733.1984 117560.024 120127.936 200651.222
-##  Armadillo    530.803    540.4075    557.0562    558.828    568.653    613.687
-##  neval
-##    100
-##    100</code></pre>
+##       expr        min          lq        mean      median          uq
+##          R 116015.909 117658.7325 120558.1406 119951.5305 121202.1700
+##  Armadillo    527.775    536.9505    560.8972    556.8815    573.7135
+##         max neval
+##  203222.270   100
+##     725.023   100</code></pre>
 <p>This is attributable to a) the fact that we are computing the Cholesky decomposition of <span class="math inline">\(\bf H\)</span> only once rather than <span class="math inline">\(n\)</span> times, b) to the fact that <code>for</code> loops are much quicker in <code>C++</code> that in <code>R</code> and c) (hopefully) that our code for computing the multivariate normal density is faster than that used by <code>dmvtnorm</code>.</p>
 </div>
 <div id="references" class="section level3">

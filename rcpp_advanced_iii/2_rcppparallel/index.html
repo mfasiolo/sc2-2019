@@ -173,7 +173,7 @@ NumericVector erf(NumericVector x)
 <p>Note that we use the error function defined in the <code>Boost</code> C++ library, which can be accessed via the <code>BH</code> package. Let’s see whether it works:</p>
 <pre class="r"><code>x &lt;- rnorm(1e6)
 max(abs( (2 * pnorm(x * sqrt(2)) - 1) - erf(x)))</code></pre>
-<pre><code>## [1] 4.440892e-16</code></pre>
+<pre><code>## [1] 3.330669e-16</code></pre>
 <p>The numerical difference seems tolerable, however:</p>
 <pre class="r"><code>library(microbenchmark)
 microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
@@ -183,7 +183,7 @@ microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1,
 <pre><code>## Unit: relative
 ##    expr      min       lq     mean   median       uq      max neval
 ##       R 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000   100
-##  erf(x) 1.605959 1.558102 1.541106 1.545023 1.510188 1.363112   100</code></pre>
+##  erf(x) 1.594735 1.573476 1.535507 1.519314 1.505643 1.276388   100</code></pre>
 <p>our <code>Rcpp</code> function does not seem very efficient. Let’s see whether we can do any better by parallelising the code via <code>RcppParalel</code> and OpenMP. In particular, consider the function:</p>
 <pre class="r"><code>library(Rcpp)
 sourceCpp(code = &#39;
@@ -399,13 +399,13 @@ gld &lt;- funCreator(0.5, 1) # Analogous to lambda function in C++
 # Perform reduction
 x &lt;- rnorm(10)
 Reduce(gld, x) # Analogous to std::accumulate</code></pre>
-<pre><code>## [1] -4.256293</code></pre>
+<pre><code>## [1] -3.453122</code></pre>
 <p>Some of the features we are using to define the lambda function are defined in the C++14 standard, hence we added the <code>Rcpp::plugins(cpp14)</code> attribute. Let’s see whether the <code>Rcpp</code> function works:</p>
 <pre class="r"><code>x &lt;- rnorm(1e6)
 dnormSeq(x, 0.5, 2)</code></pre>
-<pre><code>## [1] -1768164</code></pre>
+<pre><code>## [1] -1768190</code></pre>
 <pre class="r"><code>sum(dnorm(x, 0.5, 2, log = TRUE))</code></pre>
-<pre><code>## [1] -1768164</code></pre>
+<pre><code>## [1] -1768190</code></pre>
 <p>it seems so, and it is much quicker than base <code>R</code>:</p>
 <pre class="r"><code>microbenchmark(R = sum(dnorm(x, 0.5, 2, log = TRUE)), 
                dnormSeq(x, 0.5, 2), 
@@ -464,9 +464,9 @@ double dnormPar(Rcpp::NumericVector x, double m, double s) {
 <p>Before explaining how this works, let’s see whether it produces correct results:</p>
 <pre class="r"><code>x &lt;- rnorm(1e6)
 dnormPar(x, 0.5, 2)</code></pre>
-<pre><code>## [1] -1768189</code></pre>
+<pre><code>## [1] -1768336</code></pre>
 <pre class="r"><code>sum(dnorm(x, 0.5, 2, log = TRUE))</code></pre>
-<pre><code>## [1] -1768189</code></pre>
+<pre><code>## [1] -1768336</code></pre>
 <p>which seems to be the case. Let’s look at the speed-up, which on the CPU described above is:</p>
 <pre class="r"><code>microbenchmark(R = sum(dnorm(x, 0.5, 2, log = TRUE)), 
                RcppSeq = dnormSeq(x, 0.5, 2), 
