@@ -45,7 +45,7 @@ y <- vsum(x1, x2)
 
 max( abs(y - (x1+x2)) )
 ```
-It seems so. The `Rcpp` code above is quite lengthy: do we really need to write a `for` loop to simply add to vector together? Thanks to `Rcpp sugar`, we don't have to. In particular, `Rcpp sugar` uses operator overloading to vectorize many operations involving vectors represented using the `Rcpp` vector classes (`NumericVector`, `IntegerVector`, ...). Hence, we can write vector addition in a much more compact form:
+It seems so. The `Rcpp` code above is quite lengthy: do we really need to write a `for` loop to simply add two vectors together? Thanks to `Rcpp sugar`, we don't have to. In particular, `Rcpp sugar` uses operator overloading to vectorize many operations involving vectors represented using the `Rcpp` vector classes (`NumericVector`, `IntegerVector`, ...). Hence, we can write vector addition in a much more compact form:
 ```{r} 
 sourceCpp(code = '
 #include <Rcpp.h>
@@ -201,7 +201,7 @@ set.seed(31)
 set.seed(31)
 rnorm(3)
 ```
-Here we needed to create an `RNGScope` object, before using the RNG via `rnorm`. **IMPORTANTLY** the `RNGScope` must be declared **AFTER** declaring any of the outputs of the function (the vector `out` in this case). Failing to do so, for example declaring an output after the `RNGScope` object, will lead to very annoying intermittent crashed. Hence, it is generally preferable to use the `Rcpp::export` attribute, which deals with the RNG state automatically.
+Here we needed to create an `RNGScope` object, before using the RNG via `rnorm`. **IMPORTANTLY** the `RNGScope` must be declared **AFTER** declaring any of the outputs of the function (the vector `out` in this case). Failing to do so, for example declaring an output after the `RNGScope` object, will lead to very annoying intermittent crashes. Hence, it is generally preferable to use the `Rcpp::export` attribute, which deals with the RNG state automatically.
 
 
 
