@@ -238,7 +238,7 @@ Here we describe some commonly used features of `RcppArmadillo` and `Armadillo`.
       multiply each element of `A` by `s`. Several element-wise functions are provided (e.g., `exp(A)`, `sqrt(A)`, ...), 
       as well as standard decomposition (e.g, Cholesky, LU, ...) and solvers for linear systems. 
       
-Some guidance on how standard linear algebra operations in `R` can be translated to `RcppArmadillo` is provided [here](http://arma.sourceforge.net/docs.html). Before moving to a more involved example, we clarify the relation between `Armadillo` objects and `Rcpp` matrices and vectors. Conversion from `Armadillo` object to `Rcpp` object is performed using `Rcpp::wrap`, for example:
+Some guidance on how standard linear algebra operations in `R` can be translated to `RcppArmadillo` is provided [here](https://github.com/petewerner/misc/wiki/RcppArmadillo-cheatsheet). Before moving to a more involved example, we clarify the relation between `Armadillo` objects and `Rcpp` matrices and vectors. Conversion from `Armadillo` object to `Rcpp` object is performed using `Rcpp::wrap`, for example:
 ```{r}
 sourceCpp(code = '
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -285,7 +285,7 @@ Let's see how this worked step by step:
      `sourceCpp` with `verbose = TRUE`. In `getIntMat`, `Rcpp::wrap` was taking a copy, because the output 
      of `tmpFun_i` does not use `R` memory, while this is avoided in `getIntMat_noCopy`. 
      
-In summary `getIntMat` allocates memory outside `R` via `Mat<int> MA(nr, nc);`, than takes one copy when we do `Rcpp::wrap(MA)` and another copy when `Rcpp::wrap` is called within the wrapper written by `sourceCpp`. In contrast, 
+In summary `getIntMat` allocates memory outside `R` via `Mat<int> MA(nr, nc);` then takes one copy when we do `Rcpp::wrap(MA)` and another copy when `Rcpp::wrap` is called within the wrapper written by `sourceCpp`. In contrast, 
 `getIntMat_noCopy` allocates `R` memory via `Rcpp::IntegerMatrix MR(nr, nc);` and does no take any copy. This makes the second version much more efficient, in fact: 
 ```{r}
 d <- 1e3
@@ -299,7 +299,7 @@ The bottom line is that, when we want to manipulate large matrices or vectors in
    3. manipulate the `Armadillo` objects using the operators and functions provided by `Armadillo`;
    4. return an `Rcpp` data structure to avoid copies being made by `Rcpp::wrap`.
    
-The advance constructor provides a way of converting `Rcpp` objects into `Armadillo` objects, without taking a copy. Often talking a copy is acceptable, in which case it is more convenient to perform the conversion using the `Rcpp::as<type>()` function, where the template argument `type` can be an `Armadillo` object class such as `Mat<int>`, `Row<double>` and so on. An example is:
+The advance constructor provides a way of converting `Rcpp` objects into `Armadillo` objects, without taking a copy. Often taking a copy is acceptable, in which case it is more convenient to perform the conversion using the `Rcpp::as<type>()` function, where the template argument `type` can be an `Armadillo` object class such as `Mat<int>`, `Row<double>` and so on. An example is:
 ```{r}
 sourceCpp(code = '
 // [[Rcpp::depends(RcppArmadillo)]]

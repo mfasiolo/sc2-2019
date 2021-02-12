@@ -92,7 +92,7 @@ lmLocal <- function(y, x0, X0, x, X, H){
   return( t(X0) %*% coef(fit) )
 }
 ```
-where we are using the Gaussian kernel. Notice that this requires re-estimating the model for each location ${\bf x}_0$ we are interested in. In our case:
+where we are using the Gaussian kernel. Note that this requires re-estimating the model for each location ${\bf x}_0$ we are interested in. In our case:
 ```{r}
 nrow(solarAU)
 ```
@@ -114,7 +114,7 @@ predLocal <- sapply(1:nsub, function(ii){
   lmLocal(y = y, x0 = x0[ii, ], X0 = X0[ii, ], x = x, X = X, H = diag(c(1, 0.1)^2))
 })
 ```
-Notice that we are setting $\bf H$ to be a diagonal matrix with hand-chosen diagonal entries. Let's look at the fit.
+Note that we are setting $\bf H$ to be a diagonal matrix with hand-chosen diagonal entries. Let's look at the fit.
 ```{r, fig.align='center', fig.height=4, fig.width=10}
 solarAU_sub$fitLocal <- predLocal
 

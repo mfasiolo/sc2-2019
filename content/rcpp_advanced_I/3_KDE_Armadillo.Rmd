@@ -157,12 +157,11 @@ Remember that, in our k.d.e. application, ${\bf x}_1, \dots, {\bf x}_m$ are the 
    B) solve the linear system ${\bf H}^{-1}({\bf x}_i - \mu) = {\bf z}_i$ and then do 
       $({\bf x}_i - \mu)^T{\bf z}_i$, for $i = 1, \dots, m$;
       
-Approach A seems quite appealing: we pay an upfront $O(d^3)$ cost to get ${\bf H}^{-1}$ and the we pay $O(d^2)$ cost $m$ times to evaluate the quadratic forms. So, for $d << m$, the dominant cost is $O(md^2)$. Approach B seems more wasteful: solving the linear system by Gaussian elimination will cost $O(d^3)$ operations, so doing it $m$ times brings the dominant cost to $O(md^3)$. However, here it is essential to take into account the fact that $\bf H$ is positive definite, which means that approach B can be implemented much more efficiently. In particular, let ${\bf L}{\bf L}^T = {\bf H}$ be the Cholesky decomposition of $\bf H$. Then ${\bf H}^{-1}({\bf x}_i - \mu) = ({\bf L}^{-1})^T{\bf L}^{-1}({\bf x}_i - \mu)$ can be computed by:
+Approach A seems quite appealing: we pay an upfront $O(d^3)$ cost to get ${\bf H}^{-1}$ and the we pay $O(d^2)$ cost $m$ times to evaluate the quadratic forms. So, for $d << m$, the dominant cost is $O(md^2)$. Approach B seems more wasteful: solving the linear system by Gaussian elimination will cost $O(d^3)$ operations, so doing it $m$ times brings the dominant cost to $O(md^3)$. However, here it is essential to take into account the fact that $\bf H$ is positive definite, which means that approach B can be implemented much more efficiently. In particular, let ${\bf L}{\bf L}^T = {\bf H}$ be the Cholesky decomposition of $\bf H$. Then $({\bf x}_i - \mu)^T{\bf H}^{-1}({\bf x}_i - \mu) = ({\bf x}_i - \mu)^T({\bf L}^{-1})^T{\bf L}^{-1}({\bf x}_i - \mu)$ can be computed by:
 
    1. solving ${\bf L}^{-1}({\bf x}_i - \mu) = {\bf z}_i$ by forward-substitution 
       (recall that $\bf L$ is lower triangular). This has cost $O(d^2)$.
-   2. solving $({\bf L}^{-1})^T {\bf z}_i = \tilde{\bf z}_i$ by back-substitution. Again $O(d^2)$.
-   3. computing $({\bf x}_i - \mu)^T \tilde{\bf z}_i$ which is $O(d)$.
+   2. computing ${\bf z}_i^T {\bf z}_i$ which is $O(d)$.
    
 Hence, the cost of approach B is $O(m d^2)$ as well, but has the advantage of avoiding matrix inversion, which is generally less accurate than solving a linear system.
 
@@ -280,7 +279,7 @@ Rcpp::NumericVector kde_i(mat& y, mat& x, mat& H) {
   return Rcpp::wrap(out);
 }')
 ```
-Notice that we are not exporting `dmvnInt`, which is used only internally by `kde_i`. Let's test whether our `Armadillo` version works:
+Note that we are not exporting `dmvnInt`, which is used only internally by `kde_i`. Let's test whether our `Armadillo` version works:
 ```{r, fig.align='center', fig.height=4, fig.width=4}
 plot(kdeR(dmvnorm, x, x, diag(d)),
      kdeArma(x, x, diag(d)))
@@ -292,7 +291,7 @@ library(microbenchmark)
 microbenchmark(R = kdeR(dmvnorm, x, x, diag(d)),
                Armadillo = kdeArma(x, x, diag(d)))
 ```
-This is definitely better than the previous version! Notice that the `R` version (`kdeR`) is not too inefficient here because, at each iteration of the main `for` loop, the `dmvnorm` function evaluates a Gaussian density at $10^3$ data points. If we reduce the number of points at which the k.d.e. is evaluated, the performance gains increase. For instance:
+This is definitely better than the previous version! Note that the `R` version (`kdeR`) is not too inefficient here because, at each iteration of the main `for` loop, the `dmvnorm` function evaluates a Gaussian density at $10^3$ data points. If we reduce the number of points at which the k.d.e. is evaluated, the performance gain increases. For instance:
 ```{r}
 library(microbenchmark)
 microbenchmark(R = kdeR(dmvnorm, x[1:10, ], x, diag(d)),
