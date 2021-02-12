@@ -26,7 +26,7 @@ before_script:
     - Rscript -e 'blogdown::install_hugo()'
 
 script:
-    - Rscript -e 'blogdown::build_site()'
+    - Rscript -e 'blogdown::build_site(build_rmd = TRUE)'
 
 before_deploy:
     - rm public/.gitignore
@@ -41,7 +41,7 @@ addons:
 deploy:
     provider: pages
     skip_cleanup: true
-    github_token: $GITHUB_TOKEN
+    github_token: $GITHUB_PAT
     keep_history: true
     on:
         branch: master

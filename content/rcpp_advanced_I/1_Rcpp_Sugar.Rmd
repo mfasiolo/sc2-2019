@@ -64,7 +64,7 @@ max( abs(y - (x1+x2)) )
 ```
 It does! All four basic arithmetic operations `+`, `-`, `*` and `/` are vectorized, thanks to `Rcpp sugar`. Vector-scalar operations are also vectorized, for instance we can do $x1 * 3.0 + 1.0$, which gives the same result as in `R`. 
 
-However, notice that writing such simple arithmetic expression in `Rcpp` will not give you a big performance gain in most cases, for instance:
+However, note that writing such simple arithmetic expression in `Rcpp` will not give you a big performance gain in most cases, for instance:
 ```{r}
 library(microbenchmark)
 microbenchmark(R = x1 + x2, Rcpp = vsum(x1, x2), RcppSugar = vsumVett(x1, x2))
@@ -162,7 +162,7 @@ NumericVector rbeta_R(const int n, const int a, const int b) {
 set.seed(321)
 rbeta_R(5, 1, 3)
 ```
-Notice that `R::rbeta` returns a `double`, not a `NumericVector`. See [here](http://thecoatlessprofessor.com/programming/cpp/unofficial-rcpp-api-documentation/#stat-dist) for a complete list of the statistical distribution available via `Rcpp sugar`.
+Note that `R::rbeta` returns a `double`, not a `NumericVector`. See [here](http://thecoatlessprofessor.com/programming/cpp/unofficial-rcpp-api-documentation/#stat-dist) for a complete list of the statistical distribution available via `Rcpp sugar`.
 
 As explained [here](https://gallery.rcpp.org/articles/random-number-generation/index.html) and in the [Writing R Extensions](https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Random-number-generation) documentation, to use `R`'s internal RNG in `C/C++` we need to call `GetRNGState` before using the RNG and  `PutRNGState` before returning to `R`. The first call reads the state of the RNG (see `?.Random.seed`), the second updates it. When we use `R`'s RNG within functions exported via the `// [[Rcpp::export]]` attribute we don't have to call `GetRNGState` or `PutRNGState`, because `Rcpp` does it for us in the automatically generated `C++` wrapper function. The `// [[Rcpp::export]]` attribute is used automatically by `cppFunction` and, in fact, if we recompile a previous example:
 ```{r}
