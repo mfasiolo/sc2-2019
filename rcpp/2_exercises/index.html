@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>2. Exercises on chaotic maps and kernel regression smoothing - SC2</title>
+    <meta property="og:title" content="2. Exercises on chaotic maps and kernel regression smoothing - SC2">
+    
+    <meta name="twitter:card" content="summary">
+
+    
+      
+    
+
+    
+      
+      <meta property="description" content="Here we consider an extremely simple model for population dynamics, the Ricker map: \[ y_{t&#43;1} = ry_te^{-y_t}, \] where \(y_t&amp;gt;0\) represents the size of the population at time \(t\) and \(r&amp;gt;0\) &amp;hellip;">
+      <meta property="og:description" content="Here we consider an extremely simple model for population dynamics, the Ricker map: \[ y_{t&#43;1} = ry_te^{-y_t}, \] where \(y_t&amp;gt;0\) represents the size of the population at time \(t\) and \(r&amp;gt;0\) &amp;hellip;">
+      
+    
+
+    
+    
+
+    
+
+    
+    
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
+    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+
+<link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="breadcrumbs">
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp/">rcpp / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp/2_exercises/">2_exercises / </a>
+    
+</nav>
+
+  </head>
+
+  
+  <body class="sc2-2019">
+    <header class="masthead">
+      <h1><a href="/sc2-2019/">SC2</a></h1>
+
+<p class="tagline">Statistical Computing 2</p>
+
+      <nav class="menu">
+  <input id="menu-check" type="checkbox" />
+  <label id="menu-label" for="menu-check" class="unselectable">
+    <span class="icon close-icon">✕</span>
+    <span class="icon open-icon">☰</span>
+    <span class="text">Menu</span>
+  </label>
+  <ul>
+  
+  
+  <li><a href="/sc2-2019/">Home</a></li>
+  
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_iii/">Parallel Rcpp</a></li>
+  
+  
+  </ul>
+</nav>
+
+    </header>
+
+    <article class="main">
+      <header class="title">
+      
+<h1>2. Exercises on chaotic maps and kernel regression smoothing</h1>
+
+<h3>
+</h3>
+<hr>
+
+
+      </header>
+
+
+
+
+
+<div id="TOC">
+<ul>
+<li><a href="#simulation-based-inference-on-the-ricker-model">Simulation based inference on the Ricker model</a></li>
+<li><a href="#adaptive-kernel-regression-smoothing">Adaptive kernel regression smoothing</a></li>
+</ul>
+</div>
+
+<style>
+body {
+text-align: justify}
+</style>
+<div id="simulation-based-inference-on-the-ricker-model" class="section level3">
+<h3>Simulation based inference on the Ricker model</h3>
+<p>Here we consider an extremely simple model for population dynamics, the Ricker map:
+<span class="math display">\[
+y_{t+1} = ry_te^{-y_t},
+\]</span>
+where <span class="math inline">\(y_t&gt;0\)</span> represents the size of the population at time <span class="math inline">\(t\)</span> and <span class="math inline">\(r&gt;0\)</span> is its growth rate. The model can show a wide range of dynamics, depending on the value of <span class="math inline">\(r\)</span>. A simple function for generating a trajectory from the map is the following:</p>
+<pre class="r"><code>rickerSimul &lt;- function(n, nburn, r, y0 = 1){
+
+ y &lt;- numeric(n)
+ yx &lt;- y0
+ 
+ # Burn in phase
+ if(nburn &gt; 0){
+   for(ii in 1:nburn){ 
+     yx &lt;- r * yx * exp(-yx)
+   }
+ }
+ 
+ # Simulating and storing
+ for(ii in 1:n){
+  yx &lt;- r * yx * exp(-yx)
+  y[ii] &lt;- yx
+ }
+ 
+ return( y )
+}</code></pre>
+<p>where:</p>
+<ul>
+<li><code>y0</code> is the initial population size;</li>
+<li><code>n</code> is the total number of time steps to be stored;</li>
+<li><code>nburn</code> is the initial number of simulations that are discarded before storing the following <code>n</code> iterations.</li>
+</ul>
+<p><strong>Q1 start</strong>: create a C version of <code>rickerSimul</code> and compare its speed with that of its R version. To do this you will need a C version of <code>exp()</code>, which you can get by including the <code>Rmath.h</code> header <strong>Q1 end</strong>.</p>
+<p>Suppose that we observe some noisy data from the map, that is we observe:
+<span class="math display">\[
+z_t = y_t e^{\epsilon_t}, \;\;\; \text{with} \;\; \epsilon_t \sim N(0, \sigma^2),
+\]</span>
+In particular, assume that we have observed a data set simulated as follows:</p>
+<pre class="r"><code>nburn &lt;- 100
+n &lt;- 50
+
+y0_true &lt;- 1
+sig_true &lt;- 0.1
+r_true &lt;- 10
+
+Ntrue &lt;- rickerSimul(n = n, nburn = nburn, r = r_true, y0 = y0_true)
+yobs &lt;- Ntrue * exp(rnorm(n, 0, sig_true))
+
+plot(yobs, type = &#39;b&#39;)</code></pre>
+<p><img src="/sc2-2019/rcpp/2_Exercises_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><strong>Q2 start</strong>: build a C function for calculating the likelihood of the data. You will need the function</p>
+<pre class="cpp"><code>dnorm(double, double, double, int);</code></pre>
+<p>which is defined in the <code>Rmath.h</code> header. Its arguments are the same as those of the <code>dnorm</code> function in R (see <code>?dnorm</code>). Wrap your C likelihood function into an R function, e.g.</p>
+<pre class="r"><code>myLikR &lt;- function(logr, logsig, logy0, yobs, nburn){
+  n &lt;- length(yobs)
+  r &lt;- exp(logr)
+  sig &lt;- exp(logsig)
+  y0 &lt;- exp(logy0)
+  
+  ysim &lt;- .Call(&quot;rickerSimul_C&quot;, n, nburn, r, y0)
+  
+  llk &lt;- .Call(&quot;rickerLLK_C&quot;, yobs, ysim, sig)
+  
+  return( llk )
+  
+}</code></pre>
+<p>and use it within a Metropolis-Hastings algorithm to sample the posterior of <span class="math inline">\(\log(r)\)</span>, <span class="math inline">\(\log(\sigma)\)</span> and <span class="math inline">\(\log(y_0)\)</span> (e.g. using the <code>metrop</code> function in the <code>mcmc</code> package). We work with the log-variables to enforce positivity. Does the marginal posterior distribution of the three parameters look fine? In particular, is the posterior for <span class="math inline">\(y_0\)</span> very dispersed? Try to explain what is going on <strong>Q2 end</strong>.</p>
+<p>Now, assume that the observed data has been simulated as follows:</p>
+<pre class="r"><code>r_true &lt;- 44
+
+Ntrue &lt;- rickerSimul(n = n, nburn = nburn, r = r_true, y0 = y0_true)
+yobs &lt;- Ntrue * exp(rnorm(n, 0, sig_true))
+
+plot(yobs, type = &#39;b&#39;)</code></pre>
+<p><img src="/sc2-2019/rcpp/2_Exercises_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p><strong>Q3 start</strong>: try to use Metropolis-Hastings again to sample from the posterior under the new data, are you encountering any problem? If so, try to look at slices of the likelihood w.r.t. each parameter of the model, while keeping the remaining parameters fixed to their true value. Does the likelihood look nice and smooth? What do you think it’s happening? <strong>Q3 end</strong>.</p>
+<p>From the previous question you should have observed that the slices of the likelihood w.r.t. <span class="math inline">\(r\)</span> look horrible for <span class="math inline">\(r\)</span> greater than around 12. Hence, the MH algorithm does not mix. The reason for this behaviour is that the system is chaotic for high <span class="math inline">\(r\)</span>, and the simulated trajectory become highly sensitive to small perturbations of <span class="math inline">\(r\)</span> or of <span class="math inline">\(y_0\)</span>.
+To simplify things, assume that we know the true value of <span class="math inline">\(\sigma\)</span> and that we do not care about the value of the initial value <span class="math inline">\(y_0\)</span>. In particular, let us just assume that is <span class="math inline">\(y_0\)</span> a random variable (rather than an unknown parameter) in our model, distributed according to <span class="math inline">\(y_0 \sim \text{Unif}(1, 10)\)</span> (for example). One way of working around the chaotic behaviour of the Ricker map is to build a new likelihood based a new set of summary statistics of the raw data, whose distribution varies smoothly (rather than chaotically) with <span class="math inline">\(r\)</span>.</p>
+<p>In particular, consider the sample mean <span class="math inline">\(s_1\)</span> and standard deviation <span class="math inline">\(s_2\)</span> of the observed data, <span class="math inline">\(z_1, \dots, z_n\)</span>. For simplicity, assume that these two statistics are independently normally distributed, that is
+<span class="math display">\[
+s_1 \sim \text{N}(\mu_1, \tau_1^2), \;\;\; s_2 \sim \text{N}(\mu_2, \tau_2^2),
+\]</span>
+with <span class="math inline">\(\text{cov}(s1, s2) = 0\)</span>. Hence, the likelihood of the observed statistics, <span class="math inline">\(p(s_1, s_2|r)\)</span>, is just the product of two normal densities, whose means and variances (<span class="math inline">\(\mu_1\)</span>, <span class="math inline">\(\mu_2\)</span>, <span class="math inline">\(\tau_1\)</span> and <span class="math inline">\(\tau_2\)</span>) are unknown functions of <span class="math inline">\(r\)</span>. To sample the posterior corresponding to <span class="math inline">\(p(s_1, s_2|r)\)</span>, we need to be able to estimate this likelihood for any fixed <span class="math inline">\(r\)</span>. This can be achieved by simulation, using the following function:</p>
+<pre class="r"><code>synllk &lt;- function(logr, nsim){
+  
+  r &lt;- exp(logr)
+  s1 &lt;- s2 &lt;- numeric(nsim)
+  y0 &lt;- runif(nsim, 1, 10)
+  
+  # Note: sigma is assumed to be known!
+  for(ii in 1:nsim){
+    ysim &lt;- rickerSimul(n = n, nburn = nburn, r = r, y0 = y0[ii]) * exp(rnorm(n, 0, sig_true))
+    s1[ii] &lt;- mean(ysim)
+    s2[ii] &lt;- sd(ysim)
+  }
+  
+  out &lt;- dnorm(mean(yobs), mean(s1), sd(s1), log = TRUE) + 
+         dnorm(sd(yobs), mean(s2), sd(s2), log = TRUE)
+  
+  return( out )
+}</code></pre>
+<p>For a given value of <span class="math inline">\(\log{r}\)</span>, we estimate <span class="math inline">\(\mu_1\)</span>, <span class="math inline">\(\mu_2\)</span>, <span class="math inline">\(\tau_1\)</span> and <span class="math inline">\(\tau_2\)</span> by simulating <code>nsim</code> trajectories from the model, and then we evaluate the log-likelihood based on such estimates.</p>
+<p><strong>Q4 start</strong>: try to run a MH algorithm to (approximately) sample the posterior <span class="math inline">\(p(r|s_1, s_2)\)</span>, using the <code>synllk</code>. You should get better mixing than under the full posterior <span class="math inline">\(p(y_1, \dots, y_n|r)\)</span>. But <code>synllk</code> is very slow, so try to implement it in C, and compare your C version with the R version above in terms of computing time. You can also try to use different statistics than those used above. If you don’t know how to generate random variables in C, you can simply generate them in R and then pass them to your C function <strong>Q4 end</strong>.</p>
+<p><strong>Q5 start</strong>: By now, you should have implemented C versions of the <code>rickerSimul</code> and of the <code>synllk</code> functions. If you have time, write also a C version of the <a href="https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm">basic Metropolis-Hastings algorithm</a>, so that you are able to do the whole thing in C <strong>Q5 end</strong>.</p>
+</div>
+<div id="adaptive-kernel-regression-smoothing" class="section level3">
+<h3>Adaptive kernel regression smoothing</h3>
+<p>Consider data generated from the following model
+<span class="math display">\[
+y_i = \sin(\alpha\pi x^3) + z_i, \;\;\; \text{with} \;\;\; z_i \sim ~ \text{N}(0, \sigma^2)
+\]</span>
+for <span class="math inline">\(i = 1, \dots, n\)</span>. Below we simulate some data from this model, with <span class="math inline">\(\alpha = 4\)</span>, <span class="math inline">\(\sigma = 0.2\)</span> and <span class="math inline">\(n = 200\)</span>:</p>
+<pre class="r"><code>set.seed(998)
+nobs &lt;- 200 
+x &lt;- runif(nobs)
+y &lt;- sin(4*pi*x^3) + rnorm(nobs, 0, 0.2)
+plot(x, y)</code></pre>
+<p><img src="/sc2-2019/rcpp/2_Exercises_files/figure-html/unnamed-chunk-7-1.png" width="672" />
+Now, suppose that we want to model this data using a kernel regression smoother (KRS). That is, we want to estimate the conditional expectation <span class="math inline">\(\mu(x)=\mathbb{E}(y|x)\)</span> using
+<span class="math display">\[
+\hat{\mu}(x) = \frac{\sum_{i=1}^n\kappa_\lambda(x, x_i)y_i}{\sum_{i=1}^n\kappa_\lambda(x, x_i)}
+\]</span>
+where <span class="math inline">\(\kappa\)</span> is a kernel with bandwidth <span class="math inline">\(\lambda &gt; 0\)</span>. The function below computes this estimator by adopting a Gaussian kernel with variance <span class="math inline">\(\lambda^2\)</span>:</p>
+<pre class="r"><code>meanKRS &lt;- function(y, x, x0, lam){
+
+ n &lt;- length(x)
+ n0 &lt;- length(x0)
+ 
+ out &lt;- numeric(n0)
+ for(ii in 1:n0){
+  out[ii] &lt;- sum( dnorm(x, x0[ii], lam) * y ) / sum( dnorm(x, x0[ii], lam) )   
+ }
+ 
+ return( out )
+}</code></pre>
+<p>We now use it to produce two fits, obtained using different values of <span class="math inline">\(\lambda\)</span>:</p>
+<pre class="r"><code>xseq &lt;- seq(0, 1, length.out = 1000)
+muSmoothLarge &lt;- meanKRS(y = y, x = x, x0 = xseq, lam = 0.06)
+muSmoothSmall &lt;- meanKRS(y = y, x = x, x0 = xseq, lam = 0.02)
+plot(x, y, col = &quot;grey&quot;)
+lines(xseq, muSmoothLarge, col = 2)
+lines(xseq, muSmoothSmall, col = 4)</code></pre>
+<p><img src="/sc2-2019/rcpp/2_Exercises_files/figure-html/unnamed-chunk-9-1.png" width="576" style="display: block; margin: auto;" /></p>
+<p><strong>Q1a start</strong>: Produce a C version of <code>meanKRS</code> and compare its computational performance with that of the R version above. You will need the function</p>
+<pre class="cpp"><code>dnorm(double, double, double, int);</code></pre>
+<p>which is defined in the <code>Rmath.h</code> header. Its arguments are the same as those of the <code>dnorm</code> function in R (see <code>?dnorm</code>) <strong>Q1a end</strong>.</p>
+<p><strong>Q1b start</strong> (Optional) In practice, we don’t want to select <span class="math inline">\(\lambda\)</span> manually and using <span class="math inline">\(k\)</span>-fold cross validation is generally preferable. Hence, create a cross-validation routine for selecting <span class="math inline">\(\lambda\)</span>, implement it in C and compare its computing time with its R version. Are the gains in performance comparable to those that you got by implementing <code>meanKRS</code> in C? <strong>Q1b start</strong></p>
+<p>From the plot above, it should be clear that no single value of <span class="math inline">\(\lambda\)</span> will lead to a satisfactory fit. The basic problem is that the true <span class="math inline">\(\mu(x)\)</span> is smooth for <span class="math inline">\(x &lt; 0.5\)</span> and quite wiggly for <span class="math inline">\(x &gt; 0.5\)</span>, hence setting <span class="math inline">\(\lambda\)</span> to a high (low) value will produce a good fit in the first (second) interval and a bad fit in the second (first). To solve this issue, we should really let the smoothness depend on <span class="math inline">\(x\)</span>, that is we need to <span class="math inline">\(\lambda = \lambda(x)\)</span>. A simple way of doing this is the following:</p>
+<ul>
+<li>fit the KRS model as before with some fixed value of <span class="math inline">\(\lambda\)</span>;</li>
+<li>let the residuals from the first model be <span class="math inline">\(r_1, \dots, r_n\)</span>;</li>
+<li>estimate their expected absolute value <span class="math inline">\(v(x)=\mathbb{E}(|r||x)\)</span> using another KRS model
+with the same <span class="math inline">\(\lambda\)</span>;</li>
+<li>let the resulting estimates be <span class="math inline">\(\hat{v}(x_1), \dots, \hat{v}(x_n)\)</span>;</li>
+<li>fit another KRS model to the original data using:
+<span class="math display">\[
+\hat{\mu}(x) = \frac{\sum_{i=1}^n\kappa_{\lambda_i}(x, x_i)y_i}{\sum_{i=1}^n\kappa_{\lambda_i}(x, x_i)}
+\]</span>
+where <span class="math inline">\(\lambda_i = \lambda \tilde{w}_i\)</span> with <span class="math inline">\(\tilde{w}_i = n w_i / \sum_{i=1}^n w_i\)</span> (so that the weights sum to <span class="math inline">\(n\)</span>) and <span class="math inline">\(w_i = 1/\hat{v}(x_i)\)</span>.</li>
+</ul>
+<p>The rationale is that we start with a standard KRS with fixed <span class="math inline">\(\lambda\)</span> determined, for instance, by cross-validation. Then we model the residuals of that model to see where, along <span class="math inline">\(x\)</span>, our fit should have been more flexible. In particular, in the final model we use fit using larger bandwidth where the residuals where larger (in absolute value). The whole procedure is implemented by this function:</p>
+<pre class="r"><code>mean_var_KRS &lt;- function(y, x, x0, lam){
+
+ n &lt;- length(x)
+ n0 &lt;- length(x0)
+ mu &lt;- res &lt;- numeric(n) 
+   
+ out &lt;- madHat &lt;- numeric(n0)
+ 
+ for(ii in 1:n){
+  mu[ii] &lt;- sum( dnorm(x, x[ii], lam) * y ) / sum( dnorm(x, x[ii], lam) )   
+ }
+ 
+ resAbs &lt;- abs(y - mu)
+ for(ii in 1:n0){
+  madHat[ii] &lt;- sum( dnorm(x, x0[ii], lam) * resAbs ) / sum( dnorm(x, x0[ii], lam) )   
+ }
+ 
+ w &lt;- 1 / madHat
+ w &lt;- w / mean(w)
+ 
+ for(ii in 1:n0){
+  out[ii] &lt;- sum( dnorm(x, x0[ii], lam * w[ii]) * y ) / 
+             sum( dnorm(x, x0[ii], lam * w[ii]) )   
+ }
+ 
+ return( out )
+}</code></pre>
+<p>As you can see this leads to a better fit:</p>
+<pre class="r"><code>xseq &lt;- seq(0, 1, length.out = 1000)
+muSmoothAdapt &lt;- mean_var_KRS(y = y, x = x, x0 = xseq, lam = 0.06)
+plot(x, y, col = &quot;grey&quot;)
+lines(xseq, muSmoothLarge, col = 2) # red
+lines(xseq, muSmoothSmall, col = 4) # blue
+lines(xseq, muSmoothAdapt, col = 1) # black</code></pre>
+<p><img src="/sc2-2019/rcpp/2_Exercises_files/figure-html/unnamed-chunk-12-1.png" width="672" />
+<strong>Q2 start</strong>: Produce a C version of <code>mean_var_KRS</code>, possibly including a cross-validation routine for <span class="math inline">\(\lambda\)</span> also implemented in C, and compare its computational performance with that of the R version. Do you think that the adaptive smoother produced here would work well under heteroscedasticity? <strong>Q2 end</strong></p>
+<!-- -->
+<!--     JUNK -->
+<!-- -->
+<!-- It turns out that this likelihood function is nice and smooth: -->
+<!-- ```{r} -->
+<!-- rSeq <- seq(1.5, 9, length.out = 1000) -->
+<!-- llkSeq <- sapply(rSeq, function(.r) synllk(.r, nsim = 100)) -->
+<!-- plot(rSeq, llkSeq, type = 'l') -->
+<!-- abline(v = log(r_true), lty = 2) -->
+<!-- ``` -->
+<!-- The `synlik` function simply simulates -->
+<!-- But we are assuming that $\sigma$ is known and we said that we don't care about $y_0$. Given that we don't care about $y_0$, let us just assume that is a random variable (rather than an unknown parameter) in our model following, for example, $y_0 \sim \text{Unif}(1, 10)$. -->
+<!-- but given that we don't care about $y_0$, let us assume that $y_0 \sim \text{Unif}(1, 10)$ and substitute $\mu_1$ with $\tilde{\mu}_1 = \mathbb{E}(\mu_1) = \int_1^{10} \mu_1(r, y_0) y_0 d y_0 / 9$. We do the same with $\mu_2$. -->
+<!-- plot(metrop(function(.x) llk(.x[1], .x[2], .x[3]), initial = c(2, 0, 0), nbatch = 500000, scale = 0.2)$batch[ , 1]) -->
+<!-- llk <- function(logr, logsig, logy0){ -->
+<!--   ymod <- rickerSimul(n = n, nburn = nburn, r = exp(logr), y0 = exp(logy0)) -->
+<!--   out <- sum( dnorm(log(yobs) - log(ymod), 0, exp(logsig), log = TRUE) ) -->
+<!--   return( out ) -->
+<!-- } -->
+<!-- synllk <- function(logr, nsim){ -->
+<!--   simStat1 <- simStat2 <- numeric(nsim) -->
+<!--   for(ii in 1:nsim){ -->
+<!--    ymod <- rickerSimul(n = n, nburn = nburn, r = logr, y0 = runif(1, 1, 10)) * exp(rnorm(n, 0, exp(sig_true))) -->
+<!--    simStat1[ii] <- mean(ymod) -->
+<!--    simStat2[ii] <- sd(ymod) -->
+<!--   } -->
+<!--   out <- dnorm(mean(yobs), mean(simStat1), sd(simStat1), log = TRUE) +  -->
+<!--          dnorm(sd(yobs), mean(simStat2), sd(simStat2), log = TRUE) -->
+<!--   return( out ) -->
+<!-- } -->
+<!-- plot(metrop(function(.x) synllk(.x[1], 100), initial = c(4, 0), nbatch = 10000, scale = 1)$batch[ , 1]) -->
+<!-- rSeq <- seq(1.5, 9, length.out = 1000) -->
+<!-- llkSeq <- sapply(rSeq, function(.r) synllk(.r, nsim = 100)) -->
+<!-- plot(rSeq, llkSeq, type = 'l') -->
+<!-- abline(v = log(r_true), lty = 2) -->
+<!-- rSeq <- seq(1, 2.5, length.out = 1000) -->
+<!-- llkSeq <- sapply(rSeq, function(.r) llk(.r, logsig = log(sig_true), logy0 = log(y0_true))) -->
+<!-- plot(rSeq, llkSeq, type = 'l') -->
+<!-- abline(v = trueLogR, lty = 2) -->
+<!-- rSeq <- log(seq(0.01, 1, length.out = 1000)) -->
+<!-- llkSeq <- sapply(rSeq, function(.r) llk(log(r_true), .r, logy0 = log(y0_true))) -->
+<!-- plot(y0Seq, llkSeq, type = 'l') -->
+<!-- abline(v = trueLogR, lty = 2) -->
+<!-- rSeq <- seq(0.01, 6, length.out = 1000) -->
+<!-- llkSeq <- sapply(rSeq, function(.r) llk(log(r_true), log(sig_true), logy0 = .r)) -->
+<!-- plot(y0Seq, llkSeq, type = 'l') -->
+<!-- abline(v = trueLogR, lty = 2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- par(mfrow = c(2, 2)) -->
+<!-- simul <- sapply(1:100,  -->
+<!--                 function(nouse) rickerSimul(n = 25, nburn = 0, r = 2, y0 = runif(1, 0.1, 10))) -->
+<!-- matplot(simul, type = 'l', col = "grey") -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- nburn <- 100 -->
+<!-- n <- 50 -->
+<!-- sig <- 0.1 -->
+<!-- trueLogR <- 3.8 -->
+<!-- Ntrue <- rickerSimul(n = n, nburn = nburn, r = exp(trueLogR), y0 = 1) -->
+<!-- yobs <- Ntrue * exp(rnorm(n, 0, sig)) -->
+<!-- plot(yobs, type = 'b') -->
+<!-- llk <- function(logr){ -->
+<!--   ymod <- rickerSimul(n = n, nburn = nburn, r = exp(logr), y0 = 1) -->
+<!--   out <- sum( dnorm(log(yobs) - log(ymod), 0, sig, log = TRUE) ) -->
+<!--   return( out ) -->
+<!-- } -->
+<!-- rSeq <- seq(2.5, 4.2, length.out = 1000) -->
+<!-- llkSeq <- sapply(rSeq, function(.r) llk(.r)) -->
+<!-- plot(rSeq, llkSeq, type = 'l') -->
+<!-- abline(v = trueLogR, lty = 2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- synllk <- function(logr, nsim){ -->
+<!--   simStat <- numeric(nsim) -->
+<!--   for(ii in 1:nsim){ -->
+<!--    ymod <- rickerSimul(n = n, nburn = nburn, r = exp(logr), y0 = runif(1, 1, 10)) * exp(rnorm(n, 0, sig)) -->
+<!--    simStat[ii] <- mean(ymod) -->
+<!--   } -->
+<!--   out <- - (mean(simStat) - mean(yobs))^2 -->
+<!--   return( out ) -->
+<!-- } -->
+<!-- rSeq <- seq(2.5, 4.2, length.out = 1000) -->
+<!-- llkSeq <- sapply(rSeq, function(.r) synllk(.r, nsim = 50)) -->
+<!-- plot(rSeq, llkSeq, type = 'l') -->
+<!-- abline(v = trueLogR, lty = 2) -->
+<!-- ``` -->
+</div>
+
+
+  <footer>
+  
+
+<script src="//yihui.name/js/math-code.js"></script>
+<script async src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script async src="//yihui.name/js/center-img.js"></script>
+
+
+<script type="text/javascript">
+var sc_project=12110974;
+var sc_invisible=1;
+var sc_security="9b171880";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12110974/0/9b171880/1/"
+alt="Web Analytics"></a></div></noscript>
+
+
+
+
+
+
+
+
+  
+
+
+<p align=right>
+
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp/2_Exercises.Rmd'>View source</a>
+
+|
+
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp/2_Exercises.Rmd'>Edit source</a>
+
+</p>
+
+
+
+
+
+<script src="https://utteranc.es/client.js"
+        repo="awllee/sc1-2019"
+        issue-term="pathname"
+        label="utterance"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+
+  
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+  
+  <hr>
+  <div class="copyright">© 2020 <a href="https://mfasiolo.github.io/">Matteo Fasiolo</a></div>
+  
+  </footer>
+  </article>
+  
+  </body>
+</html>
+

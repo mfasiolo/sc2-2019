@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>4. Exercises on Rcpp - SC2</title>
+    <meta property="og:title" content="4. Exercises on Rcpp - SC2">
+    
+    <meta name="twitter:card" content="summary">
+
+    
+      
+    
+
+    
+      
+      <meta property="description" content="Here we consider the Tweedie distribution which includes continuous distributions, such as the normal and gamma, and discrete distributions, such as the Poisson. Its density is \[ &amp;hellip;">
+      <meta property="og:description" content="Here we consider the Tweedie distribution which includes continuous distributions, such as the normal and gamma, and discrete distributions, such as the Poisson. Its density is \[ &amp;hellip;">
+      
+    
+
+    
+    
+
+    
+
+    
+    
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
+    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+
+<link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="breadcrumbs">
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp/">rcpp / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp/4_exercises/">4_exercises / </a>
+    
+</nav>
+
+  </head>
+
+  
+  <body class="sc2-2019">
+    <header class="masthead">
+      <h1><a href="/sc2-2019/">SC2</a></h1>
+
+<p class="tagline">Statistical Computing 2</p>
+
+      <nav class="menu">
+  <input id="menu-check" type="checkbox" />
+  <label id="menu-label" for="menu-check" class="unselectable">
+    <span class="icon close-icon">✕</span>
+    <span class="icon open-icon">☰</span>
+    <span class="text">Menu</span>
+  </label>
+  <ul>
+  
+  
+  <li><a href="/sc2-2019/">Home</a></li>
+  
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_iii/">Parallel Rcpp</a></li>
+  
+  
+  </ul>
+</nav>
+
+    </header>
+
+    <article class="main">
+      <header class="title">
+      
+<h1>4. Exercises on Rcpp</h1>
+
+<h3>
+</h3>
+<hr>
+
+
+      </header>
+
+
+
+
+
+<div id="TOC">
+<ul>
+<li><a href="#computing-the-c.d.f.-of-the-tweedie-distribution">Computing the c.d.f. of the Tweedie distribution</a></li>
+</ul>
+</div>
+
+<style>
+body {
+text-align: justify}
+</style>
+<div id="computing-the-c.d.f.-of-the-tweedie-distribution" class="section level3">
+<h3>Computing the c.d.f. of the Tweedie distribution</h3>
+<p>Here we consider the <a href="https://en.wikipedia.org/wiki/Tweedie_distribution">Tweedie distribution</a> which includes continuous distributions, such as the normal and gamma, and discrete distributions, such as the Poisson. Its density is
+<span class="math display">\[
+p(y|\mu,\phi,p)=a(y,\phi,p)\exp\bigg[\frac{1}{\phi}\{y\theta-\kappa(\theta)\}\bigg],
+\]</span>
+where
+<span class="math display">\[
+\theta=\frac{\mu^{1-p}}{1-p}\;\;\text{for}\;p\neq1\;\;\;\text{and}\;\;\;\theta=\log\mu\;\;\text{for}\;p=1,
+\]</span>
+and
+<span class="math display">\[
+\kappa(\theta)=\frac{\mu^{2-p}}{2-p}\;\;\text{for}\;p\neq2\;\;\;\text{and}\;\;\;\theta=\log\mu\;\;\text{for}\;p=2.
+\]</span>
+with <span class="math inline">\(\mu&gt;0\)</span> being the mean, <span class="math inline">\(\phi&gt;0\)</span> the scale and <span class="math inline">\(1\leq p\leq2\)</span> is such that <span class="math inline">\(\text{var}(y)=\mu^{p}\)</span>. As explained in <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.435.5387&amp;rep=rep1&amp;type=pdf">Dunn and Smyth (2005)</a>, evaluating the Tweedie density requires approximating the factor <span class="math inline">\(a(y,\phi,p)\)</span>, which does not have a closed-form expression, using specifically designed numerical methods. Here we consider the simpler problem of numerically approximating the Tweedie c.d.f. <span class="math inline">\(P(y|\mu,\phi,p)\)</span>, under the assumption that <span class="math inline">\(a(y,\phi,p)\)</span> is unknown.</p>
+<p>For <span class="math inline">\(1\leq p\leq2\)</span>, a Tweedie variable <span class="math inline">\(y\)</span> can be written as the sum of <span class="math inline">\(N\)</span> i.i.d. Gamma distributed random variables <span class="math inline">\(z_{1},\dots,z_{N}\)</span> with shape <span class="math inline">\(-\alpha\)</span> and scale <span class="math inline">\(\gamma\)</span> (hence with mean <span class="math inline">\(-\alpha\gamma\)</span> and variance <span class="math inline">\(-\alpha\gamma^{2}\)</span>), while <span class="math inline">\(N\)</span> follows a Poisson distribution with rate <span class="math inline">\(\lambda\)</span>. In terms of the original Tweedie parameters, we have
+<span class="math display">\[
+\lambda=\frac{\mu^{2-p}}{\phi(2-p)}, \;\;\; \alpha=(2-p)/(1-p) \;\;\; \text{and} \;\;\; \gamma=\phi(p-1)\mu^{p-1}.
+\]</span>
+So, if <span class="math inline">\(p_{G}\)</span> indicates the c.d.f. of a Gamma distribution with parameters <span class="math inline">\(-k\alpha\)</span> and <span class="math inline">\(\gamma\)</span>, <span class="math inline">\(p_{p}\)</span> is the p.m.f. of a Poisson with rate <span class="math inline">\(\lambda\)</span> and we indicate with <span class="math inline">\(p(Y &lt; y)\)</span> the Tweedie c.d.f., we have
+<span class="math display">\[
+p(Y&lt;y)=p\Big(\sum_{i=1}^{N}z_{i}&lt;y\Big)=\sum_{k=1}^{\infty}p_{G}\Big(\sum_{i=1}^{k}z_{i}&lt;y\Big)p_{P}(N=k),
+\]</span>
+where the second equality holds due to the Law of Total Probability. Now, we want to avoid computing that infinite sum, hence we approximate it by
+<span class="math display">\[
+p(Y&lt;y)\approx\hat{p}(Y&lt;y)=\sum_{k=k_{min}}^{k_{max}}p_{G}\Big (\sum_{i=1}^{k}z_{i}&lt;y \Big )p_{P}(N=k),
+\]</span>
+for some <span class="math inline">\(k_{min}\)</span> and <span class="math inline">\(k_{max}\)</span>.</p>
+<p>How to choose <span class="math inline">\(k_{min}\)</span> and <span class="math inline">\(k_{max}\)</span>? Given that <span class="math inline">\(p_{P}\)</span> is maximal at <span class="math inline">\(k = \text{floor}(\lambda)\)</span>, and then monotonically decreases as we move <span class="math inline">\(k\)</span> away from the mode, a reasonable approach is to choose <span class="math inline">\(k_{min}\)</span> and <span class="math inline">\(k_{max}\)</span> such that <span class="math inline">\(p_{P}(N=k) &lt; \epsilon p_{P}\{N=\text{floor}(\lambda)\}\)</span> for <span class="math inline">\(k&lt;k_{min}\)</span> or <span class="math inline">\(k&gt;k_{max}\)</span>, for some small <span class="math inline">\(\epsilon\)</span>. If we do so, it is clear that the a very pessimistic bound on the absolute approximation error is
+<span class="math display">\[
+|p(Y&lt;y)-\hat{p}(Y&lt;y)| &lt; p_{P}(N&lt;k_{min} \; \text{or} \; N&gt;k_{max}) = 1 - p_{P}(k_{min}&lt;N&lt;k_{max}), 
+\]</span>
+which is easy to compute. Of course, <span class="math inline">\(k_{min}\)</span> and <span class="math inline">\(k_{max}\)</span> are not known in advance, but we can initialize <span class="math inline">\(k\)</span> to <span class="math inline">\(\text{floor}(\lambda)\)</span> and then increase <span class="math inline">\(k\)</span> until we get to <span class="math inline">\(p_{P}(N=k) &lt; \epsilon p_{P}\{N=\text{floor}(\lambda)\}\)</span>, which means that we have found <span class="math inline">\(k_{max}\)</span>. Then we can set <span class="math inline">\(k\)</span> to the Poisson mode and decrease <span class="math inline">\(k\)</span> until we find <span class="math inline">\(k_{min}\)</span>. All this is implemented in the following R function:</p>
+<pre class="r"><code>pTweedR0 &lt;- function(y, mu, phi, p, eps = 1e-17, log = FALSE){
+  
+  # Get param lambda, gamma and alpha to be used in gamma and poisson distrib
+  la &lt;- mu^(2-p) / ( phi * (2-p) )
+  ga &lt;- phi * (p-1) * mu^( p-1 )
+  al &lt;- (2-p) / ( 1-p )
+  
+  # Mode of Poisson is at k = floor(lambda). 
+  # If mode is 0, we start from 1 instead.
+  k0 &lt;- max(floor(la), 1)
+  
+  # Poisson density at its mode
+  mxlpP &lt;-  dpois(k0, la)
+  
+  # Get probability contribution at Poisson mode
+  pTw &lt;- mxlpP * pgamma(y, shape = - k0 * al, scale = ga)
+  
+  # Initialize k at mode
+  k &lt;- k0 
+  lP &lt;- mxlpP
+  
+  # Sum from mode k = floor(lambda) upward until we find kmax
+  while ( lP &gt; mxlpP * eps ){
+    k &lt;- k + 1
+    lP &lt;- dpois(k, la)
+    pTw &lt;- pTw + lP * pgamma(y, shape = - k * al, scale = ga)
+  }
+  kmax &lt;- k
+  
+  # Reset k to the Poisson mode, and now go down until we find kmin
+  k &lt;- k0
+  lP &lt;- mxlpP
+  while ( lP &gt; mxlpP * eps &amp;&amp; k &gt; 0  ){
+    k &lt;- k - 1
+    lP &lt;- dpois(k, la)
+    pTw &lt;- pTw + lP * pgamma(y, shape = - k * al, scale = ga)
+  }
+  kmin &lt;- k
+  
+  if( log ) { pTw &lt;- log( pTw ) }
+  
+  return( pTw )
+  
+}</code></pre>
+<p>Having defined a function for approximating the Tweedie c.d.f., we need to verify whether it is correct. Given that the true c.d.f. is unknown, we compare our function with the <code>ptweedie</code> function from the <code>tweedie</code> package. Below, we simulate a random vector of Tweedie parameters, and then we compare the (log) c.d.f.s produced by <code>pTweedR0</code> with those obtained using <code>ptweedie</code>:</p>
+<pre class="r"><code>library(&quot;tweedie&quot;)
+nsim &lt;- 1e3
+mu &lt;- runif(nsim, 0, 10)
+phi &lt;- 0.01 + rexp(nsim, 1)
+p &lt;- runif(nsim, 1.001, 1.999)
+
+lpr1 &lt;- lpr2 &lt;- rep(NA, nsim)
+for(ii in 1:nsim){
+  y &lt;- rtweedie(n = 1, mu = mu[ii], phi = phi[ii], power = p[ii])
+  lpr1[ii] &lt;- pTweedR0(y = y, mu = mu[ii], phi = phi[ii], p = p[ii], log = TRUE)
+  lpr2[ii] &lt;- log(ptweedie(q = y, mu = mu[ii], phi = phi[ii], power = p[ii]))
+}
+
+par(mfrow = c(1, 2))
+plot(lpr1, lpr2, xlab = &quot;pTweedR0&quot;, ylab = &quot;ptweedie&quot;) 
+abline(0, 1)
+plot(lpr1 - lpr2, ylab = &quot;pTweedR0 - ptweedie&quot;) 
+abline(h = 0)</code></pre>
+<p><img src="/sc2-2019/rcpp/4_Exercises_files/figure-html/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" />
+The log c.d.f.s are very close, why is not surprising as <code>ptweedie</code> uses pretty much the same approximation we are using.</p>
+<p><strong>Q1 start</strong>: The <code>pTweedR0</code> function requires explicitly looping in R, because <span class="math inline">\(k_{min}\)</span> and <span class="math inline">\(k_{max}\)</span> are not known in advance but must be determined iteratively. To address this, create an <code>Rcpp</code> version of <code>pTweedR0</code> and compare its computational performance with that of <code>pTweedR0</code> <strong>Q1 end</strong>.</p>
+<p><strong>Q2 start</strong>: Most the function provided by <code>R</code> for evaluating the c.d.f. of a random variable (e.g. <code>pnorm()</code>, <code>pexp()</code>) are vectorized in all their main arguments (e.g. <code>pnorm()</code> is vectorized in the arguments <code>q</code>, <code>mean</code> and <code>sd</code>). Our <code>pTweedR0</code> function cannot be not vectorized directly, because <span class="math inline">\(k_{min}\)</span> and <span class="math inline">\(k_{max}\)</span> depend on <span class="math inline">\(y\)</span> and on the Tweedie parameters. Use <code>Rcpp</code> to create a vectorized C++ version of <code>pTweedR0</code> (that is a version of <code>pTweedR0</code> with accepts vector inputs for <code>y</code>, <code>mu</code>, <code>phi</code> and <code>p</code>) and compare its performance with that of simply using <code>pTweedR0</code> within a <code>for()</code> loop in <code>R</code> <strong>Q2 end</strong>.</p>
+</div>
+
+
+  <footer>
+  
+
+<script src="//yihui.name/js/math-code.js"></script>
+<script async src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script async src="//yihui.name/js/center-img.js"></script>
+
+
+<script type="text/javascript">
+var sc_project=12110974;
+var sc_invisible=1;
+var sc_security="9b171880";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12110974/0/9b171880/1/"
+alt="Web Analytics"></a></div></noscript>
+
+
+
+
+
+
+
+
+  
+
+
+<p align=right>
+
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp/4_Exercises.Rmd'>View source</a>
+
+|
+
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp/4_Exercises.Rmd'>Edit source</a>
+
+</p>
+
+
+
+
+
+<script src="https://utteranc.es/client.js"
+        repo="awllee/sc1-2019"
+        issue-term="pathname"
+        label="utterance"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+
+  
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+  
+  <hr>
+  <div class="copyright">© 2020 <a href="https://mfasiolo.github.io/">Matteo Fasiolo</a></div>
+  
+  </footer>
+  </article>
+  
+  </body>
+</html>
+

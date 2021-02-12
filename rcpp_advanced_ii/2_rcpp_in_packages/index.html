@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>2. Using Rcpp in an R package (1) - SC2</title>
+    <meta property="og:title" content="2. Using Rcpp in an R package (1) - SC2">
+    
+    <meta name="twitter:card" content="summary">
+
+    
+      
+    
+
+    
+      
+      <meta property="description" content="In this section we will learn how to build a basic R package containing Rcpp code. The material provided here relies mainly on the Rcpp-attributes and Rcpp-package vignettes.
+The Rcpp package provides &amp;hellip;">
+      <meta property="og:description" content="In this section we will learn how to build a basic R package containing Rcpp code. The material provided here relies mainly on the Rcpp-attributes and Rcpp-package vignettes.
+The Rcpp package provides &amp;hellip;">
+      
+    
+
+    
+    
+
+    
+
+    
+    
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
+    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+
+<link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="breadcrumbs">
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/">rcpp_advanced_ii / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/2_rcpp_in_packages/">2_rcpp_in_packages / </a>
+    
+</nav>
+
+  </head>
+
+  
+  <body class="sc2-2019">
+    <header class="masthead">
+      <h1><a href="/sc2-2019/">SC2</a></h1>
+
+<p class="tagline">Statistical Computing 2</p>
+
+      <nav class="menu">
+  <input id="menu-check" type="checkbox" />
+  <label id="menu-label" for="menu-check" class="unselectable">
+    <span class="icon close-icon">✕</span>
+    <span class="icon open-icon">☰</span>
+    <span class="text">Menu</span>
+  </label>
+  <ul>
+  
+  
+  <li><a href="/sc2-2019/">Home</a></li>
+  
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_iii/">Parallel Rcpp</a></li>
+  
+  
+  </ul>
+</nav>
+
+    </header>
+
+    <article class="main">
+      <header class="title">
+      
+<h1>2. Using Rcpp in an R package (1)</h1>
+
+<h3>
+</h3>
+<hr>
+
+
+      </header>
+
+
+
+
+
+<div id="TOC">
+<ul>
+<li><a href="#intro-to-rcpp.package.skeleton-and-related-tools">Intro to <code>Rcpp.package.skeleton</code> and related tools</a></li>
+<li><a href="#adding-a-c-function-to-the-package">Adding a <code>C++</code> function to the package</a></li>
+</ul>
+</div>
+
+<style>
+body {
+text-align: justify}
+</style>
+<div id="intro-to-rcpp.package.skeleton-and-related-tools" class="section level3">
+<h3>Intro to <code>Rcpp.package.skeleton</code> and related tools</h3>
+<p>In this section we will learn how to build a basic <code>R</code> package containing <code>Rcpp</code> code. The material provided here relies mainly on the <a href="https://cran.r-project.org/web/packages/Rcpp/vignettes/Rcpp-attributes.pdf">Rcpp-attributes</a> and <a href="http://dirk.eddelbuettel.com/code/rcpp/Rcpp-package.pdf">Rcpp-package</a> vignettes.</p>
+<p>The <code>Rcpp</code> package provides an extension of the <code>utils::package.skeleton</code> function, which automatically creates a source <code>R</code> package which uses several features of <code>Rcpp</code>. This is used as follows:</p>
+<pre class="r"><code>library(Rcpp)
+Rcpp.package.skeleton(&quot;mypack&quot;)</code></pre>
+<p>Let’s examine the content of the automatically generated <code>mypack</code> package:</p>
+<pre class="r"><code>system(&quot;ls -1R mypack/&quot;)</code></pre>
+<pre class="r"><code>mypack:
+DESCRIPTION
+man
+NAMESPACE
+R
+Read-and-delete-me
+src
+
+mypack/man:
+mypack-package.Rd
+rcpp_hello_world.Rd
+
+mypack/R:
+RcppExports.R
+
+mypack/src:
+RcppExports.cpp
+rcpp_hello_world.cpp</code></pre>
+<p>You should be already familiar with the structure of an <code>R</code> package, otherwise see <a href="http://r-pkgs.had.co.nz/intro.html">here</a>, for instance. Here we are particularly interested in the <code>Rcpp</code>-related components of the package, hence let’s look at the <code>C++</code> code in <code>src/rcpp_hello_world.cpp</code>:</p>
+<pre class="r"><code>printFile &lt;- function(o, n = 1e5) cat(readChar(o, n))
+printFile(&quot;mypack/src/rcpp_hello_world.cpp&quot;)</code></pre>
+<pre><code>
+#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+// [[Rcpp::export]]
+List rcpp_hello_world() {
+
+    CharacterVector x = CharacterVector::create( &quot;foo&quot;, &quot;bar&quot; )  ;
+    NumericVector y   = NumericVector::create( 0.0, 1.0 ) ;
+    List z            = List::create( x, y ) ;
+
+    return z ;
+}</code></pre>
+<p>This is an example <code>C++</code> function generated by <code>Rcpp.package.skeleton</code>. We are not interested in what the function does (despite its name, it doesn’t say “hello”!), what matters to us is that the <code>// [[Rcpp::export]]</code> attribute indicates that this function should be exported. That is, this is not an internal function, but it should be available to users of the <code>mypack</code> package.</p>
+<p>To make <code>rcpp_hello_world</code> accessible at <code>R</code> level, <code>Rcpp.package.skeleton</code> calls <code>compileAttributes</code> (we will see how to use this function later), which creates a <code>C++</code> and <code>R</code> wrapper for this function. The <code>C++</code> wrapper can in found in:</p>
+<pre class="r"><code>printFile(&quot;mypack/src/RcppExports.cpp&quot;)</code></pre>
+<pre><code>// Generated by using Rcpp::compileAttributes() -&gt; do not edit by hand
+// Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
+
+#include &lt;Rcpp.h&gt;
+
+using namespace Rcpp;
+
+// rcpp_hello_world
+List rcpp_hello_world();
+RcppExport SEXP _mypack_rcpp_hello_world() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(rcpp_hello_world());
+    return rcpp_result_gen;
+END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {&quot;_mypack_rcpp_hello_world&quot;, (DL_FUNC) &amp;_mypack_rcpp_hello_world, 0},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_mypack(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
+}</code></pre>
+<p>Let’s examine the content of this file:</p>
+<ul>
+<li>the first two lines indicate that the file has been generated by <code>compileAttributes</code>. If we wanted to edit this file
+manually, we would have to remove those lines first, otherwise our edits would be overwritten if we were to call
+<code>compileAttributes</code> again;</li>
+<li>then there is the definition of the <code>RcppExport SEXP _mypack_rcpp_hello_world()</code>. This is a standard <code>Rcpp</code> wrapper for
+<code>rcpp_hello_world</code>, which makes it accessible from <code>R</code> via <code>.Call</code> (remember that the latter requires function inputs
+and output of class <code>SEXP</code>). Doing <code>sourceCpp(rcpp_hello_world.cpp)</code> would generate a similar wrapper,
+but with a different name.</li>
+<li>then <code>static const R_CallMethodDef CallEntries</code> creates an object which lists all the <code>C++</code> function that will be
+accessible from <code>R</code> via <code>.Call</code>. In our case, the only exported <code>C++</code> function is <code>_mypack_rcpp_hello_world</code>.
+The <code>CallEntries</code> object then appears in the definition of the <code>R_init_mypack</code> function. The purpose of this
+part of the code is registring the native routine (e.g., <code>C++</code> functions) provided by the package. In particular,
+the <code>.Call</code> interface needs to find the code for the <code>C++</code> function being called and registring such routines
+via <code>R_registerRoutines</code> facilitates the search process. For the purpose of this course, understanding how
+registration works is not important, but you might want to read the
+<a href="https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Registering-native-routines">relevant section</a> of
+the Writing R Extensions manual if you want more details.</li>
+</ul>
+<p>As we have just seen, <code>RcppExports.cpp</code> contains the <code>Rcpp</code> wrapper (callable via <code>.Call</code>) to the <code>rcpp_hello_world</code> <code>C++</code> function. The corresponding <code>R</code> wrapper is here:</p>
+<pre class="r"><code>printFile(&quot;mypack/R/RcppExports.R&quot;)</code></pre>
+<pre><code># Generated by using Rcpp::compileAttributes() -&gt; do not edit by hand
+# Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
+
+rcpp_hello_world &lt;- function() {
+    .Call(`_mypack_rcpp_hello_world`)
+}</code></pre>
+<p>This is a straightfoward wrapper, analogous those generated via <code>sourceCpp</code>.</p>
+<p>Let’s look at the <code>NAMESPACE</code> file:</p>
+<pre class="r"><code>printFile(&quot;mypack/NAMESPACE&quot;)</code></pre>
+<pre><code>useDynLib(mypack, .registration=TRUE)
+importFrom(Rcpp, evalCpp)
+exportPattern(&quot;^[[:alpha:]]+&quot;)</code></pre>
+<p>The directive <code>useDynLib(mypack, .registration=TRUE)</code> makes so that all the registered routines are loaded in <code>R</code>. For example, after installing the package:</p>
+<pre class="r"><code>system(&quot;R CMD build mypack&quot;)
+system(&quot;R CMD INSTALL mypack&quot;)</code></pre>
+<p>we can do:</p>
+<pre class="r"><code>mypack:::&quot;_mypack_rcpp_hello_world&quot;</code></pre>
+<pre><code>$name
+[1] &quot;_mypack_rcpp_hello_world&quot;
+
+$address
+&lt;pointer: 0x416b1b0&gt;
+attr(,&quot;class&quot;)
+[1] &quot;RegisteredNativeSymbol&quot;
+
+$dll
+DLL name: mypack
+Filename: /home/travis/R/Library/mypack/libs/mypack.so
+Dynamic lookup: FALSE
+
+$numParameters
+[1] 0
+
+attr(,&quot;class&quot;)
+[1] &quot;CallRoutine&quot;      &quot;NativeSymbolInfo&quot;</code></pre>
+<p>which gives information about the routine and we can call the <code>C++</code> code directly via:</p>
+<pre class="r"><code>.Call(&quot;_mypack_rcpp_hello_world&quot;, PACKAGE = &quot;mypack&quot;) </code></pre>
+<pre><code>[[1]]
+[1] &quot;foo&quot; &quot;bar&quot;
+
+[[2]]
+[1] 0 1</code></pre>
+<p>See <a href="http://www.hep.by/gnu/r-patched/r-exts/R-exts_30.html">here</a> for more details on <code>useDynLib</code>. The line <code>exportPattern(&quot;^[[:alpha:]]+&quot;)</code> makes so that all the <code>R</code> functions whose name starts with a letter of the alphabet will be exported. Then, <code>importFrom(Rcpp, evalCpp)</code> is there because packages using <code>Rcpp</code> need to import something (anything from <code>Rcpp</code>). This requirement is related to a bug in <code>R</code>, hence importing something from <code>Rcpp</code> might not be needed in the future.</p>
+<p>Finally, we look at the Description:</p>
+<pre class="r"><code>printFile(&quot;mypack/DESCRIPTION&quot;)</code></pre>
+<pre><code>Package: mypack
+Type: Package
+Title: What the Package Does in One &#39;Title Case&#39; Line
+Version: 1.0
+Date: 2021-02-12
+Author: Your Name
+Maintainer: Your Name &lt;your@email.com&gt;
+Description: One paragraph description of what the package does as one
+        or more full sentences.
+License: GPL (&gt;= 2)
+Imports: Rcpp (&gt;= 1.0.6)
+LinkingTo: Rcpp</code></pre>
+<p>This is fairly standard, the only thing to notice is that <code>Rcpp</code> appear both in <code>LinkingTo</code> and in <code>Imports</code>. Once the above-mentioned bug will be solved, <code>Rcpp</code> will need to appear only in <code>LinkingTo</code> (unless we genuinely need to import <code>R</code> functions from <code>Rcpp</code> in our package). The latter is a declaration which allows <code>R</code> to retrieve the header file of the target package (<code>Rcpp</code> in this case) and to link them to the compiled code in our package. Hence, it cannot be used to link to a <code>C++</code> library (e.g., the <code>MKL</code> library) which is not contained in a <code>R</code> package. Linking to external libraries must be done manually using makefiles and it is not covered here.</p>
+</div>
+<div id="adding-a-c-function-to-the-package" class="section level3">
+<h3>Adding a <code>C++</code> function to the package</h3>
+<p>In the previous section we described the structure of a basic package created by <code>Rcpp.package.skeleton</code>. Here we explain how to add further <code>C++</code> functions to the package and how to export them. Suppose that we would like to add the following function to our <code>mypack</code> package:</p>
+<pre class="r"><code>printFile(&quot;dotRcpp.cpp&quot;)</code></pre>
+<pre><code>#include &lt;Rcpp.h&gt;
+
+using namespace Rcpp;
+
+//&#39; Dot product in Rcpp.
+//&#39;
+//&#39; @param x1 numeric vector
+//&#39; @param x2 numeric vector
+//&#39; @return dot product, that is \code{t(x1)%*%x2}
+// [[Rcpp::export(dotRcpp)]]
+NumericVector dotRcpp_I(NumericVector x1, NumericVector x2)
+{
+  NumericVector out(1);
+  out[0] = sum(x1 * x2);
+  return out;
+}</code></pre>
+<p>This function simply calculates the dot product of two numeric vectors. Notice that the function definition is preceded by some comments starting with <code>//' Dot product in Rcpp.</code>. These will be used by <code>compileAttributes</code> to build the documentation of this function. To demostrate this, we must move the function to the folder containing the source code:</p>
+<pre class="r"><code>system(&quot;cp dotRcpp.cpp mypack/src/dotRcpp.cpp&quot;)</code></pre>
+<p>then we compile the <code>Rcpp</code> attributes:</p>
+<pre class="r"><code>compileAttributes(&quot;mypack&quot;)</code></pre>
+<p>The <code>R</code> wrapper to our <code>C++</code> function can be found here:</p>
+<pre class="r"><code>printFile(&quot;mypack/R/RcppExports.R&quot;)</code></pre>
+<pre><code># Generated by using Rcpp::compileAttributes() -&gt; do not edit by hand
+# Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
+
+#&#39; Dot product in Rcpp.
+#&#39;
+#&#39; @param x1 numeric vector
+#&#39; @param x2 numeric vector
+#&#39; @return dot product, that is \code{t(x1)%*%x2}
+dotRcpp &lt;- function(x1, x2) {
+    .Call(`_mypack_dotRcpp_I`, x1, x2)
+}
+
+rcpp_hello_world &lt;- function() {
+    .Call(`_mypack_rcpp_hello_world`)
+}</code></pre>
+<p>As you can see the dots <code>dotRcpp</code> function is preceded by <code>roxygen</code> comments, which can be used to produce the corresponding <code>.Rd</code> files using <code>roxygenize(&quot;mypack&quot;)</code>. <code>dotRcpp</code> is a wrapper around the <code>C++</code> function <code>_mypack_dotRcpp_I</code>, which is itself a wrapper around the internal <code>C++</code> function <code>dotRcpp_I</code>, and it is defined here:</p>
+<pre class="r"><code>printFile(&quot;mypack/src/RcppExports.cpp&quot;)</code></pre>
+<pre><code>// Generated by using Rcpp::compileAttributes() -&gt; do not edit by hand
+// Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
+
+#include &lt;Rcpp.h&gt;
+
+using namespace Rcpp;
+
+// dotRcpp_I
+NumericVector dotRcpp_I(NumericVector x1, NumericVector x2);
+RcppExport SEXP _mypack_dotRcpp_I(SEXP x1SEXP, SEXP x2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter&lt; NumericVector &gt;::type x1(x1SEXP);
+    Rcpp::traits::input_parameter&lt; NumericVector &gt;::type x2(x2SEXP);
+    rcpp_result_gen = Rcpp::wrap(dotRcpp_I(x1, x2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_hello_world
+List rcpp_hello_world();
+RcppExport SEXP _mypack_rcpp_hello_world() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(rcpp_hello_world());
+    return rcpp_result_gen;
+END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {&quot;_mypack_dotRcpp_I&quot;, (DL_FUNC) &amp;_mypack_dotRcpp_I, 2},
+    {&quot;_mypack_rcpp_hello_world&quot;, (DL_FUNC) &amp;_mypack_rcpp_hello_world, 0},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_mypack(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
+}</code></pre>
+<p>The mechanisms is the same described in the previous section. Notice that the <code>compileAttribute</code> will be called automatically when you build your package using Rstudio or <code>devtools</code>.</p>
+</div>
+
+
+  <footer>
+  
+
+<script src="//yihui.name/js/math-code.js"></script>
+<script async src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script async src="//yihui.name/js/center-img.js"></script>
+
+
+<script type="text/javascript">
+var sc_project=12110974;
+var sc_invisible=1;
+var sc_security="9b171880";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12110974/0/9b171880/1/"
+alt="Web Analytics"></a></div></noscript>
+
+
+
+
+
+
+
+
+  
+
+
+<p align=right>
+
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp_advanced_II/2_Rcpp_in_packages.Rmd'>View source</a>
+
+|
+
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp_advanced_II/2_Rcpp_in_packages.Rmd'>Edit source</a>
+
+</p>
+
+
+
+
+
+<script src="https://utteranc.es/client.js"
+        repo="awllee/sc1-2019"
+        issue-term="pathname"
+        label="utterance"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+
+  
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+  
+  <hr>
+  <div class="copyright">© 2020 <a href="https://mfasiolo.github.io/">Matteo Fasiolo</a></div>
+  
+  </footer>
+  </article>
+  
+  </body>
+</html>
+

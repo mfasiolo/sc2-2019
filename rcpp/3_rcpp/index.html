@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>3. Rcpp basics - SC2</title>
+    <meta property="og:title" content="3. Rcpp basics - SC2">
+    
+    <meta name="twitter:card" content="summary">
+
+    
+      
+    
+
+    
+      
+      <meta property="description" content="To illustrate how Rcpp works, let us consider again our C function for exponential smoothing, that is:
+#include &amp;lt;R.h&amp;gt; #include &amp;lt;Rinternals.h&amp;gt; SEXP expSmooth2(SEXP y, SEXP a) { int ni; &amp;hellip;">
+      <meta property="og:description" content="To illustrate how Rcpp works, let us consider again our C function for exponential smoothing, that is:
+#include &amp;lt;R.h&amp;gt; #include &amp;lt;Rinternals.h&amp;gt; SEXP expSmooth2(SEXP y, SEXP a) { int ni; &amp;hellip;">
+      
+    
+
+    
+    
+
+    
+
+    
+    
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
+    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+
+<link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="breadcrumbs">
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp/">rcpp / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp/3_rcpp/">3_rcpp / </a>
+    
+</nav>
+
+  </head>
+
+  
+  <body class="sc2-2019">
+    <header class="masthead">
+      <h1><a href="/sc2-2019/">SC2</a></h1>
+
+<p class="tagline">Statistical Computing 2</p>
+
+      <nav class="menu">
+  <input id="menu-check" type="checkbox" />
+  <label id="menu-label" for="menu-check" class="unselectable">
+    <span class="icon close-icon">✕</span>
+    <span class="icon open-icon">☰</span>
+    <span class="text">Menu</span>
+  </label>
+  <ul>
+  
+  
+  <li><a href="/sc2-2019/">Home</a></li>
+  
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_iii/">Parallel Rcpp</a></li>
+  
+  
+  </ul>
+</nav>
+
+    </header>
+
+    <article class="main">
+      <header class="title">
+      
+<h1>3. Rcpp basics</h1>
+
+<h3>
+</h3>
+<hr>
+
+
+      </header>
+
+
+
+
+
+<div id="TOC">
+<ul>
+<li><a href="#rcpp-via-r-cmd-shlib-the-old-but-instructive-way">Rcpp via R CMD SHLIB: the old but instructive way</a></li>
+<li><a href="#rcpp-via-sourcecpp">Rcpp via <code>sourceCpp()</code></a></li>
+<li><a href="#inline-rcpp-via-cppfunction-and-evalcpp">Inline Rcpp via <code>cppFunction()</code> and <code>evalCpp()</code></a></li>
+<li><a href="#references">References</a></li>
+</ul>
+</div>
+
+<style>
+body {
+text-align: justify}
+</style>
+<div id="rcpp-via-r-cmd-shlib-the-old-but-instructive-way" class="section level3">
+<h3>Rcpp via R CMD SHLIB: the old but instructive way</h3>
+<p>To illustrate how <code>Rcpp</code> works, let us consider again our C function for exponential smoothing, that is:</p>
+<pre class="cpp"><code>#include &lt;R.h&gt;
+#include &lt;Rinternals.h&gt;
+
+SEXP expSmooth2(SEXP y, SEXP a)
+{
+  int ni;
+  double *xy, *xys;
+  double ai;
+  SEXP ys;
+  
+  y = PROTECT(coerceVector(y, REALSXP));
+  ni = length(y);
+  ys = PROTECT(allocVector(REALSXP, ni));
+  
+  ai = REAL(a)[0];
+  xy = REAL(y); 
+  xys = REAL(ys);
+  
+  xys[0] = xy[0];
+  for(int i = 1; i &lt; ni; i++){
+    xys[i] = ai * xys[i-1] + (1 - ai) * xy[i];
+  }
+  
+  UNPROTECT(2);
+  
+  return ys;
+}</code></pre>
+<p>Now, the same function can be implemented in “raw” Rcpp as follows (as we will explain later this is NOT the recommended way of using <code>Rcpp</code>):</p>
+<pre class="cpp"><code>#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+RcppExport SEXP expSmoothRcpp_manual(SEXP ySEXP, SEXP aSEXP)
+{
+  const NumericVector y = as&lt;const NumericVector&gt;(ySEXP);
+  const double a = as&lt;const double&gt;(aSEXP);
+  
+  int ni = y.size();
+  NumericVector ys(ni);
+  
+  ys[0] = y[0];
+  for(int i = 1; i &lt; ni; i++){
+    ys[i] = a * ys[i-1] + (1 - a) * y[i];
+  }
+  
+  return ys;
+}</code></pre>
+<p>Don’t worry if you don’t understand what is going on in the code above, we’ll explain it below. As you can see the <code>Rcpp</code> function for exponential smoothing is much more compact. On the Linux command line it can be compiled by doing:</p>
+<pre class="r"><code>library(Rcpp)
+system(&quot;export PKG_CXXFLAGS=`Rscript -e \&quot;Rcpp:::CxxFlags()\&quot;` &amp;&amp; 
+        R CMD SHLIB expSmoothRcpp_manual.cpp&quot;)</code></pre>
+<p>Note that the call to <code>R CMD SHLIB</code> is preceded by some extra code, which is needed to let <code>SHLIB</code> know where <code>Rcpp.h</code> can be found. We then load the compiled code as usual:</p>
+<pre class="r"><code>dyn.load(&quot;expSmoothRcpp_manual.so&quot;)</code></pre>
+<p>Let’s see whether the new function actually works:</p>
+<pre class="r"><code>system(&quot;R CMD SHLIB expSmooth2.c&quot;)
+dyn.load(&quot;expSmooth2.so&quot;)
+
+y &lt;- rnorm(100)
+max( abs(.Call(&quot;expSmoothRcpp_manual&quot;, y, 0.9) - .Call(&quot;expSmooth2&quot;, y, 0.9)) )</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>So the <code>C</code> and <code>Rcpp</code> functions produce exactly the same output.</p>
+<p>Now, let us try to understand how the <code>Rcpp</code> function for exponential smoothing works:</p>
+<ul>
+<li>in the first two lines we are including the <code>Rcpp.h</code> header and we are adopting the corresponding
+namespace.</li>
+<li><code>expSmoothRcpp_manual</code> has <code>SEXP</code> inputs and outputs, hence it can be called via <code>.Call</code>.</li>
+<li><code>RcppExport</code> is an alias for <code>extern &quot;C&quot;</code>, the reason why we needed the latter is not important here,
+but it is there to tell the C++ compiler not to mangle the name of the function, otherwise <code>.Call</code>
+would not be able to find it.</li>
+<li><code>const NumericVector y = as&lt;const NumericVector&gt;(ySEXP);</code> converts the <code>ySEXP</code> argument, which has
+class <code>SEXP</code>, to a constant object, <code>y</code>, of class <code>NumericVector</code>, which simply represents
+vectors of doubles. The <code>NumericVector</code> class and the templated function <code>as</code> belong to the <code>Rcpp</code> namespace.
+Importantly, <code>ySEXP</code> is not copied, and modifying <code>y</code> would modify <code>ySEXP</code>. We avoid this risk by using <code>const</code>.</li>
+<li><code>const double a = as&lt;const double&gt;(aSEXP);</code> converts <code>aSEXP</code> similarly.</li>
+<li><code>int ni = y.size();</code> here we are using the <code>size</code> member function provided by the <code>NumericVector</code> class to extract the size (or length) of <code>y</code> and store it into an integer <code>ni</code>.</li>
+<li><code>NumericVector ys(ni);</code> creates a new <code>NumericVector</code> <code>ys</code> of size <code>ni</code>.</li>
+<li>Then the <code>for</code> loop is very similar to the one in <code>expSmooth2</code> and we return the smoothed vector <code>ys</code>, without
+calling <code>UNPROTECT</code>.</li>
+</ul>
+<p>It is worth repeating that compiling <code>Rcpp</code> code via <code>R CMD SHLIB</code> is not recommended, and the next section will illustrate some better methods. The main advantage of <code>Rcpp</code> illustrated so far is that we didn’t explicitly create any object of class <code>SEXP</code>, which means that we didn’t have to call <code>PROTECT</code> and <code>UNPROTECT</code> to do memory management. In fact, this was does automatically for us via the <code>NumericVector</code> class, which wraps an <code>R</code> object of class <code>SEXP</code> and protects it from <code>R</code>’s garbage collector while it is in scope (that is until we exit the part of the program where the
+variable is accessible). Hence, our code is shorter and one source of mistakes (i.e., incorrect memory management) has been removed. <code>Rcpp</code> provides many other wrappers around <code>R</code> objects, such as:</p>
+<ul>
+<li><code>NumericMatrix</code> wraps a <code>numeric</code> matrix in <code>R</code>;</li>
+<li><code>IntegerVector</code>, <code>IntegerMatrix</code> wrap <code>integer</code> vectors/matrices in <code>R</code>;</li>
+<li><code>List</code> wraps a <code>list</code> in <code>R</code>;</li>
+<li><code>Function</code> wraps a <code>function</code> in <code>R</code>;</li>
+<li>see <a href="https://thecoatlessprofessor.com/programming/cpp/unofficial-rcpp-api-documentation/#vmld">here</a>
+for more classes.</li>
+</ul>
+<p>The pattern is always the same, upon passing from <code>R</code> to a <code>C++</code> function, wrap all the <code>SEXP</code> inputs via one of the wrapper classes defined in <code>Rcpp</code>, so that you will be able manipulate them in <code>C++</code> without thinking about <code>R</code> memory management. As we will see in the next section, the conversion from <code>SEXP</code> to an <code>Rcpp</code> wrapper can be handled automatically by <code>Rcpp</code>.</p>
+</div>
+<div id="rcpp-via-sourcecpp" class="section level3">
+<h3>Rcpp via <code>sourceCpp()</code></h3>
+<p>Consider the following <code>C++</code> function:</p>
+<pre class="cpp"><code>#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+// [[Rcpp::export(name = &quot;expSmoothRcpp&quot;)]]
+NumericVector expSmoothRcpp_I(const NumericVector y, const double a)
+{
+  int ni = y.size();
+  NumericVector ys(ni);
+  
+  ys[0] = y[0];
+  for(int i = 1; i &lt; ni; i++){
+    ys[i] = a * ys[i-1] + (1 - a) * y[i];
+  }
+  
+  return ys;
+}</code></pre>
+<p>This is very similar to <code>expSmoothRcpp_manual</code> (see above). In fact, if we leave aside the comment:</p>
+<pre class="cpp"><code>// [[Rcpp::export(name = &quot;expSmoothRcpp&quot;)]]</code></pre>
+<p>for a moment, the main difference is that now the function signature has changed from:</p>
+<pre class="cpp"><code>RcppExport SEXP expSmoothRcpp_manual(SEXP ySEXP, SEXP aSEXP)</code></pre>
+<p>to:</p>
+<pre class="cpp"><code>NumericVector expSmoothRcpp_I(const NumericVector y, const double a)</code></pre>
+<p>Hence, the function is not using <code>RcppExport</code> and its inputs and output are not of class <code>SEXP</code>, which means that this function cannot be directly called from <code>R</code> using <code>.Call()</code>. To make this function accessible from <code>R</code>, we can do:</p>
+<pre class="r"><code>sourceCpp(&quot;expSmoothRcpp_I.cpp&quot;)</code></pre>
+<p>which compiles <code>expSmoothRcpp_I</code>, loads the corresponding dynamic library in <code>R</code> (using <code>dyn.load</code>) and creates an <code>R</code> wrapper called <code>expSmoothRcpp</code>. Hence, to test if this worked we do:</p>
+<pre class="r"><code>max( abs(expSmoothRcpp(y, 0.9) - .Call(&quot;expSmooth2&quot;, y, 0.9)) )</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>Perfect agreement.</p>
+<p>Now, to understand how this works, note that:</p>
+<pre class="r"><code>expSmoothRcpp</code></pre>
+<pre><code>## function (y, a) 
+## .Call(&lt;pointer: 0x7f5e5170fe50&gt;, y, a)</code></pre>
+<p>shows that <code>expSmoothRcpp</code> is a simple wrapper around a <code>.Call</code> to a C++ function called <code>&lt;pointer: 0x7ff6985a0520&gt;</code> (or similar). The R function and the C++ function called in the internal call to <code>.Call</code> have been generated by the call to <code>sourceCpp</code>. We can get more details about what <code>sourceCpp</code> is doing, by using the <code>verbose</code> argument:</p>
+<pre class="r"><code>sourceCpp(&quot;expSmoothRcpp_I.cpp&quot;, rebuild = TRUE, verbose = TRUE)</code></pre>
+<pre><code>## 
+## Generated extern &quot;C&quot; functions 
+## --------------------------------------------------------
+## 
+## 
+## #include &lt;Rcpp.h&gt;
+## // expSmoothRcpp_I
+## NumericVector expSmoothRcpp_I(const NumericVector y, const double a);
+## RcppExport SEXP sourceCpp_1_expSmoothRcpp_I(SEXP ySEXP, SEXP aSEXP) {
+## BEGIN_RCPP
+##     Rcpp::RObject rcpp_result_gen;
+##     Rcpp::RNGScope rcpp_rngScope_gen;
+##     Rcpp::traits::input_parameter&lt; const NumericVector &gt;::type y(ySEXP);
+##     Rcpp::traits::input_parameter&lt; const double &gt;::type a(aSEXP);
+##     rcpp_result_gen = Rcpp::wrap(expSmoothRcpp_I(y, a));
+##     return rcpp_result_gen;
+## END_RCPP
+## }
+## 
+## Generated R functions 
+## -------------------------------------------------------
+## 
+## `.sourceCpp_1_DLLInfo` &lt;- dyn.load(&#39;/tmp/RtmpizW7Ye/sourceCpp-x86_64-pc-linux-gnu-1.0.6/sourcecpp_570f2f97edbf/sourceCpp_3.so&#39;)
+## 
+## expSmoothRcpp &lt;- Rcpp:::sourceCppFunction(function(y, a) {}, FALSE, `.sourceCpp_1_DLLInfo`, &#39;sourceCpp_1_expSmoothRcpp_I&#39;)
+## 
+## rm(`.sourceCpp_1_DLLInfo`)
+## 
+## Building shared library
+## --------------------------------------------------------
+## 
+## DIR: /tmp/RtmpizW7Ye/sourceCpp-x86_64-pc-linux-gnu-1.0.6/sourcecpp_570f2f97edbf
+## 
+## /opt/R/4.0.2/lib/R/bin/R CMD SHLIB --preclean -o &#39;sourceCpp_3.so&#39; &#39;expSmoothRcpp_I.cpp&#39;</code></pre>
+<p>The first part of the text output states that some <code>extern &quot;C&quot;</code> functions have been generated. In particular, we see the definition of the function:</p>
+<pre class="cpp"><code>RcppExport SEXP sourceCpp_1_expSmoothRcpp_I(SEXP ySEXP, SEXP aSEXP)</code></pre>
+<p>The fact that the definition of <code>sourceCpp_1_expSmoothRcpp</code> is preceded by <code>RcppExport</code> and that the inputs and output are of class <code>SEXP</code> means that the function can be called from R using <code>.Call</code> (remember that this is a requirement of <code>.Call</code>). The fact that <code>sourceCpp_1_expSmoothRcpp</code> is compatible with <code>.Call</code> and that it contains a call to <code>expSmoothRcpp_I</code> (our C++ code, above) shows that <code>sourceCpp_1_expSmoothRcpp</code> is a wrapper around <code>expSmoothRcpp_I</code>, making it accessible from <code>R</code>. We now examine the function body:</p>
+<ul>
+<li><code>Rcpp::RObject rcpp_result_gen;</code> creates an object of class <code>RObject</code>, which is defined in <code>Rcpp.h</code>.
+The <code>RObject</code> class is a wrapper around an <code>SEXP</code> object, which is not copied. Here the object is
+initially empty. The memory of <code>RObject</code> is managed automatically, that is the object is protected
+from garbage collector while it is in scope. The <code>RObject</code> is a base class, from which many <code>Rcpp</code> classes
+(such as <code>NumericVector</code>, <code>List</code>, <code>Function</code>, etc) are derived.</li>
+<li><code>Rcpp::RNGScope rcpp_rngScope_gen;</code> has to do with the initialization of the random number generator,
+which is not important here, but we’ll say more about it later.</li>
+<li><p><code>Rcpp::traits::input_parameter&lt; const NumericVector &gt;::type y(ySEXP);</code> creates an object <code>y</code>, which is a
+wrapper around <code>ySEXP</code>. <code>y</code> is a constant <code>NumericVector</code>, hence it can be passed to our
+<code>expSmoothRcpp</code> function. A similar thing is done for <code>a</code>, in the next line of code. Explaining
+how <code>input_parameter</code> works is quite involved, but for our purposes this code is equivalent to doing</p>
+<p><code>const NumericVector y = as&lt;const NumericVector&gt;(ySEXP);</code></p>
+<p>as in our original <code>expSmoothRcpp_manual</code> function.</p></li>
+</ul>
+<p>So, to make our <code>expSmoothRcpp_I</code> function accessible from <code>R</code>, <code>sourceCpp</code> has written a <code>C++</code> wrapper which is compatible with <code>.Call</code> and does all the necessary conversions from <code>SEXP</code> to <code>NumericVector</code>, <code>double</code> and potentially many other <code>Rcpp</code> or <code>C++</code> classes for us. The next lines in the text output show that <code>sourceCpp</code> has:</p>
+<ul>
+<li>dynamically loaded the shared object generated by compiling the <code>C++</code> code in <code>expSmoothRcpp_I.cpp</code>
+(see the last line of the text output);</li>
+<li>built the <code>expSmoothRcpp</code> wrapper function.</li>
+</ul>
+<p>The last thing that needs to be explained is the purpose of the comment preceding our <code>C++</code> function definition, that is:</p>
+<pre class="cpp"><code>// [[Rcpp::export(name = &quot;expSmoothRcpp&quot;)]]
+NumericVector expSmoothRcpp_I(const NumericVector y, const double a)</code></pre>
+<p>Here <code>Rcpp::exportRcpp</code> is an example on the Rcpp export attribute, used to declare that the <code>expSmoothRcpp_I</code> <code>C++</code> function should be callable from R via the automatically generated <code>R</code> and <code>C++</code> code we have described above. The optional <code>(name = &quot;expSmoothRcpp&quot;)</code> argument is used to specify the name of the R function that should be used to access the <code>C++</code> code. In fact, simply doing:</p>
+<pre class="cpp"><code>// [[Rcpp::export]]
+NumericVector expSmoothRcpp_I(const NumericVector y, const double a)</code></pre>
+<p>would have created an <code>R</code> wrapper called <code>expSmoothRcpp_I</code>. For more on attributes, see the <a href="http://dirk.eddelbuettel.com/code/rcpp/Rcpp-attributes.pdf">Rcpp vignette on attributes</a>, which also clarifies what are the requirements that must met by a <code>C++</code> function to be exportable to <code>R</code> via <code>Rcpp::exportRcpp</code>.</p>
+</div>
+<div id="inline-rcpp-via-cppfunction-and-evalcpp" class="section level3">
+<h3>Inline Rcpp via <code>cppFunction()</code> and <code>evalCpp()</code></h3>
+<p>While it is generally preferable to have <code>C++</code> code stored in its own <code>.cpp</code> source files, <code>Rcpp</code> provides mechanisms for defining and executing <code>C++</code> functions within an R script. In particular, consider the following standard <code>Rcpp</code> example:</p>
+<pre class="r"><code>sourceCpp(code = &#39;
+#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+// [[Rcpp::export(name = &quot;fiboInline1&quot;)]]
+int fibonacci(const int n) {
+ if (n &lt; 2)
+  return n;
+ else
+  return (fibonacci(n-1)) + fibonacci(n-2);
+}&#39;)</code></pre>
+<p>which creates a <code>C++</code> function for computing the <span class="math inline">\(n\)</span>-th element of the Fibonacci sequence:</p>
+<pre class="r"><code>fiboInline1(6)</code></pre>
+<pre><code>## [1] 8</code></pre>
+<p>This is equivalent to having defined the function in, say, <code>fibo.cpp</code> and having sourced it using <code>sourceCpp(&quot;fibo.cpp&quot;)</code>. An even more compact approach involves using the <code>cppFunction</code> function:</p>
+<pre class="r"><code>cppFunction(&#39;
+int fiboInline2(const int x) {
+ if (x &lt; 2)
+  return x;
+ else
+  return (fiboInline2(x-1)) + fiboInline2(x-2);
+}
+&#39;)
+
+fiboInline2(6)</code></pre>
+<pre><code>## [1] 8</code></pre>
+<p>Using <code>Rcpp</code> in an inline fashion can be convenient we dealing with very small chunks of <code>C++</code> code. Simple <code>C++</code> expression can be evaluated via <code>evalCpp</code>, for instance:</p>
+<pre class="r"><code>evalCpp(&#39;1.0 + 1.0&#39;)</code></pre>
+<pre><code>## [1] 2</code></pre>
+<p>As for <code>sourceCpp</code>, we can use the <code>verbose</code> argument to look at the code automatically generated by <code>Rcpp</code>:</p>
+<pre class="r"><code>evalCpp(&#39;1.0 + 1.0&#39;, verbose = TRUE)</code></pre>
+<pre><code>## 
+## Generated code for function definition: 
+## --------------------------------------------------------
+## 
+## #include &lt;Rcpp.h&gt;
+## 
+## using namespace Rcpp;
+## 
+## // [[Rcpp::export]]
+## SEXP get_value(){ return wrap( 1.0 + 1.0 ) ; }
+## 
+## No rebuild required (use rebuild = TRUE to force a rebuild)</code></pre>
+<pre><code>## [1] 2</code></pre>
+<p>Notice the use of <code>Rcpp::wrap</code> when the <code>get_value</code> function returns. <code>wrap</code> allows to transfer objects from C++ to R, for example here it converts the double 2.0 to a numeric vector in R. An important point is that, when converting from R to C++ using <code>Rcpp::as&lt;T&gt;</code>, we need to specify the C++ type via the <code>T</code> argument, while the conversion from C++ to R using <code>wrap</code> is handled automatically.</p>
+</div>
+<div id="references" class="section level3">
+<h3>References</h3>
+<ul>
+<li>Allaire, J.J., Eddelbuettel, D. and François, R., 2018. Rcpp Attributes. Vignette included in R package Rcpp, URL <a href="http://CRAN" class="uri">http://CRAN</a>. R-Project. org/package= Rcpp.</li>
+<li>Eddelbuettel, D., 2013. Seamless R and C++ integration with Rcpp. New York: Springer.</li>
+<li>Eddelbuettel, D. and Balamuta, J.J., 2018. Extending R with C++: A Brief Introduction to Rcpp. The American Statistician, 72(1), pp.28-36.</li>
+<li>Wickham, H., 2014. Advanced r. Chapman and Hall/CRC.</li>
+</ul>
+</div>
+
+
+  <footer>
+  
+
+<script src="//yihui.name/js/math-code.js"></script>
+<script async src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script async src="//yihui.name/js/center-img.js"></script>
+
+
+<script type="text/javascript">
+var sc_project=12110974;
+var sc_invisible=1;
+var sc_security="9b171880";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12110974/0/9b171880/1/"
+alt="Web Analytics"></a></div></noscript>
+
+
+
+
+
+
+
+
+  
+
+
+<p align=right>
+
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp/3_Rcpp.Rmd'>View source</a>
+
+|
+
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp/3_Rcpp.Rmd'>Edit source</a>
+
+</p>
+
+
+
+
+
+<script src="https://utteranc.es/client.js"
+        repo="awllee/sc1-2019"
+        issue-term="pathname"
+        label="utterance"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+
+  
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+  
+  <hr>
+  <div class="copyright">© 2020 <a href="https://mfasiolo.github.io/">Matteo Fasiolo</a></div>
+  
+  </footer>
+  </article>
+  
+  </body>
+</html>
+
