@@ -53,7 +53,7 @@ addDiffLengh <- cppFunction("
 addDiffLengh(1:3, 1)
 addDiffLengh(1, 1:3)
 ```
-does not behave in the way we would expect in `R`. In the first case we are adding `1` to the vector `1:3`, and the output is the same we would obtain by doing $1:3 + 1$ in `R`. But, in the second case, we are adding `1:3` to a vector of length `1` and `Rcpp` does not do any recycling.
+does not behave in the way we would expect in `R`. In the first case we are adding `1` to the vector `1:3`, and the output should that no recycling in going on (compare this with $1:3 + 1$ in `R`). In the second case, we are adding `1:3` to a vector of length `1` and `Rcpp` does not do any recycling.
 
 The bottom line is that we should not expect `Rcpp` code to behave like `R` code when it comes to recycling, and that `Rcpp` does not provide a direct equivalent of the `%*%` operator for matrix-matrix and matrix-vector multiplication. Hence, when doing linear algebra in `Rcpp`, we are better off using the methods offered by the `RcppArmadillo` package, as done in the following function:  
 ```{r}
