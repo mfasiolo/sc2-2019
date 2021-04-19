@@ -247,8 +247,8 @@ microbenchmark(kdeR = kdeR(dmvnorm, x, x, diag(d)),
                kdeLazy = kdeLazy(dmvnorm, x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
 ##     expr      min       lq     mean   median       uq      max neval
-##     kdeR 189.5916 193.6308 196.8357 194.8294 196.5700 273.4159   100
-##  kdeLazy 226.1306 230.9828 235.8046 233.3107 235.7476 319.5085   100</code></pre>
+##     kdeR 190.0653 194.0389 197.2462 195.2178 197.7048 271.6086   100
+##  kdeLazy 224.5172 229.5075 234.0115 231.1635 234.2720 303.0598   100</code></pre>
 <p>It turns out that the <code>Rcpp</code> version is not faster. This demonstrates that writing part of the code in <code>Rcpp</code> does not automatically lead to performance gains. In particular our <code>Rcpp</code> code:</p>
 <ul>
 <li>calls the <code>dmvnR</code> function to compute the Gaussian kernel. We cannot expect an <code>R</code> function
@@ -397,20 +397,20 @@ It seems so! We now compare the <code>Armadillo</code> and the <code>R</code> ve
 microbenchmark(R = kdeR(dmvnorm, x, x, diag(d)),
                Armadillo = kdeArma(x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
-##       expr       min        lq      mean    median        uq       max neval
-##          R 188.81203 193.45335 197.45926 195.10690 196.66002 276.37211   100
-##  Armadillo  59.39267  59.64529  59.92153  59.81613  60.08004  64.24754   100</code></pre>
+##       expr       min        lq      mean    median       uq      max neval
+##          R 188.67475 194.53019 198.09538 195.72788 197.4632 273.2767   100
+##  Armadillo  59.50014  59.70424  59.94554  59.86073  60.0724  61.5366   100</code></pre>
 <p>This is definitely better than the previous version! Note that the <code>R</code> version (<code>kdeR</code>) is not too inefficient here because, at each iteration of the main <code>for</code> loop, the <code>dmvnorm</code> function evaluates a Gaussian density at <span class="math inline">\(10^3\)</span> data points. If we reduce the number of points at which the k.d.e. is evaluated, the performance gain increases. For instance:</p>
 <pre class="r"><code>library(microbenchmark)
 microbenchmark(R = kdeR(dmvnorm, x[1:10, ], x, diag(d)),
                Armadillo = kdeArma(x[1:10, ], x, diag(d)))</code></pre>
 <pre><code>## Unit: microseconds
-##       expr        min          lq        mean    median          uq        max
-##          R 109525.396 115064.4250 117467.5178 116547.39 118619.0360 196088.011
-##  Armadillo    537.001    548.6545    571.0566    574.37    584.1355    652.014
-##  neval
-##    100
-##    100</code></pre>
+##       expr        min          lq        mean      median          uq
+##          R 109512.107 114571.6655 116950.1495 115881.1530 118131.6810
+##  Armadillo    536.296    543.4645    563.5433    567.2425    578.9655
+##         max neval
+##  192586.397   100
+##     620.709   100</code></pre>
 <p>This is attributable to a) the fact that we are computing the Cholesky decomposition of <span class="math inline">\(\bf H\)</span> only once rather than <span class="math inline">\(n\)</span> times, b) to the fact that <code>for</code> loops are much quicker in <code>C++</code> that in <code>R</code> and c) (hopefully) that our code for computing the multivariate normal density is faster than that used by <code>dmvtnorm</code>.</p>
 </div>
 <div id="references" class="section level3">

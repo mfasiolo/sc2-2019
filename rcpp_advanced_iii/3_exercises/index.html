@@ -163,7 +163,7 @@ x &lt;- rep(Irish$extra$tod, ncust)
 n &lt;- length(x)
 ss &lt;- sample(1:n, 1e4)
 plot(x[ss], y[ss], col = &quot;grey&quot;)</code></pre>
-<p><img src="Rplot00.png" /></p>
+<p><img src="/img/Rplot00.png" /></p>
 <p>where the <span class="math inline">\(x\)</span>-axis here represents the time of day (0 is midnight and 47 is 23:30).</p>
 <p>We want to model the relation between the time of day (<code>x</code>) and the demand (<code>y</code>). We start with a simple univariate regression model <span class="math inline">\(\mathbb{E}(y|x) = \beta_1 x\)</span> (note that we do not need an intercept as we have centered <code>y</code> above). Here is a simple function to fit the model by least squares:</p>
 <pre class="r"><code>reg1D &lt;- function(y, x){
@@ -188,7 +188,7 @@ want use OpenMP and/or some of the functions provided by <code>RcppParallel</cod
 <pre class="r"><code>ss &lt;- sort( sample(1:n, 1e4) )
 plot(x[ss], y[ss], col = &quot;grey&quot;)
 abline(a = 0, b = reg1D(y, x), col = 2, lwd = 2)</code></pre>
-<p><img src="Rplot.png" />
+<p><img src="/img/Rplot.png" />
 is arguably a pretty poor fit! Let’s try to do better by fitting a polynomial regression such as <span class="math inline">\(\mathbb{E}(y|x) = \beta_0 + \beta_1 x + \beta_2 x^2 + \beta_3 x^3\)</span> (note that we have included an intercept here, despite <span class="math inline">\(y\)</span> being centered. The reason will become clear later on). A multivariate linear regression model, with model matrix <code>X</code>, can be fitted using the following function:</p>
 <pre class="r"><code>regMD &lt;- function(y, X){
   
@@ -212,7 +212,7 @@ Xu &lt;- cbind(1, 0:47, (0:47)^2, (0:47)^3)
 plot(x[ss], y[ss], col = &quot;grey&quot;)
 lines(0:47, Xu %*% b, col = 2, lwd = 3)
 lines(0:47, Xu %*% b_lm, col = 1, lty = 2)</code></pre>
-<p><img src="Rplot01.png" />
+<p><img src="/img/Rplot01.png" />
 As one would hope, our solution coincides with the one provided by <code>lm()</code>.</p>
 <p><strong>Q2 start</strong> Implement a parallel version of <code>regMD</code> using <code>RcppParallel</code> and compare your function to <code>regMD</code> in terms of exactness and timing. <strong>Q2 end</strong></p>
 <p>The polynomial fit is better but we can do even better using local polynomial regression.
@@ -241,13 +241,13 @@ plot(x[ss], y[ss], col = &quot;grey&quot;)
 lines(0:47, Xu %*% b, col = 2, lwd = 3)
 lines(0:47, Xu %*% b_lm, col = 1, lty = 2)
 abline(v = 35, lty = 2)</code></pre>
-<p><img src="Rplot02.png" /></p>
+<p><img src="/img/Rplot02.png" /></p>
 <p>It seems so. To evaluate our fitted function at several points on the <span class="math inline">\(x\)</span>-axis, we do (NOTE this takes a few minutes to run):</p>
 <pre class="r"><code>f &lt;- lapply(0:47, function(.x ) regMD_local(y, X, x0 = .x, x = x, h = 5))
 
 plot(x[ss], y[ss], col = &quot;grey&quot;)
 lines(0:47, sapply(1:48, function(ii) Xu[ii, ] %*% f[[ii]]), col = 2, lwd = 3, type = &#39;b&#39;)</code></pre>
-<p><img src="Rplot03.png" /></p>
+<p><img src="/img/Rplot03.png" /></p>
 <p><strong>Q3 start</strong> Implement a parallel version of <code>regMD_local</code> using <code>RcppParallel</code> and compare your function to <code>regMD_local</code> in terms of exactness and timing. <strong>Q3 end</strong></p>
 <p><strong>Q4 start</strong> Consider these lines of code:</p>
 <pre class="r"><code>  w &lt;- dnorm(x0, x, h)
