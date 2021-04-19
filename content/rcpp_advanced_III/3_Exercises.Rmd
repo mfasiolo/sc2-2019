@@ -47,7 +47,7 @@ ss <- sample(1:n, 1e4)
 plot(x[ss], y[ss], col = "grey")
 ```
 
-![](./Rplot00.png)
+![](/img/Rplot00.png)
 
 where the $x$-axis here represents the time of day (0 is midnight and 47 is 23:30).
 
@@ -82,7 +82,7 @@ ss <- sort( sample(1:n, 1e4) )
 plot(x[ss], y[ss], col = "grey")
 abline(a = 0, b = reg1D(y, x), col = 2, lwd = 2)
 ```
-![](./Rplot.png)
+![](/img/Rplot.png)
 is arguably a pretty poor fit! Let's try to do better by fitting a polynomial regression such as $\mathbb{E}(y|x) = \beta_0 + \beta_1 x + \beta_2 x^2 + \beta_3 x^3$ (note that we have included an intercept here, despite $y$ being centered. The reason will become clear later on). A multivariate linear regression model, with model matrix `X`, can be fitted using the following function:
 ```{r, eval = FALSE}
 regMD <- function(y, X){
@@ -110,7 +110,7 @@ plot(x[ss], y[ss], col = "grey")
 lines(0:47, Xu %*% b, col = 2, lwd = 3)
 lines(0:47, Xu %*% b_lm, col = 1, lty = 2)
 ```
-![](./Rplot01.png)
+![](/img/Rplot01.png)
 As one would hope, our solution coincides with the one provided by `lm()`.
 
 **Q2 start** Implement a parallel version of `regMD` using `RcppParallel` and compare your function to `regMD` in terms of exactness and timing. **Q2 end**
@@ -146,7 +146,7 @@ lines(0:47, Xu %*% b_lm, col = 1, lty = 2)
 abline(v = 35, lty = 2)
 ```
 
-![](./Rplot02.png)
+![](/img/Rplot02.png)
 
 It seems so. To evaluate our fitted function at several points on the $x$-axis, we do (NOTE this takes a few minutes to run):
 ```{r, eval = FALSE}
@@ -156,7 +156,7 @@ plot(x[ss], y[ss], col = "grey")
 lines(0:47, sapply(1:48, function(ii) Xu[ii, ] %*% f[[ii]]), col = 2, lwd = 3, type = 'b')
 ```
 
-![](./Rplot03.png)  
+![](/img/Rplot03.png)  
 
 **Q3 start** Implement a parallel version of `regMD_local` using `RcppParallel` and compare your function to `regMD_local` in terms of exactness and timing. **Q3 end**
 
