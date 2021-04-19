@@ -247,8 +247,8 @@ microbenchmark(kdeR = kdeR(dmvnorm, x, x, diag(d)),
                kdeLazy = kdeLazy(dmvnorm, x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
 ##     expr      min       lq     mean   median       uq      max neval
-##     kdeR 190.7113 194.9097 198.3930 196.4322 198.8733 278.0299   100
-##  kdeLazy 226.3770 231.8339 235.8738 233.5616 235.4350 316.3799   100</code></pre>
+##     kdeR 189.5916 193.6308 196.8357 194.8294 196.5700 273.4159   100
+##  kdeLazy 226.1306 230.9828 235.8046 233.3107 235.7476 319.5085   100</code></pre>
 <p>It turns out that the <code>Rcpp</code> version is not faster. This demonstrates that writing part of the code in <code>Rcpp</code> does not automatically lead to performance gains. In particular our <code>Rcpp</code> code:</p>
 <ul>
 <li>calls the <code>dmvnR</code> function to compute the Gaussian kernel. We cannot expect an <code>R</code> function
@@ -398,16 +398,16 @@ microbenchmark(R = kdeR(dmvnorm, x, x, diag(d)),
                Armadillo = kdeArma(x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
 ##       expr       min        lq      mean    median        uq       max neval
-##          R 190.39665 195.34521 198.82085 196.42758 197.93470 278.13258   100
-##  Armadillo  59.42321  59.66142  59.88116  59.79997  60.05182  61.50354   100</code></pre>
+##          R 188.81203 193.45335 197.45926 195.10690 196.66002 276.37211   100
+##  Armadillo  59.39267  59.64529  59.92153  59.81613  60.08004  64.24754   100</code></pre>
 <p>This is definitely better than the previous version! Note that the <code>R</code> version (<code>kdeR</code>) is not too inefficient here because, at each iteration of the main <code>for</code> loop, the <code>dmvnorm</code> function evaluates a Gaussian density at <span class="math inline">\(10^3\)</span> data points. If we reduce the number of points at which the k.d.e. is evaluated, the performance gain increases. For instance:</p>
 <pre class="r"><code>library(microbenchmark)
 microbenchmark(R = kdeR(dmvnorm, x[1:10, ], x, diag(d)),
                Armadillo = kdeArma(x[1:10, ], x, diag(d)))</code></pre>
 <pre><code>## Unit: microseconds
-##       expr        min         lq        mean     median         uq        max
-##          R 109755.228 115255.918 117277.6119 116409.650 118102.735 199432.742
-##  Armadillo    535.505    540.784    560.1727    561.372    575.909    644.378
+##       expr        min          lq        mean    median          uq        max
+##          R 109525.396 115064.4250 117467.5178 116547.39 118619.0360 196088.011
+##  Armadillo    537.001    548.6545    571.0566    574.37    584.1355    652.014
 ##  neval
 ##    100
 ##    100</code></pre>
