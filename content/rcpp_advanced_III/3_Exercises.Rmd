@@ -14,7 +14,7 @@ text-align: justify}
 ### Smoothing by local polynomial regression
 
 Here we consider an Irish smart meter data set which can be found in the `electBook` package. At the time of writing `electBook` is available only on Github, hence we need to install it from there using `devtools`:
-```{r, message=FALSE}
+```{r, message=FALSE, eval = FALSE}
 # Install electBook only if it is not already installed
 if( !require(electBook) ){
   library(devtools)
@@ -23,19 +23,21 @@ if( !require(electBook) ){
 }
 ```
 We can now load the data: 
-```{r, message=FALSE}
+```{r, message=FALSE, eval = FALSE}
 library(electBook)
 data(Irish)
 ```
 See `?Irish` or \url{here}[https://awllee.github.io/sc1/tidyverse/data_reshaping_tidyr/] for details about the data.
 Let us concatenate the electricity demand from all households into a single vector:
-```{r}
+```{r, eval = FALSE}
 y <- do.call("c", Irish$indCons)
 y <- y - mean(y)
 str(y)
+# Named num [1:44886928] -0.477 -0.366 -0.405 -0.476 -0.366 ...
+# - attr(*, "names")= chr [1:44886928] "I10021" "I10022" "I10023" "I10024" ...
 ```
 We have over 44 million observations, here we plot as sub-set:
-```{r}
+```{r, eval = FALSE}
 ncust <- ncol(Irish$indCons) 
 
 x <- rep(Irish$extra$tod, ncust)
@@ -44,10 +46,13 @@ n <- length(x)
 ss <- sample(1:n, 1e4)
 plot(x[ss], y[ss], col = "grey")
 ```
+
+![](./Rplot00.png)
+
 where the $x$-axis here represents the time of day (0 is midnight and 47 is 23:30).
 
 We want to model the relation between the time of day (`x`) and the demand (`y`). We start with a simple univariate regression model $\mathbb{E}(y|x) = \beta_1 x$ (note that we do not need an intercept as we have centered `y` above). Here is a simple function to fit the model by least squares:
-```{r}
+```{r, eval = FALSE}
 reg1D <- function(y, x){
   
   b <- t(x) %*% y / (t(x) %*% x)  
@@ -79,7 +84,7 @@ abline(a = 0, b = reg1D(y, x), col = 2, lwd = 2)
 ```
 ![](./Rplot.png)
 is arguably a pretty poor fit! Let's try to do better by fitting a polynomial regression such as $\mathbb{E}(y|x) = \beta_0 + \beta_1 x + \beta_2 x^2 + \beta_3 x^3$ (note that we have included an intercept here, despite $y$ being centered. The reason will become clear later on). A multivariate linear regression model, with model matrix `X`, can be fitted using the following function:
-```{r}
+```{r, eval = FALSE}
 regMD <- function(y, X){
   
   XtX <- t(X) %*% X
@@ -112,7 +117,7 @@ As one would hope, our solution coincides with the one provided by `lm()`.
 
 The polynomial fit is better but we can do even better using local polynomial regression.
 This is a function for basic one dimensional local polynomial regression (using a Gaussian kernel):
-```{r}
+```{r, eval = FALSE}
 regMD_local <- function(y, X, x0, x, h){
   
   w <- dnorm(x0, x, h)
