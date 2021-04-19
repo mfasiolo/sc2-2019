@@ -91,6 +91,16 @@ The Rcpp package provides an extension of the utils::package.skeleton function, 
     </item>
     
     <item>
+      <title>3. Exercise on parallel local regression</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/3_exercises/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/3_exercises/</guid>
+      <description>Smoothing by local polynomial regression    body { text-align: justify}  Smoothing by local polynomial regression Here we consider an Irish smart meter data set which can be found in the electBook package. At the time of writing electBook is available only on Github, hence we need to install it from there using devtools:
+# Install electBook only if it is not already installed if( !require(electBook) ){ library(devtools) install_github(&amp;quot;mfasiolo/electBook&amp;quot;) library(electBook) } We can now load the data:</description>
+    </item>
+    
+    <item>
       <title>3. Rcpp basics</title>
       <link>https://mfasiolo.github.io/sc2-2019/rcpp/3_rcpp/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>

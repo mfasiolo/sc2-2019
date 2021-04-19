@@ -25,5 +25,15 @@ Basic examples The following Rcpp program simply pauses the system for sec secon
       <description>Thread-safe accessors Parallel for loops with RcppParallel Parallel reductions with RcppParallel References    body { text-align: justify}  Here we briefly introduce the RcppParallel R package. As explained in the previous section, Rcpp and R’s C API are not guaranteed to be thread-safe, hence calling them within parallel code is ‘for experts only’. RcppParallel provides tools to access R vectors and matrices in a thread-safe way, thus making parallel coding easier.</description>
     </item>
     
+    <item>
+      <title>3. Exercise on parallel local regression</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/3_exercises/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/3_exercises/</guid>
+      <description>Smoothing by local polynomial regression    body { text-align: justify}  Smoothing by local polynomial regression Here we consider an Irish smart meter data set which can be found in the electBook package. At the time of writing electBook is available only on Github, hence we need to install it from there using devtools:
+# Install electBook only if it is not already installed if( !require(electBook) ){ library(devtools) install_github(&amp;quot;mfasiolo/electBook&amp;quot;) library(electBook) } We can now load the data:</description>
+    </item>
+    
   </channel>
 </rss>

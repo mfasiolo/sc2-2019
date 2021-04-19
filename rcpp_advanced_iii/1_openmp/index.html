@@ -160,7 +160,7 @@ bool wait_a_second(int sec)
 
 system.time( wait_a_second(2) )[3]</code></pre>
 <pre><code>## elapsed 
-##   2.001</code></pre>
+##       2</code></pre>
 <p>Where <code>sleep</code> is defined in <code>unistd.h</code>. The following function uses OpenMP to wait <code>sec</code> seconds on <code>ncores</code> in parallel:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
 #include &lt;unistd.h&gt;
