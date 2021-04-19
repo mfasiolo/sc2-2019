@@ -13,11 +13,21 @@ text-align: justify}
 
 ### Smoothing by local polynomial regression
 
-Consider the Irish smart metering data set presented in a previous chapter: 
+Here we consider an Irish smart meter data set which can be found in the `electBook` package. At the time of writing `electBook` is available only on Github, hence we need to install it from there using `devtools`:
+```{r, message=FALSE}
+# Install electBook only if it is not already installed
+if( !require(electBook) ){
+  library(devtools)
+  install_github("mfasiolo/electBook")
+  library(electBook)
+}
+```
+We can now load the data: 
 ```{r, message=FALSE}
 library(electBook)
 data(Irish)
 ```
+See `?Irish` or \url{here}[https://awllee.github.io/sc1/tidyverse/data_reshaping_tidyr/] for details about the data.
 Let us concatenate the electricity demand from all households into a single vector:
 ```{r}
 y <- do.call("c", Irish$indCons)
