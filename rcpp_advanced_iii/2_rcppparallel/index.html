@@ -181,9 +181,9 @@ microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1,
                times = 100, 
                unit = &quot;relative&quot;)</code></pre>
 <pre><code>## Unit: relative
-##    expr      min       lq    mean   median       uq     max neval
-##       R 1.000000 1.000000 1.00000 1.000000 1.000000 1.00000   100
-##  erf(x) 1.603468 1.553947 1.53546 1.517275 1.508076 1.38408   100</code></pre>
+##    expr      min       lq     mean  median       uq      max neval
+##       R 1.000000 1.000000 1.000000 1.00000 1.000000 1.000000   100
+##  erf(x) 1.599526 1.527793 1.535219 1.50947 1.506988 2.082612   100</code></pre>
 <p>our <code>Rcpp</code> function does not seem very efficient. Let’s see whether we can do any better by parallelising the code via <code>RcppParalel</code> and OpenMP. In particular, consider the function:</p>
 <pre class="r"><code>library(Rcpp)
 sourceCpp(code = &#39;
@@ -399,13 +399,13 @@ gld &lt;- funCreator(0.5, 1) # Analogous to lambda function in C++
 # Perform reduction
 x &lt;- rnorm(10)
 Reduce(gld, x) # Analogous to std::accumulate</code></pre>
-<pre><code>## [1] -6.88982</code></pre>
+<pre><code>## [1] -7.99136</code></pre>
 <p>Some of the features we are using to define the lambda function are defined in the C++14 standard, hence we added the <code>Rcpp::plugins(cpp14)</code> attribute. Let’s see whether the <code>Rcpp</code> function works:</p>
 <pre class="r"><code>x &lt;- rnorm(1e6)
 dnormSeq(x, 0.5, 2)</code></pre>
-<pre><code>## [1] -1768695</code></pre>
+<pre><code>## [1] -1768419</code></pre>
 <pre class="r"><code>sum(dnorm(x, 0.5, 2, log = TRUE))</code></pre>
-<pre><code>## [1] -1768695</code></pre>
+<pre><code>## [1] -1768419</code></pre>
 <p>it seems so, and it is much quicker than base <code>R</code>:</p>
 <pre class="r"><code>microbenchmark(R = sum(dnorm(x, 0.5, 2, log = TRUE)), 
                dnormSeq(x, 0.5, 2), 
@@ -464,9 +464,9 @@ double dnormPar(Rcpp::NumericVector x, double m, double s) {
 <p>Before explaining how this works, let’s see whether it produces correct results:</p>
 <pre class="r"><code>x &lt;- rnorm(1e6)
 dnormPar(x, 0.5, 2)</code></pre>
-<pre><code>## [1] -1768637</code></pre>
+<pre><code>## [1] -1768354</code></pre>
 <pre class="r"><code>sum(dnorm(x, 0.5, 2, log = TRUE))</code></pre>
-<pre><code>## [1] -1768637</code></pre>
+<pre><code>## [1] -1768354</code></pre>
 <p>which seems to be the case. Let’s look at the speed-up, which on the CPU described above is:</p>
 <pre class="r"><code>microbenchmark(R = sum(dnorm(x, 0.5, 2, log = TRUE)), 
                RcppSeq = dnormSeq(x, 0.5, 2), 
