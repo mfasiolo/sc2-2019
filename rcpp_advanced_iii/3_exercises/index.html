@@ -252,16 +252,18 @@ lines(0:47, sapply(1:48, function(ii) Xu[ii, ] %*% f[[ii]]), col = 2, lwd = 3, t
   w &lt;- w / sum(x)</code></pre>
 <p>In principle the weights should sum to one, but for example:</p>
 <pre class="r"><code>x &lt;- c(100, 200, 300)
-( w &lt;- dnorm(0, x, 1) )
-( w &lt;- w / sum(x) ) </code></pre>
+( w &lt;- dnorm(0, x, 1) )</code></pre>
+<pre><code>## [1] 0 0 0</code></pre>
+<pre class="r"><code>( w &lt;- w / sum(x) ) </code></pre>
+<pre><code>## [1] 0 0 0</code></pre>
 <p>as you can see, all the weight are 0! The numerically stable way of computing this is:</p>
-<pre class="r"><code>x &lt;- c(100, 200, 300)
-lw &lt;- dnorm(0, x, 1, log = TRUE)
+<pre class="r"><code>lw &lt;- dnorm(0, x, 1, log = TRUE)
 mlw &lt;- max(lw)
 ( w &lt;- exp(lw - mlw) / sum(exp(lw - mlw)) ) </code></pre>
+<pre><code>## [1] 1 0 0</code></pre>
 <p>Think about why this solution is preferable and implement a parallel version of it.
 <strong>Q4 end</strong></p>
-<p><strong>Q4 start</strong> Assume that new data becomes available, that is the model matrix is updated to <span class="math inline">\(\bf X \leftarrow [\bf X_{\text{old}}^T, \bf X_{\text{new}}^T]^T\)</span> (new rows of data have been added). Assuming that you have stored <span class="math inline">\(\bf X_{\text{old}}^T \bf W_{\text{old}} \bf X_{\text{old}}\)</span>, how would you efficiently update your fit? <strong>Q4 end</strong></p>
+<p><strong>Q5 start</strong> Assume that new data becomes available, that is the model matrix is updated to <span class="math inline">\(\bf X \leftarrow [\bf X_{\text{old}}^T, \bf X_{\text{new}}^T]^T\)</span> (new rows of data have been added). Assuming that you have stored <span class="math inline">\(\bf X_{\text{old}}^T \bf W_{\text{old}} \bf X_{\text{old}}\)</span>, how would you efficiently update your fit? <strong>Q5 end</strong></p>
 </div>
 
 
