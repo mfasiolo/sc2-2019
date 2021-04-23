@@ -182,14 +182,13 @@ lines(0:47, ele$Xu_f, col = 2, lwd = 3, type = 'b')
   w <- w / sum(x)
 ```
 In principle the weights should sum to one, but for example: 
-```{r, eval = FALSE}
+```{r}
 x <- c(100, 200, 300)
 ( w <- dnorm(0, x, 1) )
 ( w <- w / sum(x) ) 
 ```
 as you can see, all the weight are 0! The numerically stable way of computing this is:
-```{r, eval = FALSE}
-x <- c(100, 200, 300)
+```{r}
 lw <- dnorm(0, x, 1, log = TRUE)
 mlw <- max(lw)
 ( w <- exp(lw - mlw) / sum(exp(lw - mlw)) ) 
@@ -197,4 +196,4 @@ mlw <- max(lw)
 Think about why this solution is preferable and implement a parallel version of it.
 **Q4 end**
 
-**Q4 start** Assume that new data becomes available, that is the model matrix is updated to $\bf X \leftarrow [\bf X_{\text{old}}^T, \bf X_{\text{new}}^T]^T$ (new rows of data have been added). Assuming that you have stored $\bf X_{\text{old}}^T \bf W_{\text{old}} \bf X_{\text{old}}$, how would you efficiently update your fit? **Q4 end**
+**Q5 start** Assume that new data becomes available, that is the model matrix is updated to $\bf X \leftarrow [\bf X_{\text{old}}^T, \bf X_{\text{new}}^T]^T$ (new rows of data have been added). Assuming that you have stored $\bf X_{\text{old}}^T \bf W_{\text{old}} \bf X_{\text{old}}$, how would you efficiently update your fit? **Q5 end**
