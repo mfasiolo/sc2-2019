@@ -56,10 +56,10 @@ max(abs( (2 * pnorm(x * sqrt(2)) - 1) - erf(x)))
 The numerical difference seems tolerable, however:
 ```{r}
 library(microbenchmark)
+options(microbenchmark.unit="relative")
 microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
                erf(x), 
-               times = 100, 
-               unit = "relative")
+               times = 100)
 ```
 our `Rcpp` function does not seem very efficient. Let's see whether we can do any better by parallelising the code via `RcppParalel` and OpenMP. In particular, consider the function:
 ```{r}
@@ -111,8 +111,7 @@ microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1,
                erfOmp(x, 1), 
                erfOmp(x, 4),
                erfOmp(x, 8),
-               times = 100, 
-               unit = 'relative')
+               times = 100)
 ```
 ```{r, eval = FALSE}
 Unit: relative
@@ -155,8 +154,7 @@ which is analogous to our original `erf` function, but now we use `std::trasform
 ```{r, results = 'hide'}
 microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
                erfStd(x),
-               times = 100, 
-               unit = 'relative')
+               times = 100)
 ```
 ```{r, eval = FALSE}
 Unit: relative
@@ -218,8 +216,7 @@ and let's check its computational performance:
 microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
                erfOmp(x, 4),
                erfPar(x),
-               times = 100, 
-               unit = 'relative')
+               times = 100)
 ```
 ```{r, eval = FALSE}
 Unit: relative
@@ -332,8 +329,7 @@ sum(dnorm(x, 0.5, 2, log = TRUE))
 it seems so, and it is much quicker than base `R`:
 ```{R, results = 'hide'}
 microbenchmark(R = sum(dnorm(x, 0.5, 2, log = TRUE)), 
-               dnormSeq(x, 0.5, 2), 
-               unit = 'relative')
+               dnormSeq(x, 0.5, 2))
 ```
 ```{r, eval = FALSE}
 Unit: relative
@@ -400,8 +396,7 @@ which seems to be the case. Let's look at the speed-up, which on the CPU describ
 ```{r, results = 'hide'}
 microbenchmark(R = sum(dnorm(x, 0.5, 2, log = TRUE)), 
                RcppSeq = dnormSeq(x, 0.5, 2), 
-               RcppPar = dnormPar(x, 0.5, 2), 
-               unit = "relative")
+               RcppPar = dnormPar(x, 0.5, 2))
 ```
 ```{r, eval = FALSE}
 Unit: relative

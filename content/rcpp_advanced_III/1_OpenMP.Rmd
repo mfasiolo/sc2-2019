@@ -133,13 +133,13 @@ On my Intel i7-3820 3.60GHz CPU with 4 cores 8 threads I get the following timin
 x <- rnorm(1e7)
 
 library(microbenchmark)
+options(microbenchmark.unit="relative")
 microbenchmark(all(is.finite(x)),
                allFiniteSeq(x),
                allFiniteOMP(x, 1), 
                allFiniteOMP(x, 4),
                allFiniteOMP(x, 8), 
-               allFiniteOMP(x, 16),
-               unit = 'relative')
+               allFiniteOMP(x, 16))
 ```
 ```{r, eval = FALSE}
 Unit: relative
@@ -320,7 +320,6 @@ microbenchmark(R = rowSums(matrix(runif(n*nstep), n, nstep)),
                sitmo_omp1 = sumunif_sitmo_omp(n, nstep = nstep, seeds = 1),
                sitmo_omp4 = sumunif_sitmo_omp(n, nstep = nstep, seeds = 1:4), 
                sitmo_omp16 = sumunif_sitmo_omp(n, nstep = nstep, seeds = 1:16), 
-               unit = "relative", 
                times = 100
                )
 ```
