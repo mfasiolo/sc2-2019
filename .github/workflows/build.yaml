@@ -24,6 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: R -e 'install.packages(c(
+          "blogdown",
           "tidyverse", 
           "mgcViz", 
           "devtools", 
