@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/mfasiolo/sc2-2019.svg?branch=master)](https://travis-ci.com/mfasiolo/sc2-2019)
+[![Build Status](https://github.com/mfasiolo/sc2-2019/workflows/build/badge.svg)](https://github.com/mfasiolo/sc2-2019/actions)
 
 # Statistical Computing 2 Website
 
