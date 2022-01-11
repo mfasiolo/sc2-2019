@@ -8,6 +8,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // dotArma_I
 arma::vec dotArma_I(arma::vec x1, arma::vec x2);
 RcppExport SEXP _mypack_dotArma_I(SEXP x1SEXP, SEXP x2SEXP) {

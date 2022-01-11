@@ -250,13 +250,13 @@ bool allFiniteOMP(NumericVector x, int ncores)
 <pre class="r"><code>x &lt;- rnorm(1e7)
 
 library(microbenchmark)
+options(microbenchmark.unit=&quot;relative&quot;)
 microbenchmark(all(is.finite(x)),
                allFiniteSeq(x),
                allFiniteOMP(x, 1), 
                allFiniteOMP(x, 4),
                allFiniteOMP(x, 8), 
-               allFiniteOMP(x, 16),
-               unit = &#39;relative&#39;)</code></pre>
+               allFiniteOMP(x, 16))</code></pre>
 <pre class="r"><code>Unit: relative
                 expr       min        lq       mean    median         uq      max neval
    all(is.finite(x)) 18.892823 17.973095 14.2843653 17.272120 13.0616667 7.876008   100
@@ -409,7 +409,6 @@ It seems to work fine. Let’s look at the CPU time:</p>
                sitmo_omp1 = sumunif_sitmo_omp(n, nstep = nstep, seeds = 1),
                sitmo_omp4 = sumunif_sitmo_omp(n, nstep = nstep, seeds = 1:4), 
                sitmo_omp16 = sumunif_sitmo_omp(n, nstep = nstep, seeds = 1:16), 
-               unit = &quot;relative&quot;, 
                times = 100
                )</code></pre>
 <p>On the system described above, I get:</p>

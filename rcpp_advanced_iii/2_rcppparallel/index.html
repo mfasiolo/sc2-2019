@@ -176,14 +176,14 @@ max(abs( (2 * pnorm(x * sqrt(2)) - 1) - erf(x)))</code></pre>
 <pre><code>## [1] 4.440892e-16</code></pre>
 <p>The numerical difference seems tolerable, however:</p>
 <pre class="r"><code>library(microbenchmark)
+options(microbenchmark.unit=&quot;relative&quot;)
 microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
                erf(x), 
-               times = 100, 
-               unit = &quot;relative&quot;)</code></pre>
+               times = 100)</code></pre>
 <pre><code>## Unit: relative
-##    expr      min       lq     mean   median       uq      max neval
-##       R 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000   100
-##  erf(x) 1.590154 1.574875 1.547287 1.500372 1.500914 2.104897   100</code></pre>
+##    expr    min      lq     mean   median       uq      max neval
+##       R 1.0000 1.00000 1.000000 1.000000 1.000000 1.000000   100
+##  erf(x) 1.6997 1.70189 1.659416 1.670036 1.651696 1.375982   100</code></pre>
 <p>our <code>Rcpp</code> function does not seem very efficient. Let’s see whether we can do any better by parallelising the code via <code>RcppParalel</code> and OpenMP. In particular, consider the function:</p>
 <pre class="r"><code>library(Rcpp)
 sourceCpp(code = &#39;
@@ -228,8 +228,7 @@ max(abs( (2 * pnorm(x * sqrt(2)) - 1) - erfOmp(x, 4)))</code></pre>
                erfOmp(x, 1), 
                erfOmp(x, 4),
                erfOmp(x, 8),
-               times = 100, 
-               unit = &#39;relative&#39;)</code></pre>
+               times = 100)</code></pre>
 <pre class="r"><code>Unit: relative
          expr      min       lq     mean   median       uq       max neval
             R 3.951898 3.717663 3.388519 3.683268 3.173645 1.8356637   100
@@ -265,8 +264,7 @@ Rcpp::NumericVector erfStd(Rcpp::NumericVector x) {
 <p>which is analogous to our original <code>erf</code> function, but now we use <code>std::trasform</code> in place of the explicit for loop. The performance is not much different:</p>
 <pre class="r"><code>microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
                erfStd(x),
-               times = 100, 
-               unit = &#39;relative&#39;)</code></pre>
+               times = 100)</code></pre>
 <pre class="r"><code>Unit: relative
       expr      min       lq     mean  median     uq      max neval
          R 1.000000 1.000000 1.000000 1.00000 1.0000 1.000000  1000
@@ -321,8 +319,7 @@ Rcpp::NumericVector erfPar(Rcpp::NumericVector x) {
 <pre class="r"><code>microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
                erfOmp(x, 4),
                erfPar(x),
-               times = 100, 
-               unit = &#39;relative&#39;)</code></pre>
+               times = 100)</code></pre>
 <pre class="r"><code>Unit: relative
          expr      min       lq     mean   median       uq      max neval
             R 3.865710 4.034473 3.667210 3.697507 3.548906 1.734676   100
@@ -399,17 +396,16 @@ gld &lt;- funCreator(0.5, 1) # Analogous to lambda function in C++
 # Perform reduction
 x &lt;- rnorm(10)
 Reduce(gld, x) # Analogous to std::accumulate</code></pre>
-<pre><code>## [1] -5.817929</code></pre>
+<pre><code>## [1] -11.81899</code></pre>
 <p>Some of the features we are using to define the lambda function are defined in the C++14 standard, hence we added the <code>Rcpp::plugins(cpp14)</code> attribute. Let’s see whether the <code>Rcpp</code> function works:</p>
 <pre class="r"><code>x &lt;- rnorm(1e6)
 dnormSeq(x, 0.5, 2)</code></pre>
-<pre><code>## [1] -1768273</code></pre>
+<pre><code>## [1] -1768511</code></pre>
 <pre class="r"><code>sum(dnorm(x, 0.5, 2, log = TRUE))</code></pre>
-<pre><code>## [1] -1768273</code></pre>
+<pre><code>## [1] -1768511</code></pre>
 <p>it seems so, and it is much quicker than base <code>R</code>:</p>
 <pre class="r"><code>microbenchmark(R = sum(dnorm(x, 0.5, 2, log = TRUE)), 
-               dnormSeq(x, 0.5, 2), 
-               unit = &#39;relative&#39;)</code></pre>
+               dnormSeq(x, 0.5, 2))</code></pre>
 <pre class="r"><code>Unit: relative
                 expr      min       lq     mean   median       uq      max neval
                    R 12.60742 12.38649 12.55583 12.25376 12.39503 11.30485   100
@@ -464,14 +460,13 @@ double dnormPar(Rcpp::NumericVector x, double m, double s) {
 <p>Before explaining how this works, let’s see whether it produces correct results:</p>
 <pre class="r"><code>x &lt;- rnorm(1e6)
 dnormPar(x, 0.5, 2)</code></pre>
-<pre><code>## [1] -1768292</code></pre>
+<pre><code>## [1] -1768596</code></pre>
 <pre class="r"><code>sum(dnorm(x, 0.5, 2, log = TRUE))</code></pre>
-<pre><code>## [1] -1768292</code></pre>
+<pre><code>## [1] -1768596</code></pre>
 <p>which seems to be the case. Let’s look at the speed-up, which on the CPU described above is:</p>
 <pre class="r"><code>microbenchmark(R = sum(dnorm(x, 0.5, 2, log = TRUE)), 
                RcppSeq = dnormSeq(x, 0.5, 2), 
-               RcppPar = dnormPar(x, 0.5, 2), 
-               unit = &quot;relative&quot;)</code></pre>
+               RcppPar = dnormPar(x, 0.5, 2))</code></pre>
 <pre class="r"><code>Unit: relative
     expr       min        lq      mean    median        uq       max neval
        R 48.132613 47.623084 47.100746 47.014235 46.438556 43.741062   100
@@ -489,7 +484,7 @@ double value;</code></pre>
   input(input), m(m_), s(s_), value(0) { }</code></pre>
 <p>This is the constructor being called when we do <code>Gau obj(x, m, s);</code> in <code>dnormPar</code>. The second constructor is:</p>
 <pre class="cpp"><code>Gau(const Gau&amp; obj, Split) : input(obj.input), m(obj.m), s(obj.s), value(0) { }</code></pre>
-<p>and will be called by <code>parallelReduce</code>. Note that it takes a reference to an object of type <code>Gau</code> as input, and it uses its members (e.g. <code>obj.input</code>) to initialise its own members. The <code>Split</code> argument is used by <code>parallelReduce</code> to split the computation. Then, we have the operator:</p>
+<p>and will be called by <code>parallelReduce</code>. Note that it takes a reference to an object of type <code>Gau</code> as input, and it uses its members (e.g. <code>obj.input</code>) to initialise its own members. The <code>Split</code> argument is used by <code>parallelReduce</code> to split the computation. Then, we have the operator:</p>
 <pre class="cpp"><code>void operator()(std::size_t begin, std::size_t end) {
  auto gld = [m1 = m, s1 = s](const double x1, const double x2) { 
   return x1 - (x2-m1) * (x2-m1) / (s1*s1*2.0); 
