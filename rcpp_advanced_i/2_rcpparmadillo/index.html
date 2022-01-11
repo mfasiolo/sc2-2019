@@ -164,8 +164,8 @@ B &lt;- matrix(1, d, d)
 y &lt;- 1:d
 
 MMv_wrong(A, B, y)</code></pre>
-<pre><code>## [1]  1.000000e+00  2.000000e+00  3.000000e+00 2.121996e-314 3.058658e-314
-## [6] 4.638614e-310 4.638617e-310 4.638617e-310 1.482197e-323</code></pre>
+<pre><code>## [1]  1.000000e+00  2.000000e+00  3.000000e+00  0.000000e+00 3.050369e-314
+## [6] 6.637041e-317 1.142580e-316 1.142572e-316 3.952525e-323</code></pre>
 <p>In particular, <code>A * B</code> in <code>MMv_I</code> is equivalent to <code>as.vector(A * B)</code> is <code>R</code>, that is it computes the element-wise product of two matrices and then converts the output to a vector. Then one might expect that <code>A * B * y</code> in <code>MMv_I</code> should be equivalent to:</p>
 <pre class="r"><code>as.vector(A * B) * y</code></pre>
 <pre><code>## [1] 1 2 3 1 2 3 1 2 3</code></pre>
@@ -217,7 +217,7 @@ addDiffLengh(1:3, 1)</code></pre>
 ## Generated R functions 
 ## -------------------------------------------------------
 ## 
-## `.sourceCpp_5_DLLInfo` &lt;- dyn.load(&#39;/tmp/RtmplwcVie/sourceCpp-x86_64-pc-linux-gnu-1.0.7/sourcecpp_ffec606b2d81/sourceCpp_6.so&#39;)
+## `.sourceCpp_5_DLLInfo` &lt;- dyn.load(&#39;/tmp/Rtmpo4wNyM/sourceCpp-x86_64-pc-linux-gnu-1.0.7/sourcecpp_480a2b1e9a2c/sourceCpp_6.so&#39;)
 ## 
 ## MMv_arma &lt;- Rcpp:::sourceCppFunction(function(A, B, y) {}, FALSE, `.sourceCpp_5_DLLInfo`, &#39;sourceCpp_5_MMv_arma_I&#39;)
 ## 
@@ -226,9 +226,9 @@ addDiffLengh(1:3, 1)</code></pre>
 ## Building shared library
 ## --------------------------------------------------------
 ## 
-## DIR: /tmp/RtmplwcVie/sourceCpp-x86_64-pc-linux-gnu-1.0.7/sourcecpp_ffec606b2d81
+## DIR: /tmp/Rtmpo4wNyM/sourceCpp-x86_64-pc-linux-gnu-1.0.7/sourcecpp_480a2b1e9a2c
 ## 
-## /opt/R/4.1.2/lib/R/bin/R CMD SHLIB -o &#39;sourceCpp_6.so&#39; &#39;fileffec60e69af2.cpp&#39;</code></pre>
+## /opt/R/4.0.2/lib/R/bin/R CMD SHLIB -o &#39;sourceCpp_6.so&#39; &#39;file480a557e05ce.cpp&#39;</code></pre>
 <p>Before illustrating the performance of this function, let’s explain what is going on in the code above:</p>
 <ul>
 <li><code>// [[Rcpp::depends(RcppArmadillo)]]</code> is an <code>Rcpp</code> attribute that states that our code depends on the <code>RcppArmadillo</code>
@@ -251,21 +251,21 @@ B &lt;- matrix(rnorm(d^2), d, d)
 y &lt;- rnorm(d)
 
 max(abs(A %*% B %*% y - MMv_arma(A, B, y)))</code></pre>
-<pre><code>## [1] 1.227818e-11</code></pre>
+<pre><code>## [1] 5.002221e-12</code></pre>
 <pre class="r"><code>library(microbenchmark)
 microbenchmark(R = A %*% B %*% y, 
                Arma = MMv_arma(A, B, y))</code></pre>
-<pre><code>## Unit: milliseconds
-##  expr      min       lq       mean    median       uq      max neval
-##     R 589.9185 616.5319 633.927503 627.69820 643.6935 726.6415   100
-##  Arma   1.0145   1.1550   1.410883   1.39665   1.5652   3.4020   100</code></pre>
+<pre><code>## Unit: microseconds
+##  expr       min        lq      mean    median        uq       max neval
+##     R 61750.799 62935.272 64839.576 63372.592 63931.041 74636.689   100
+##  Arma   681.098  1049.231  1164.487  1228.086  1257.072  4465.728   100</code></pre>
 <p>The performance gains are substantial! It might be tempting to conclude that the <code>Armadillo</code> library is just so much better than <code>R</code> default linear algebra routines, but we need to understand how this performance gain was achieved. To do so, consider the following comparison:</p>
 <pre class="r"><code>microbenchmark(R = A %*% (B %*% y), 
                Arma = MMv_arma(A, B, y))</code></pre>
-<pre><code>## Unit: milliseconds
-##  expr    min      lq     mean  median     uq    max neval
-##     R 1.7071 1.86545 2.031211 1.99745 2.1234 2.9155   100
-##  Arma 1.0372 1.10820 1.284132 1.16775 1.3618 2.6788   100</code></pre>
+<pre><code>## Unit: microseconds
+##  expr      min        lq      mean    median       uq      max neval
+##     R 2891.696 3123.9755 3289.0365 3242.5870 3440.634 4106.003   100
+##  Arma  678.803  715.8305  756.5209  741.8925  785.205 1063.494   100</code></pre>
 <p>It seems that simply adding a pair of brackets made our <code>R</code> code much more efficient, and closer to <code>Armadillo</code>’s performance! The reason is simply that the code <code>A %*% B %*% y</code> computes the matrix product first, which is a <span class="math inline">\(O(d^3)\)</span> operation, and then multiplies that resulting matrix by the vector <code>y</code>, which is a <span class="math inline">\(O(d^2)\)</span> operation. Instead, <code>A %*% (B %*% y)</code> computes two matrix-vector multiplications, thus avoiding the <span class="math inline">\(O(d^3)\)</span> computation. The question is whether the speed-up we are getting from <code>Armadillo</code> is due to the fact that this library is automatically computing the matrix-matrix-vector product using this more efficient order of operations. To verify this, we write the following:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
  // [[Rcpp::depends(RcppArmadillo)]]
@@ -282,8 +282,8 @@ microbenchmark(R = A %*% B %*% y,
                Arma_slow = MMv_arma_slow(A, B, y))</code></pre>
 <pre><code>## Unit: milliseconds
 ##       expr      min       lq     mean   median       uq      max neval
-##          R 595.2472 611.6151 625.1636 621.9104 633.0766 712.4548   100
-##  Arma_slow 585.9830 602.0226 614.7851 611.1234 622.5387 687.7767   100</code></pre>
+##          R 58.97896 59.92682 63.71948 63.29020 63.79602 73.43222   100
+##  Arma_slow 53.04441 53.87709 55.65269 54.20555 57.76462 60.72233   100</code></pre>
 <p>Now the performance is comparable, hence the efficiency of the <code>Armadillo</code> implementation is mostly due to the order in which the computations are performed. The fact that we can achieve similar performance using base <code>R</code> and a pair of (well-placed) brackets might be disappointing, but note that is remarkable that <code>Armadillo</code> is able to automatically determine the order of operations so as to optimize efficiency. In reality, <code>Armadillo</code> does more than just reordering operation, but it can combine several operations into one and reduce the need for temporary objects, via delayed evaluation. This can result in faster computation and lower memory usage, relative to naive evaluation. Delayed evaluation is achieved via template meta-programming, which is beyond the scope of this course. From a user point of view, what matters is that template meta-programming allows <code>Armadillo</code> to reason about linear algebra expression at compile-time, with the aim of producing code that is tailored to each mathematical expression. See <code>Armadillo</code>’s <a href="http://arma.sourceforge.net/">website</a> for more details.</p>
 <p>Before describing some of the main functions and structures provide by <code>Armadillo</code> and <code>RcppArmadillo</code>, we cover another basic example in the next section.</p>
 </div>
@@ -305,9 +305,9 @@ mat mSum_i(mat&amp; A, mat&amp; B, mat&amp; C, mat&amp; D, mat&amp; E) {
 microbenchmark(R = Z &lt;- A + B + C + D + E,
                arma = Z &lt;- mSum_arma(A, B, C, D, E))</code></pre>
 <pre><code>## Unit: milliseconds
-##  expr    min     lq      mean  median       uq     max neval
-##     R 5.4689 7.0916 13.051903 8.34270 10.39865 71.6395   100
-##  arma 1.7907 2.6308  4.772534 4.36925  5.25825 54.6557   100</code></pre>
+##  expr      min       lq      mean   median        uq      max neval
+##     R 5.957182 7.925397 13.676797 8.562033 11.406106 60.34500   100
+##  arma 2.481154 2.728715  5.955723 4.743348  7.631084 52.79944   100</code></pre>
 <p>As we might have expected, the <code>Armadillo</code> version of the sum is faster. How was this better performance achieved? Note that when evaluating the <code>A + B + C + D + E</code>, <code>R</code> will compute <code>A + B</code> and store the result in a temporary object, which we call <code>ApB</code>. Then, it will compute <code>ApB + C</code> and store the temporary result in another matrix, and so on. Hence, the four matrix sums will result in the allocation of four matrices, three of these are temporary and will be discarded, the last one will be stored as <code>Z</code>. An efficient implementation would avoid allocating memory for three temporary matrices, but would simply allocate memory for <code>Z</code> and then do:</p>
 <pre class="r"><code>for(i in 1:d)
   for(j in 1:d)
@@ -330,15 +330,15 @@ mat mSum_i(mat&amp; A, mat&amp; B, mat&amp; C, mat&amp; D, mat&amp; E) {
                arma = Z &lt;- mSum_arma(A, B, C, D, E), 
                arma_slow = Z &lt;- mSum_arma_slow(A, B, C, D, E))</code></pre>
 <pre><code>## Unit: milliseconds
-##       expr    min      lq      mean   median       uq     max neval
-##          R 3.9134 6.70805 12.069392  7.69255  8.85250 66.3848   100
-##       arma 1.8640 2.60045  4.437704  3.08455  5.30445 45.4983   100
-##  arma_slow 5.0300 7.94255 11.879835 11.74035 14.19685 55.0879   100</code></pre>
+##       expr      min        lq      mean    median        uq      max neval
+##          R 5.915885  8.298399 14.564621  9.934756 11.864645 56.76494   100
+##       arma 2.325380  2.762094  7.034135  4.425047  7.737614 53.98145   100
+##  arma_slow 6.753207 10.366577 16.703615 16.508238 19.447463 66.98024   100</code></pre>
 <p>The performance of the second <code>Armadillo</code> version is close to that of the <code>R</code> code, hence we can conclude that the efficiency of the first <code>Armadillo</code> version is attributable to the fact that it avoids creating temporary matrices.</p>
 <p>To conclude this example, consider its extension to the problem of computing <span class="math inline">\({\bf A} + {\bf B} + \cdots\)</span>, where the number of matrices involved in the sum is arbitrary (that is, not fixed to five as above). If the matrices are contained in a <code>list</code>, for example:</p>
 <pre class="r"><code>nmat &lt;- 10
 mats &lt;- lapply(1:nmat, function(.nouse) matrix(rnorm(1e6), 1e3, 1e3))</code></pre>
-<p>then one compact way of calculating their sum in <code>R</code> is <code>Reduce("+", M)</code>. Can we modify our <code>RcppArmadillo</code> code to handle any number of matrices? One way of doing this so that the compile-time efficiency tricks of <code>Armadillo</code> are exploited is based on some text editing. In particular, consider the following function:</p>
+<p>then one compact way of calculating their sum in <code>R</code> is <code>Reduce(&quot;+&quot;, M)</code>. Can we modify our <code>RcppArmadillo</code> code to handle any number of matrices? One way of doing this so that the compile-time efficiency tricks of <code>Armadillo</code> are exploited is based on some text editing. In particular, consider the following function:</p>
 <pre class="r"><code>getMatSumFun &lt;- function(n){
   args &lt;- paste0(&quot;mat&amp; &quot;, paste0(&quot;A&quot;, 1:n), &quot;,&quot;, collapse = &#39; &#39;)
   args &lt;- substr(args, 1, nchar(args)-1)
@@ -375,9 +375,9 @@ cat(armaCode)</code></pre>
 
 microbenchmark(R = Reduce(&quot;+&quot;, mats), arma = do.call(&quot;mSum_arma_list&quot;, mats))</code></pre>
 <pre><code>## Unit: milliseconds
-##  expr     min       lq     mean   median       uq     max neval
-##     R 18.6860 20.67345 25.32515 22.17315 24.78565 80.7884   100
-##  arma  8.6857  9.75290 12.05526 10.29460 13.09895 54.3370   100</code></pre>
+##  expr       min        lq      mean    median       uq      max neval
+##     R 18.490373 19.356276 27.370727 21.867816 31.91039 85.57094   100
+##  arma  7.694878  7.859713  9.853033  9.791173 11.00011 14.33575   100</code></pre>
 </div>
 <div id="basic-rcpparmadillo-usage" class="section level3">
 <h3>Basic <code>RcppArmadillo</code> usage</h3>
@@ -462,9 +462,9 @@ of <code>tmpFun_i</code> does not use <code>R</code> memory, while this is avoid
 <pre class="r"><code>d &lt;- 1e3
 microbenchmark(copy = getIntMat(d, d), noCopy = getIntMat_noCopy(d, d))</code></pre>
 <pre><code>## Unit: microseconds
-##    expr    min      lq     mean  median     uq    max neval
-##    copy 3542.0 3887.00 5003.195 5099.70 5600.2 8834.4   100
-##  noCopy  324.7  347.65 1268.989 1562.95 1840.6 4844.1   100</code></pre>
+##    expr      min        lq     mean   median       uq      max neval
+##    copy 3136.506 4335.3885 5230.829 4696.370 6159.906 8897.118   100
+##  noCopy  601.415  619.3015 1600.048 1794.758 2232.893 4954.026   100</code></pre>
 <p>The bottom line is that, when we want to manipulate large matrices or vectors in <code>RcppArmadillo</code>, it is often more efficient to:</p>
 <ol style="list-style-type: decimal">
 <li><ol style="list-style-type: lower-alpha">

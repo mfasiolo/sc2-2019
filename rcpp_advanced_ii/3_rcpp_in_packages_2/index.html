@@ -415,7 +415,7 @@ arma::vec dotSource_I(arma::vec x1, arma::vec x2)
 dotSource(3:1, 3:1)</code></pre>
 <pre><code>##      [,1]
 ## [1,]   14</code></pre>
-<p>Notice that we don’t need to include <code>RcppArmadillo.h</code>, because it’s already included in <code>mypack.h</code>, while both <code>RcppArmadillo</code> and <code>mypack</code> have to appear in <code>Rcpp::depends</code>. This is because both packages are needed to correctly set the compilation environment (e.g., <code>sourceCpp</code> will use the compilation flags <code>-I"some_folder/RcppArmadillo/include"</code> <code>-I"some_folder/mypack/include"</code> to link against <code>RcppArmadillo.h</code> and <code>mypack.h</code>).</p>
+<p>Notice that we don’t need to include <code>RcppArmadillo.h</code>, because it’s already included in <code>mypack.h</code>, while both <code>RcppArmadillo</code> and <code>mypack</code> have to appear in <code>Rcpp::depends</code>. This is because both packages are needed to correctly set the compilation environment (e.g., <code>sourceCpp</code> will use the compilation flags <code>-I&quot;some_folder/RcppArmadillo/include&quot;</code> <code>-I&quot;some_folder/mypack/include&quot;</code> to link against <code>RcppArmadillo.h</code> and <code>mypack.h</code>).</p>
 </div>
 <div id="using-an-r-package-to-make-a-c-library-available-to-other-packages" class="section level3">
 <h3>Using an <code>R</code> package to make a <code>C++</code> library available to other packages</h3>
@@ -447,7 +447,7 @@ printFile(&quot;mypack/inst/include/mypack.h&quot;)</code></pre>
 #include &quot;smart/smart.h&quot;
 
 #endif</code></pre>
-<p>The main change is that we added <code>#include "smart/smart.h"</code> to include the new library. We can now re-build and re-install our package:</p>
+<p>The main change is that we added <code>#include &quot;smart/smart.h&quot;</code> to include the new library. We can now re-build and re-install our package:</p>
 <pre class="r"><code>system(&quot;R CMD build mypack&quot;)
 system(&quot;R CMD INSTALL mypack_1.0.tar.gz&quot;)</code></pre>
 <p>And now the <code>smart</code> <code>C++</code> library is available via our package:</p>

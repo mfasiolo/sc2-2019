@@ -160,7 +160,7 @@ bool wait_a_second(int sec)
 
 system.time( wait_a_second(2) )[3]</code></pre>
 <pre><code>## elapsed 
-##       2</code></pre>
+##   2.001</code></pre>
 <p>Where <code>sleep</code> is defined in <code>unistd.h</code>. The following function uses OpenMP to wait <code>sec</code> seconds on <code>ncores</code> in parallel:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
 #include &lt;unistd.h&gt;
@@ -192,13 +192,13 @@ bool wait_a_second_omp(int sec, int ncores)
 <p>which tells the compiler that the <code>for</code> loop can be run in parallel. Let try if this works:</p>
 <pre class="r"><code>system.time(wait_a_second_omp(4, 1))[3]</code></pre>
 <pre><code>## elapsed 
-##   4.001</code></pre>
+##       4</code></pre>
 <pre class="r"><code>system.time(wait_a_second_omp(4, 4))[3]</code></pre>
 <pre><code>## elapsed 
-##   1.001</code></pre>
+##   1.002</code></pre>
 <pre class="r"><code>system.time(wait_a_second_omp(16, 16))[3]</code></pre>
 <pre><code>## elapsed 
-##   1.001</code></pre>
+##       1</code></pre>
 <p>It seems so! Note that the speed up is linear in the number of threads in this case, because each thread is essentially doing nothing. That is, there is no competition for computing resources (i.e., floating-point processing units). To illustrate that this is generally not the case, let us consider the following <code>Rcpp</code> function:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
 #include &lt;Rcpp.h&gt;
