@@ -220,7 +220,7 @@ file.show(rinternals)</code></pre>
 <li><code>REALSXP</code> a numeric vector such as <code>c(1.2, 0.45)</code>;</li>
 <li><code>LGLSXP</code> a logical vector such as <code>c(TRUE, FALSE, FALSE)</code>;</li>
 <li><code>INTSXP</code> an integer vector such as <code>c(2L, 34L, 1L)</code>;</li>
-<li><code>VECSXP</code> a list such as <code>list(&quot;a&quot; = 2, &quot;b&quot; = c(5, 4))</code>.</li>
+<li><code>VECSXP</code> a list such as <code>list("a" = 2, "b" = c(5, 4))</code>.</li>
 </ul>
 <p>See the <a href="https://cran.r-project.org/doc/manuals/R-ints.html#R-Internal-Structures">R internal documentation</a> for a complete list.</p>
 <p>The first lines of the function’s body are:</p>
@@ -288,9 +288,9 @@ smoC &lt;- function() .Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch,
 library(microbenchmark)
 microbenchmark(smoR(), smoC(), times = 500)</code></pre>
 <pre><code>## Unit: microseconds
-##    expr     min       lq      mean   median       uq      max neval
-##  smoR() 494.701 498.5225 506.29661 500.5570 505.9565 1863.131   500
-##  smoC()  21.738  22.0685  25.53463  22.3565  22.8845 1339.641   500</code></pre>
+##    expr   min    lq     mean median     uq    max neval
+##  smoR() 611.3 748.9 846.9698 810.35 873.65 7374.4   500
+##  smoC()  12.4  15.5  26.4296  16.80  21.20 2819.2   500</code></pre>
 <p>So the C version is more than 10 times faster. The comparison it somewhat unfair, because the R function is allocating memory containing the smoothed temperature at every call, while the C version is re-using the memory allocated to the <code>tmpSmooth</code> vector. However, the ability to overwrite R objects without copying them is one of the reasons for interfacing R with C.</p>
 <p>We now go back to our original application, and fit a model which excludes <code>so2</code> which didn’t seem to matter and that includes the effect of smoothed temperature:</p>
 <pre class="r"><code>chicago$tmpSmooth &lt;- tmpSmooth
@@ -305,7 +305,7 @@ The plots shows that the effect of smoothed temperature is quite important, and 
 <pre class="r"><code>AIC(fit0, fit1)</code></pre>
 <pre><code>##            df      AIC
 ## fit0 145.0587 37889.99
-## fit1 141.5414 37862.83</code></pre>
+## fit1 141.5415 37862.83</code></pre>
 </div>
 <div id="creating-r-objects-within-c-code" class="section level3">
 <h3>Creating R objects within C code</h3>
@@ -371,10 +371,10 @@ smoC2 &lt;- function() .Call(&quot;expSmooth2&quot;, chicago$tmpd, 0.8)
 library(microbenchmark)
 microbenchmark(smoR(), smoC(), smoC2(), times = 500)</code></pre>
 <pre><code>## Unit: microseconds
-##     expr     min       lq      mean   median      uq      max neval
-##   smoR() 494.400 499.6055 508.92675 504.2670 510.585 1622.611   500
-##   smoC()  22.323  22.9485  26.88751  23.3415  23.965 1583.931   500
-##  smoC2()  21.954  22.9770  29.14161  24.0860  30.558 1177.192   500</code></pre>
+##     expr   min    lq     mean median     uq    max neval
+##   smoR() 638.3 736.6 853.8568 791.15 866.65 3412.9   500
+##   smoC()  13.8  16.3  30.0388  17.60  22.15 3351.8   500
+##  smoC2()  13.3  16.2  25.7200  17.80  22.05 1664.9   500</code></pre>
 <p>despite the fact that it is allocating memory for the output vector at every call. Importantly, <code>expSmooth2</code> is safer and works directly with integer input vectors:</p>
 <pre class="r"><code>plot(chicago$death[1:1000], col = &quot;grey&quot;)
 lines(.Call(&quot;expSmooth2&quot;, chicago$death, 0.8)[1:1000], col = 2)</code></pre>

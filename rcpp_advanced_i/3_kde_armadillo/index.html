@@ -145,7 +145,7 @@ text-align: justify}
 <span class="math display">\[
 \hat{\pi}_{\bf H}({\bf x}) = \frac{1}{n} \sum_{i=1}^n \kappa_{\bf H}({\bf x} - {\bf x}_i^o),
 \]</span>
-where <span class="math inline">\(\kappa_{\bf H}\)</span> is a kernel with positive definite bandwidth matrix <span class="math inline">\({\bf H}\)</span>. Here we assume that <span class="math inline">\(\kappa_{\bf H}\)</span> is a multivariate Gaussian kernel, with covariance matrix <span class="math inline">\({\bf H}\)</span>. Further, the data is generated from the mixture of warped Gaussians of <a href="https://arxiv.org/pdf/1611.06874.pdf">Fasiolo et al. (2018)</a>. The details of this density are unimportant here, what matters is that the example is defined in <span class="math inline">\(d&gt;2\)</span> dimensions and, under such density <span class="math inline">\(\pi({\bf x})\)</span>, the joint distribution of the first two dimensions is far from Gaussian while the remaining dimensions are standard i.i.d. Gaussian variables.</p>
+where <span class="math inline">\(\kappa_{\bf H}\)</span> is a kernel with positive definite bandwidth matrix <span class="math inline">\({\bf H}\)</span>. Here we assume that <span class="math inline">\(\kappa_{\bf H}\)</span> is a multivariate Gaussian kernel, with covariance matrix <span class="math inline">\({\bf H}\)</span>. Further, the data is generated from the mixture of warped Gaussians of <a href="https://arxiv.org/pdf/1611.06874.pdf">Fasiolo et al. (2018)</a>. The details of this density are unimportant here, what matters is that the example is defined in <span class="math inline">\(d&gt;2\)</span> dimensions and, under such density <span class="math inline">\(\pi({\bf x})\)</span>, the joint distribution of the first two dimensions is far from Gaussian while the remaining dimensions are standard i.i.d. Gaussian variables.</p>
 <p>Samples from this density can be generated using the following functions:</p>
 <pre class="r"><code>rBanana &lt;- function(n, d, a, b, shi1, shi2){
   out &lt;- matrix(rnorm(d*n), n, d);
@@ -211,8 +211,10 @@ grd &lt;- as.matrix(cbind(expand.grid(x1, x2), matrix(0, l^2, d-2)))
 library(mvtnorm)
 dns &lt;- kdeR(dmvnorm, grd, x, diag(d))</code></pre>
 <p>Where we use the <code>dmvnorm</code> function from the <code>mvtnorm</code> package to evaluate the Gaussian kernel and we set <span class="math inline">\(\bf H\)</span> simply to the identity matrix. We plot the <code>k.d.e.</code>:</p>
-<pre class="r"><code>library(ggplot2)
-library(viridis)</code></pre>
+<pre class="r"><code>library(ggplot2)</code></pre>
+<pre><code>## Warning in register(): Can&#39;t find generic `scale_type` in package ggplot2 to
+## register S3 method.</code></pre>
+<pre class="r"><code>library(viridis)</code></pre>
 <pre><code>## Loading required package: viridisLite</code></pre>
 <pre class="r"><code>ggplot(data = data.frame(x = grd[ , 1], y = grd[ , 2], z = dns),
        mapping = aes(x = x, y = y, z = z, fill = z)) +
@@ -247,8 +249,8 @@ microbenchmark(kdeR = kdeR(dmvnorm, x, x, diag(d)),
                kdeLazy = kdeLazy(dmvnorm, x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
 ##     expr      min       lq     mean   median       uq      max neval
-##     kdeR 185.6337 188.5512 194.2779 190.6412 193.2317 401.7935   100
-##  kdeLazy 219.5708 225.8295 231.7043 229.2044 231.9991 305.3270   100</code></pre>
+##     kdeR 319.6055 339.3508 352.2859 345.7873 357.1634 498.4018   100
+##  kdeLazy 384.9842 401.7074 413.3666 408.2912 416.4884 544.8965   100</code></pre>
 <p>It turns out that the <code>Rcpp</code> version is not faster. This demonstrates that writing part of the code in <code>Rcpp</code> does not automatically lead to performance gains. In particular our <code>Rcpp</code> code:</p>
 <ul>
 <li>calls the <code>dmvnR</code> function to compute the Gaussian kernel. We cannot expect an <code>R</code> function
@@ -294,7 +296,7 @@ Before looking at the <code>Armadillo</code> function to evaluate the Gaussian l
 }</code></pre>
 <p>This is almost identical to the function that we have used before, the main differences being the following lines:</p>
 <ul>
-<li><code>mat cholDec = chol(H, &quot;lower&quot;);</code> here we are computing the Cholesky decomposition of <span class="math inline">\(\bf H\)</span>
+<li><code>mat cholDec = chol(H, "lower");</code> here we are computing the Cholesky decomposition of <span class="math inline">\(\bf H\)</span>
 and we are storing the lower-triangular factor in <code>cholDec</code>;</li>
 <li><code>out += dmvnInt(y, x.row(ii), cholDec);</code> evaluates a multivariate normal density, with mean vector
 <span class="math inline">\(\mu = {\bf x}_i^0\)</span> and covariance <span class="math inline">\(\bf H\)</span>, at <span class="math inline">\({\bf x}_1, \dots, {\bf x}_m\)</span>. Instead of passing
@@ -397,20 +399,17 @@ It seems so! We now compare the <code>Armadillo</code> and the <code>R</code> ve
 microbenchmark(R = kdeR(dmvnorm, x, x, diag(d)),
                Armadillo = kdeArma(x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
-##       expr       min        lq      mean    median        uq       max neval
-##          R 184.15200 190.09946 193.98313 191.98482 194.38720 264.78047   100
-##  Armadillo  59.78601  59.96576  60.05682  60.02922  60.10468  61.15711   100</code></pre>
+##       expr      min        lq     mean   median       uq      max neval
+##          R 316.8409 330.81385 339.1549 336.8165 342.3327 488.5681   100
+##  Armadillo  35.4951  40.18935  41.6488  41.6021  43.2063  52.1446   100</code></pre>
 <p>This is definitely better than the previous version! Note that the <code>R</code> version (<code>kdeR</code>) is not too inefficient here because, at each iteration of the main <code>for</code> loop, the <code>dmvnorm</code> function evaluates a Gaussian density at <span class="math inline">\(10^3\)</span> data points. If we reduce the number of points at which the k.d.e. is evaluated, the performance gain increases. For instance:</p>
 <pre class="r"><code>library(microbenchmark)
 microbenchmark(R = kdeR(dmvnorm, x[1:10, ], x, diag(d)),
                Armadillo = kdeArma(x[1:10, ], x, diag(d)))</code></pre>
 <pre><code>## Unit: microseconds
-##       expr        min         lq        mean   median          uq        max
-##          R 110138.945 112351.824 115266.8985 114574.6 116181.0855 186967.124
-##  Armadillo    532.727    543.094    589.3654    563.4    572.8645   3436.232
-##  neval
-##    100
-##    100</code></pre>
+##       expr      min       lq       mean    median        uq      max neval
+##          R 216713.0 232505.2 240854.820 240562.00 245119.25 365921.6   100
+##  Armadillo    374.9    467.3    551.928    520.05    595.45   1112.3   100</code></pre>
 <p>This is attributable to a) the fact that we are computing the Cholesky decomposition of <span class="math inline">\(\bf H\)</span> only once rather than <span class="math inline">\(n\)</span> times, b) to the fact that <code>for</code> loops are much quicker in <code>C++</code> that in <code>R</code> and c) (hopefully) that our code for computing the multivariate normal density is faster than that used by <code>dmvtnorm</code>.</p>
 </div>
 <div id="references" class="section level3">

@@ -160,8 +160,10 @@ head(solarAU)</code></pre>
 <p>The interest is modelling the production as a function of the <code>tod</code> and <code>toy</code>. We will be working with log-production, which is less skewed:</p>
 <pre class="r"><code>solarAU$logprod &lt;- log(solarAU$prod+0.01)</code></pre>
 <p>We added <span class="math inline">\(0.01\)</span> to avoid getting <code>-Inf</code> when the production is zero. Let’s look at the log-production as a function of the two covariates:</p>
-<pre class="r"><code>library(ggplot2)
-library(viridis)
+<pre class="r"><code>library(ggplot2)</code></pre>
+<pre><code>## Warning in register(): Can&#39;t find generic `scale_type` in package ggplot2 to
+## register S3 method.</code></pre>
+<pre class="r"><code>library(viridis)
 ggplot(solarAU,
        aes(x = toy, y = tod, z = logprod)) +
        stat_summary_hex() +
