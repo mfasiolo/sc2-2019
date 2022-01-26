@@ -43,7 +43,7 @@ SEXP expSmooth2(SEXP y, SEXP a)
   return ys;
 }
 ```
-Now, the same function can be implemented in "raw" Rcpp as follows (as we will explain later this is NOT the recommended way of using `Rcpp`):
+Now, the same function can be implemented in "raw" Rcpp as follows (as we will explain later, this is NOT the recommended way of using `Rcpp`):
 ```{r engine='Rcpp', eval = FALSE}
 #include <Rcpp.h>
 using namespace Rcpp;
@@ -102,7 +102,7 @@ Now, let us try to understand how the `Rcpp` function for exponential smoothing 
    - Then the `for` loop is very similar to the one in `expSmooth2` and we return the smoothed vector `ys`, without
      calling `UNPROTECT`.
      
-It is worth repeating that compiling `Rcpp` code via `R CMD SHLIB` is not recommended, and the next section will illustrate some better methods. The main advantage of `Rcpp` illustrated so far is that we didn't explicitly create any object of class `SEXP`, which means that we didn't have to call `PROTECT` and `UNPROTECT` to do memory management. In fact, this was does automatically for us via the `NumericVector` class, which wraps an `R` object of class `SEXP` and protects it from `R`'s garbage collector while it is in scope (that is until we exit the part of the program where the
+It is worth repeating that compiling `Rcpp` code via `R CMD SHLIB` is not recommended, and the next section will illustrate some better methods. The main advantage of `Rcpp` illustrated so far is that we didn't explicitly create any object of class `SEXP`, which means that we didn't have to call `PROTECT` and `UNPROTECT` to do memory management. In fact, this was done automatically for us via the `NumericVector` class, which wraps an `R` object of class `SEXP` and protects it from `R`'s garbage collector while it is in scope (that is, until we exit the part of the program where the
 variable is accessible). Hence, our code is shorter and one source of mistakes (i.e., incorrect memory management) has been removed. `Rcpp` provides many other wrappers around `R` objects, such as:
 
    - `NumericMatrix` wraps a `numeric` matrix in `R`;
@@ -198,7 +198,7 @@ The last thing that needs to be explained is the purpose of the comment precedin
 // [[Rcpp::export(name = "expSmoothRcpp")]]
 NumericVector expSmoothRcpp_I(const NumericVector y, const double a)
 ```
-Here `Rcpp::exportRcpp` is an example on the Rcpp export attribute, used to declare that the `expSmoothRcpp_I` `C++` function should be callable from R via the automatically generated `R` and `C++` code we have described above. The optional `(name = "expSmoothRcpp")` argument is used to specify the name of the R function that should be used to access the `C++` code. In fact, simply doing:
+Here `Rcpp::exportRcpp` is an example of the Rcpp export attribute, used to declare that the `expSmoothRcpp_I` `C++` function should be callable from R via the automatically generated `R` and `C++` code we have described above. The optional `(name = "expSmoothRcpp")` argument is used to specify the name of the R function that should be used to access the `C++` code. In fact, simply doing:
 ```{r engine='Rcpp', eval = FALSE}
 // [[Rcpp::export]]
 NumericVector expSmoothRcpp_I(const NumericVector y, const double a)

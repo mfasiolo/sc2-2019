@@ -84,7 +84,7 @@ The `expSmooth` function returns an `SEXP`, which is also the class of its input
    - `n`, a scalar indicating the length of `y` and `ys`;
    - `a`, the $\alpha$ coefficient.
 
-Even though all the arguments of `expSmooth` are of class `SEXP`, is important to know that `SEXP` is a variant type, that is a C object whose subtype is known only at runtime, with subtypes that cover all data structures in R. Examples of subtypes are:
+Even though all the arguments of `expSmooth` are of class `SEXP`, it is important to know that `SEXP` is a variant type, that is a C object whose subtype is known only at runtime, with subtypes that cover all data structures in R. Examples of subtypes are:
    
    - `REALSXP` a numeric vector such as `c(1.2, 0.45)`;
    - `LGLSXP` a logical vector such as `c(TRUE, FALSE, FALSE)`;
@@ -123,11 +123,11 @@ where `R_NilValue` is defined in `Rinternals.h` and it's the C equivalent of R's
 
 ### Calling expSmooth from R
 
-Now, assume that `expSmooth` is contained in a file called `expSmooth.c`, which in our case can be found in our working directory, as you can see from the following call to the command line (the output is hidden here): 
+Now, assume that `expSmooth` is contained in a file called `expSmooth.c`, which in our case can be found in our working directory, as you could see from the following call to the command line (the output is hidden here): 
 ```{r}
 system("ls *.c")
 ```
-Here we will explaining how to call `expSmooth` using the `.Call` interface in R. `.Call` can be used to call C functions that accept variables of class `SEXP` as inputs and return an object of class `SEXP`. Indeed, we created the `expSmooth` function with this requirement in mind.
+Here we will explain how to call `expSmooth` using the `.Call` interface in R. `.Call` can be used to call C functions that accept variables of class `SEXP` as inputs and return an object of class `SEXP`. Indeed, we created the `expSmooth` function with this requirement in mind.
 
 The first thing that we need to do is to compile the C code as follows
 ```{r}
@@ -185,7 +185,7 @@ microbenchmark(smoR(), smoC(), times = 500)
 ```
 So the C version is more than 10 times faster. The comparison it somewhat unfair, because the R function is allocating memory containing the smoothed temperature at every call, while the C version is re-using the memory allocated to the `tmpSmooth` vector. However, the ability to overwrite R objects without copying them is one of the reasons for interfacing R with C. 
 
-We now go back to our original application, and fit a model which excludes `so2` with didn't seem to matter and that includes the effect of smoothed temperature:
+We now go back to our original application, and fit a model which excludes `so2` which didn't seem to matter and that includes the effect of smoothed temperature:
 ```{r, message = FALSE}
 chicago$tmpSmooth <- tmpSmooth
 fit1 <- bam(death ~ s(time, k = 200) + s(pm10median) + s(o3median) +
@@ -209,9 +209,9 @@ Here we try to refine the `expSmooth` function created above. Firstly notice tha
 .Call("expSmooth", chicago$death, tmpSmooth, nch, 0.8)
 # Error: REAL() can only be applied to a 'numeric', not a 'integer'
 ```
-Because `xy = REAL(y);` triggers an error which signals that `y` should be a vector of reals, not of integers. To smooth the number of death we must pass `as.double(chicago$death)`. However, `expSmooth` does not check for other things, for example there nothing guaranteeing that argument `n` actually matches the length of the input vectors `y` and `ys`. For example, the following code:
+Because `xy = REAL(y);` triggers an error which signals that `y` should be a vector of reals, not of integers. To smooth the number of death we must pass `as.double(chicago$death)`. However, `expSmooth` does not check for other things as well. For example, there nothing guaranteeing that argument `n` matches the length of the input vectors `y` and `ys`. For example, the following code:
 ```{r, eval = FALSE}
-.Call("expSmooth", chicago$tmpd, tmpSmooth, nch + 10L, 0.8) # do NOT run this
+.Call("expSmooth", chicago$tmpd, tmpSmooth, nch + 10L, 0.8) # do NOT run this!
 ```
 might run without any indication that something wrong has happened. But $n$ is 10 units longer than `length(chicago$tmpd)`, which mean that the last 10 iterations of this loop:
 ```{r engine='Rcpp', eval = FALSE}
@@ -256,7 +256,7 @@ Notice that `expSmooth2` has only two arguments: the variable to be smoothed `y`
 y = PROTECT(coerceVector(y, REALSXP));
 ni = length(y);
 ```
-we are using `coerceVector` to convert `y` to subtype `REALSXP` hence this analogous to doing `as.double` in R. The output of `coerceVector` must be protected from R's garbage collector using `PROTECT`, otherwise the memory allocated to `y` might be deallocated before we finished using it. All R objects allocated in C code must be protected, as failing to do so might lead to intermittent crashes and hard to find bugs. See this [blog post](https://developer.r-project.org/Blog/public/2019/04/18/common-protect-errors/) for more details. The next line just extracts the length of `y` and stores it in `ni`, thus removing the need to pass the length of `y` as an argument.
+we are using `coerceVector` to convert `y` to subtype `REALSXP` hence this is analogous to doing `as.double` in R. The output of `coerceVector` must be protected from R's garbage collector using `PROTECT`, otherwise the memory allocated to `y` might be deallocated before we finished using it. All R objects allocated in C code must be protected, as failing to do so might lead to intermittent crashes and hard to find bugs. See this [blog post](https://developer.r-project.org/Blog/public/2019/04/18/common-protect-errors/) for more details. The next line just extracts the length of `y` and stores it in `ni`, thus removing the need to pass the length of `y` as an argument.
 
 Then we allocate memory for the smoothed output:
 ```{r engine='Rcpp', eval = FALSE}
