@@ -211,7 +211,7 @@ squareVect(1:5) </code></pre>
    NumericVector out(10);
    return out;
 }&#39;)</code></pre>
-<p>then <code>R CMD SHLIB</code> will be use the option <code>-I"some_directory/Rcpp/include"</code> when compiling, which allows the compiler to find <code>Rcpp.h</code>. Similarly, when we use <code>RcppArmadillo</code> in our <code>Rcpp</code> code, as in this example:</p>
+<p>then <code>R CMD SHLIB</code> will be use the option <code>-I&quot;some_directory/Rcpp/include&quot;</code> when compiling, which allows the compiler to find <code>Rcpp.h</code>. Similarly, when we use <code>RcppArmadillo</code> in our <code>Rcpp</code> code, as in this example:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
  // [[Rcpp::depends(RcppArmadillo)]]
  #include &lt;RcppArmadillo.h&gt;
@@ -221,7 +221,7 @@ squareVect(1:5) </code></pre>
  arma::vec Mv_I(arma::mat&amp; A, arma::vec&amp; y) {
    return A * y;
 }&#39;)</code></pre>
-<p>we include the <code>// [[Rcpp::depends(RcppArmadillo)]]</code> attribute, to make sure that the compiler options are set correctly to work with <code>Armadillo</code>. In particular, in this case <code>R CMD SHLIB</code> will need (among others) the option <code>-I"some_directory/RcppArmadillo/include"</code> to find <code>RcppArmadillo.h</code> as well as <code>-llapack</code> and <code>-lblas</code> to include the <code>LAPACK</code> and <code>BLAS</code> linear algebra libraries, which are used by <code>Armadillo</code>. You can see this by setting <code>verbose = TRUE</code> when calling <code>sourceCpp</code>.</p>
+<p>we include the <code>// [[Rcpp::depends(RcppArmadillo)]]</code> attribute, to make sure that the compiler options are set correctly to work with <code>Armadillo</code>. In particular, in this case <code>R CMD SHLIB</code> will need (among others) the option <code>-I&quot;some_directory/RcppArmadillo/include&quot;</code> to find <code>RcppArmadillo.h</code> as well as <code>-llapack</code> and <code>-lblas</code> to include the <code>LAPACK</code> and <code>BLAS</code> linear algebra libraries, which are used by <code>Armadillo</code>. You can see this by setting <code>verbose = TRUE</code> when calling <code>sourceCpp</code>.</p>
 <p>The point is that the <code>Rcpp::depends</code> mechanism gives you access to lots of extensions that can be used within your <code>Rcpp</code> code, without having to worry about the compilation process. In particular, in addition to <code>RcppArmadillo</code>, you can use:</p>
 <ul>
 <li><code>RcppEigen</code> which provides access to the <code>Eigen</code> linear algebra library;</li>
@@ -271,7 +271,7 @@ rnormBoost(5, 3)</code></pre>
 <pre><code>## [1] -0.3226455  0.4446485  1.2954095  1.6020953 -1.6903968 -0.2742874</code></pre>
 <p>The packages listed above are some of the packages on which your <code>Rcpp</code> code can depend via the <code>Rcpp::depends</code> attribute. Understanding exactly how the latter works is beyond the scope of this course, but it is useful to be aware of the fact that <code>sourceCpp</code> will look for the information on the package(s) mentioned in <code>Rcpp::depends</code>, which is needed to set up the compilation enviroment. For example, it will look for the path to the header file to be included, which can be found by doing:</p>
 <pre class="r"><code>system.file(&quot;include&quot;, package = &quot;RcppArmadillo&quot;)</code></pre>
-<pre><code>## [1] &quot;/home/runner/work/_temp/Library/RcppArmadillo/include&quot;</code></pre>
+<pre><code>## [1] &quot;/home/travis/R/Library/RcppArmadillo/include&quot;</code></pre>
 <p>Further information can retrieved via the <code>getPlugin</code> function, for example:</p>
 <pre class="r"><code>get(&quot;inlineCxxPlugin&quot;, asNamespace(&quot;RcppArmadillo&quot;))()$env</code></pre>
 <pre><code>## $PKG_LIBS

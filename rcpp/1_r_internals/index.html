@@ -215,12 +215,12 @@ file.show(rinternals)</code></pre>
 <li><code>n</code>, a scalar indicating the length of <code>y</code> and <code>ys</code>;</li>
 <li><code>a</code>, the <span class="math inline">\(\alpha\)</span> coefficient.</li>
 </ul>
-<p>Even though all the arguments of <code>expSmooth</code> are of class <code>SEXP</code>, is important to know that <code>SEXP</code> is a variant type, that is a C object whose subtype is known only at runtime, with subtypes that cover all data structures in R. Examples of subtypes are:</p>
+<p>Even though all the arguments of <code>expSmooth</code> are of class <code>SEXP</code>, it is important to know that <code>SEXP</code> is a variant type, that is a C object whose subtype is known only at runtime, with subtypes that cover all data structures in R. Examples of subtypes are:</p>
 <ul>
 <li><code>REALSXP</code> a numeric vector such as <code>c(1.2, 0.45)</code>;</li>
 <li><code>LGLSXP</code> a logical vector such as <code>c(TRUE, FALSE, FALSE)</code>;</li>
 <li><code>INTSXP</code> an integer vector such as <code>c(2L, 34L, 1L)</code>;</li>
-<li><code>VECSXP</code> a list such as <code>list("a" = 2, "b" = c(5, 4))</code>.</li>
+<li><code>VECSXP</code> a list such as <code>list(&quot;a&quot; = 2, &quot;b&quot; = c(5, 4))</code>.</li>
 </ul>
 <p>See the <a href="https://cran.r-project.org/doc/manuals/R-ints.html#R-Internal-Structures">R internal documentation</a> for a complete list.</p>
 <p>The first lines of the function’s body are:</p>
@@ -244,9 +244,9 @@ for(int i = 1; i &lt; ni; i++){
 </div>
 <div id="calling-expsmooth-from-r" class="section level3">
 <h3>Calling expSmooth from R</h3>
-<p>Now, assume that <code>expSmooth</code> is contained in a file called <code>expSmooth.c</code>, which in our case can be found in our working directory, as you can see from the following call to the command line (the output is hidden here):</p>
+<p>Now, assume that <code>expSmooth</code> is contained in a file called <code>expSmooth.c</code>, which in our case can be found in our working directory, as you could see from the following call to the command line (the output is hidden here):</p>
 <pre class="r"><code>system(&quot;ls *.c&quot;)</code></pre>
-<p>Here we will explaining how to call <code>expSmooth</code> using the <code>.Call</code> interface in R. <code>.Call</code> can be used to call C functions that accept variables of class <code>SEXP</code> as inputs and return an object of class <code>SEXP</code>. Indeed, we created the <code>expSmooth</code> function with this requirement in mind.</p>
+<p>Here we will explain how to call <code>expSmooth</code> using the <code>.Call</code> interface in R. <code>.Call</code> can be used to call C functions that accept variables of class <code>SEXP</code> as inputs and return an object of class <code>SEXP</code>. Indeed, we created the <code>expSmooth</code> function with this requirement in mind.</p>
 <p>The first thing that we need to do is to compile the C code as follows</p>
 <pre class="r"><code>system(&quot;R CMD SHLIB expSmooth.c&quot;)</code></pre>
 <p>This will create two files, <code>expSmooth.o</code> and <code>expSmooth.so</code>, containing binary code. The <code>.so</code> object is a shared object which can be loaded in R by doing:</p>
@@ -288,11 +288,11 @@ smoC &lt;- function() .Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch,
 library(microbenchmark)
 microbenchmark(smoR(), smoC(), times = 500)</code></pre>
 <pre><code>## Unit: microseconds
-##    expr   min    lq     mean median    uq    max neval
-##  smoR() 615.0 618.7 625.3614  620.9 625.2 1847.3   500
-##  smoC()  16.1  16.2  20.1356   16.4  16.6 1749.7   500</code></pre>
+##    expr     min       lq      mean   median       uq      max neval
+##  smoR() 494.701 498.5225 506.29661 500.5570 505.9565 1863.131   500
+##  smoC()  21.738  22.0685  25.53463  22.3565  22.8845 1339.641   500</code></pre>
 <p>So the C version is more than 10 times faster. The comparison it somewhat unfair, because the R function is allocating memory containing the smoothed temperature at every call, while the C version is re-using the memory allocated to the <code>tmpSmooth</code> vector. However, the ability to overwrite R objects without copying them is one of the reasons for interfacing R with C.</p>
-<p>We now go back to our original application, and fit a model which excludes <code>so2</code> with didn’t seem to matter and that includes the effect of smoothed temperature:</p>
+<p>We now go back to our original application, and fit a model which excludes <code>so2</code> which didn’t seem to matter and that includes the effect of smoothed temperature:</p>
 <pre class="r"><code>chicago$tmpSmooth &lt;- tmpSmooth
 fit1 &lt;- bam(death ~ s(time, k = 200) + s(pm10median) + s(o3median) +
                     s(tmpd) + s(tmpSmooth),
@@ -305,15 +305,15 @@ The plots shows that the effect of smoothed temperature is quite important, and 
 <pre class="r"><code>AIC(fit0, fit1)</code></pre>
 <pre><code>##            df      AIC
 ## fit0 145.0587 37889.99
-## fit1 141.5415 37862.83</code></pre>
+## fit1 141.5414 37862.83</code></pre>
 </div>
 <div id="creating-r-objects-within-c-code" class="section level3">
 <h3>Creating R objects within C code</h3>
 <p>Here we try to refine the <code>expSmooth</code> function created above. Firstly notice that, while <code>expSmooth</code> does not make any explicit assumption about the subtype of its <code>SEXP</code> input, trying to smooth the number of death leads to:</p>
 <pre class="r"><code>.Call(&quot;expSmooth&quot;, chicago$death, tmpSmooth, nch, 0.8)
 # Error: REAL() can only be applied to a &#39;numeric&#39;, not a &#39;integer&#39;</code></pre>
-<p>Because <code>xy = REAL(y);</code> triggers an error which signals that <code>y</code> should be a vector of reals, not of integers. To smooth the number of death we must pass <code>as.double(chicago$death)</code>. However, <code>expSmooth</code> does not check for other things, for example there nothing guaranteeing that argument <code>n</code> actually matches the length of the input vectors <code>y</code> and <code>ys</code>. For example, the following code:</p>
-<pre class="r"><code>.Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch + 10L, 0.8) # do NOT run this</code></pre>
+<p>Because <code>xy = REAL(y);</code> triggers an error which signals that <code>y</code> should be a vector of reals, not of integers. To smooth the number of death we must pass <code>as.double(chicago$death)</code>. However, <code>expSmooth</code> does not check for other things as well. For example, there nothing guaranteeing that argument <code>n</code> matches the length of the input vectors <code>y</code> and <code>ys</code>. For example, the following code:</p>
+<pre class="r"><code>.Call(&quot;expSmooth&quot;, chicago$tmpd, tmpSmooth, nch + 10L, 0.8) # do NOT run this!</code></pre>
 <p>might run without any indication that something wrong has happened. But <span class="math inline">\(n\)</span> is 10 units longer than <code>length(chicago$tmpd)</code>, which mean that the last 10 iterations of this loop:</p>
 <pre class="cpp"><code>for(int i = 1; i &lt; ni; i++){
   xys[i] = ai * xys[i-1] + (1 - ai) * xy[i];
@@ -350,7 +350,7 @@ SEXP expSmooth2(SEXP y, SEXP a)
 <p>Notice that <code>expSmooth2</code> has only two arguments: the variable to be smoothed <code>y</code> and the smoothing coefficient <code>a</code>. Then here:</p>
 <pre class="cpp"><code>y = PROTECT(coerceVector(y, REALSXP));
 ni = length(y);</code></pre>
-<p>we are using <code>coerceVector</code> to convert <code>y</code> to subtype <code>REALSXP</code> hence this analogous to doing <code>as.double</code> in R. The output of <code>coerceVector</code> must be protected from R’s garbage collector using <code>PROTECT</code>, otherwise the memory allocated to <code>y</code> might be deallocated before we finished using it. All R objects allocated in C code must be protected, as failing to do so might lead to intermittent crashes and hard to find bugs. See this <a href="https://developer.r-project.org/Blog/public/2019/04/18/common-protect-errors/">blog post</a> for more details. The next line just extracts the length of <code>y</code> and stores it in <code>ni</code>, thus removing the need to pass the length of <code>y</code> as an argument.</p>
+<p>we are using <code>coerceVector</code> to convert <code>y</code> to subtype <code>REALSXP</code> hence this is analogous to doing <code>as.double</code> in R. The output of <code>coerceVector</code> must be protected from R’s garbage collector using <code>PROTECT</code>, otherwise the memory allocated to <code>y</code> might be deallocated before we finished using it. All R objects allocated in C code must be protected, as failing to do so might lead to intermittent crashes and hard to find bugs. See this <a href="https://developer.r-project.org/Blog/public/2019/04/18/common-protect-errors/">blog post</a> for more details. The next line just extracts the length of <code>y</code> and stores it in <code>ni</code>, thus removing the need to pass the length of <code>y</code> as an argument.</p>
 <p>Then we allocate memory for the smoothed output:</p>
 <pre class="cpp"><code>ys = PROTECT(allocVector(REALSXP, ni));</code></pre>
 <p>where we are allocating memory for a vector of doubles with <code>ni</code> elements. This also must be protected, because we are allocating an R object (<code>allocVector</code> is defined in <code>Rinternals.h</code>). The main loop is the same, but <code>expSmooth2</code> ends with:</p>
@@ -371,10 +371,10 @@ smoC2 &lt;- function() .Call(&quot;expSmooth2&quot;, chicago$tmpd, 0.8)
 library(microbenchmark)
 microbenchmark(smoR(), smoC(), smoC2(), times = 500)</code></pre>
 <pre><code>## Unit: microseconds
-##     expr   min     lq     mean median     uq    max neval
-##   smoR() 614.6 618.55 625.3666 620.95 625.20 1876.7   500
-##   smoC()  16.8  16.90  20.7844  17.00  17.35 1737.1   500
-##  smoC2()  16.2  16.70  19.6408  17.00  17.40 1195.8   500</code></pre>
+##     expr     min       lq      mean   median      uq      max neval
+##   smoR() 494.400 499.6055 508.92675 504.2670 510.585 1622.611   500
+##   smoC()  22.323  22.9485  26.88751  23.3415  23.965 1583.931   500
+##  smoC2()  21.954  22.9770  29.14161  24.0860  30.558 1177.192   500</code></pre>
 <p>despite the fact that it is allocating memory for the output vector at every call. Importantly, <code>expSmooth2</code> is safer and works directly with integer input vectors:</p>
 <pre class="r"><code>plot(chicago$death[1:1000], col = &quot;grey&quot;)
 lines(.Call(&quot;expSmooth2&quot;, chicago$death, 0.8)[1:1000], col = 2)</code></pre>

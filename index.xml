@@ -107,7 +107,7 @@ The Rcpp package provides an extension of the utils::package.skeleton function, 
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp/3_rcpp/</guid>
       <description>Rcpp via R CMD SHLIB: the old but instructive way Rcpp via sourceCpp() Inline Rcpp via cppFunction() and evalCpp() References    body { text-align: justify}  Rcpp via R CMD SHLIB: the old but instructive way To illustrate how Rcpp works, let us consider again our C function for exponential smoothing, that is:
-#include &amp;lt;R.h&amp;gt; #include &amp;lt;Rinternals.h&amp;gt; SEXP expSmooth2(SEXP y, SEXP a) { int ni; double *xy, *xys; double ai; SEXP ys; y = PROTECT(coerceVector(y, REALSXP)); ni = length(y); ys = PROTECT(allocVector(REALSXP, ni)); ai = REAL(a)[0]; xy = REAL(y); xys = REAL(ys); xys[0] = xy[0]; for(int i = 1; i &amp;lt; ni; i++){ xys[i] = ai * xys[i-1] + (1 - ai) * xy[i]; } UNPROTECT(2); return ys; } Now, the same function can be implemented in “raw” Rcpp as follows (as we will explain later this is NOT the recommended way of using Rcpp):</description>
+#include &amp;lt;R.h&amp;gt; #include &amp;lt;Rinternals.h&amp;gt; SEXP expSmooth2(SEXP y, SEXP a) { int ni; double *xy, *xys; double ai; SEXP ys; y = PROTECT(coerceVector(y, REALSXP)); ni = length(y); ys = PROTECT(allocVector(REALSXP, ni)); ai = REAL(a)[0]; xy = REAL(y); xys = REAL(ys); xys[0] = xy[0]; for(int i = 1; i &amp;lt; ni; i++){ xys[i] = ai * xys[i-1] + (1 - ai) * xy[i]; } UNPROTECT(2); return ys; } Now, the same function can be implemented in “raw” Rcpp as follows (as we will explain later, this is NOT the recommended way of using Rcpp):</description>
     </item>
     
     <item>
