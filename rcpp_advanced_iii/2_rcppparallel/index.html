@@ -181,9 +181,9 @@ microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1,
                erf(x), 
                times = 100)</code></pre>
 <pre><code>## Unit: relative
-##    expr     min       lq     mean   median       uq       max neval
-##       R 1.00000 1.000000 1.000000 1.000000 1.000000 1.0000000   100
-##  erf(x) 1.53835 1.463751 1.430357 1.441524 1.444601 0.9303498   100</code></pre>
+##    expr      min       lq     mean   median       uq     max neval
+##       R 1.000000 1.000000 1.000000 1.000000 1.000000 1.00000   100
+##  erf(x) 1.507193 1.443637 1.467976 1.446921 1.453766 1.28495   100</code></pre>
 <p>our <code>Rcpp</code> function does not seem very efficient. Let’s see whether we can do any better by parallelising the code via <code>RcppParalel</code> and OpenMP. In particular, consider the function:</p>
 <pre class="r"><code>library(Rcpp)
 sourceCpp(code = &#39;
@@ -396,13 +396,13 @@ gld &lt;- funCreator(0.5, 1) # Analogous to lambda function in C++
 # Perform reduction
 x &lt;- rnorm(10)
 Reduce(gld, x) # Analogous to std::accumulate</code></pre>
-<pre><code>## [1] -6.368064</code></pre>
+<pre><code>## [1] -8.311811</code></pre>
 <p>Some of the features we are using to define the lambda function are defined in the C++14 standard, hence we added the <code>Rcpp::plugins(cpp14)</code> attribute. Let’s see whether the <code>Rcpp</code> function works:</p>
 <pre class="r"><code>x &lt;- rnorm(1e6)
 dnormSeq(x, 0.5, 2)</code></pre>
-<pre><code>## [1] -1768114</code></pre>
+<pre><code>## [1] -1768345</code></pre>
 <pre class="r"><code>sum(dnorm(x, 0.5, 2, log = TRUE))</code></pre>
-<pre><code>## [1] -1768114</code></pre>
+<pre><code>## [1] -1768345</code></pre>
 <p>it seems so, and it is much quicker than base <code>R</code>:</p>
 <pre class="r"><code>microbenchmark(R = sum(dnorm(x, 0.5, 2, log = TRUE)), 
                dnormSeq(x, 0.5, 2))</code></pre>
@@ -460,9 +460,9 @@ double dnormPar(Rcpp::NumericVector x, double m, double s) {
 <p>Before explaining how this works, let’s see whether it produces correct results:</p>
 <pre class="r"><code>x &lt;- rnorm(1e6)
 dnormPar(x, 0.5, 2)</code></pre>
-<pre><code>## [1] -1768211</code></pre>
+<pre><code>## [1] -1768608</code></pre>
 <pre class="r"><code>sum(dnorm(x, 0.5, 2, log = TRUE))</code></pre>
-<pre><code>## [1] -1768211</code></pre>
+<pre><code>## [1] -1768608</code></pre>
 <p>which seems to be the case. Let’s look at the speed-up, which on the CPU described above is:</p>
 <pre class="r"><code>microbenchmark(R = sum(dnorm(x, 0.5, 2, log = TRUE)), 
                RcppSeq = dnormSeq(x, 0.5, 2), 
@@ -484,7 +484,7 @@ double value;</code></pre>
   input(input), m(m_), s(s_), value(0) { }</code></pre>
 <p>This is the constructor being called when we do <code>Gau obj(x, m, s);</code> in <code>dnormPar</code>. The second constructor is:</p>
 <pre class="cpp"><code>Gau(const Gau&amp; obj, Split) : input(obj.input), m(obj.m), s(obj.s), value(0) { }</code></pre>
-<p>and will be called by <code>parallelReduce</code>. Note that it takes a reference to an object of type <code>Gau</code> as input, and it uses its members (e.g. <code>obj.input</code>) to initialise its own members. The <code>Split</code> argument is used by <code>parallelReduce</code> to split the computation. Then, we have the operator:</p>
+<p>and will be called by <code>parallelReduce</code>. Note that it takes a reference to an object of type <code>Gau</code> as input, and it uses its members (e.g. <code>obj.input</code>) to initialise its own members. The <code>Split</code> argument is used by <code>parallelReduce</code> to split the computation. Then, we have the operator:</p>
 <pre class="cpp"><code>void operator()(std::size_t begin, std::size_t end) {
  auto gld = [m1 = m, s1 = s](const double x1, const double x2) { 
   return x1 - (x2-m1) * (x2-m1) / (s1*s1*2.0); 
