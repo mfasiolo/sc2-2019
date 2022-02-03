@@ -78,7 +78,7 @@ microbenchmark(R = x1 + x2, Rcpp = vsum(x1, x2), RcppSugar = vsumVett(x1, x2))
 ```
 Here `Rcpp` is much slower than `R`, because the computational effort is limited (the vectors `x1` and `x2` are short) and it is dominated by the cost of calling `C++` from `R`. Closing this brief digression on the dangers of using `Rcpp` without a clear idea of where the performance gains will come from, we go back to `Rcpp sugar`.
 
-`Rcpp sugar` provide vectorized versions of the main logical operators `>`, `<`, `>=`, `<=`, `==`, `&`, `|` and `!`. For instance, we can define the function:
+`Rcpp sugar` provides vectorized versions of the main logical operators `>`, `<`, `>=`, `<=`, `==`, `&`, `|` and `!`. For instance, we can define the function:
 ```{r} 
 sourceCpp(code = '
 #include <Rcpp.h>
