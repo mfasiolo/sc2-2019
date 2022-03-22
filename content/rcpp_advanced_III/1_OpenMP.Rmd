@@ -25,7 +25,7 @@ sourceCpp(code = '
 // [[Rcpp::export(wait_a_second)]]
 bool wait_a_second(int sec)
 {
- for(size_t ii = 0; ii < sec; ii++)
+ for(int ii = 0; ii < sec; ii++)
  { 
   sleep(1);
  }
@@ -51,7 +51,7 @@ bool wait_a_second_omp(int sec, int ncores)
   #pragma omp parallel num_threads(ncores)
   #pragma omp for
  #endif
- for(size_t ii = 0; ii < sec; ii++)
+ for(int ii = 0; ii < sec; ii++)
  { 
   sleep(1);
  }
@@ -61,7 +61,7 @@ bool wait_a_second_omp(int sec, int ncores)
  }
 ')
 ```
-Noet that we used the `Rcpp::plugins` attribute to include OpenMP in the compilation of the `Rcpp` function. The key OpenMP directives are 
+Note that we used the `Rcpp::plugins` attribute to include OpenMP in the compilation of the `Rcpp` function. The key OpenMP directives are 
 ```{r engine='Rcpp', eval = FALSE}
 #pragma omp parallel num_threads(ncores)
 ```
@@ -104,6 +104,7 @@ which returns `TRUE` is all the elements of `x` are finite, `FALSE` otherwise. W
 ```{r}
 sourceCpp(code = '
 #include <Rcpp.h>
+#include <omp.h>
 using namespace Rcpp;
 
 // [[Rcpp::plugins(openmp)]]
@@ -111,23 +112,38 @@ using namespace Rcpp;
 // [[Rcpp::export(allFiniteOMP)]]
 bool allFiniteOMP(NumericVector x, int ncores)
 {
-
  size_t n = x.size();
  double out = 0;
+ NumericVector z(ncores);
  
- #if defined(_OPENMP)
-  #pragma omp parallel for num_threads(ncores)
- #endif
- for(size_t ii = 0; ii < n; ii++)
+ #pragma omp parallel num_threads(ncores)
  {
-  out += x[ii];
+  int kk = omp_get_thread_num();
+  
+  #pragma omp for schedule(static)
+  for(size_t ii = 0; ii < n; ii++)
+  {
+   z[kk] += x[ii];
+  }
  }
+ 
+ out = sum(z);
  
  return R_FINITE(out);
 
  }
 ')
 ```
+Note that this code:
+```{r engine='Rcpp', eval = FALSE}
+#pragma omp parallel num_threads(ncores)
+```
+marks the beginning of a parallel section of the code, hence the variables declared in this section (e.g, `kk`) are private to each parallel thread. This code:
+```{r engine='Rcpp', eval = FALSE}
+int kk = omp_get_thread_num();
+```
+retrieves the ID number of each thread (`omp_get_thread_num()` is defined in `omp.h`). The rest of the code should be relatively clear.
+
 On my Intel i7-3820 3.60GHz CPU with 4 cores 8 threads I get the following timing: 
 ```{r, results='hide'}
 x <- rnorm(1e7)
@@ -151,15 +167,7 @@ Unit: relative
   allFiniteOMP(x, 8)  1.000000  1.000000  1.0000000  1.000000  1.0000000 1.000000   100
  allFiniteOMP(x, 16)  1.045107  1.103636  1.0457466  1.165450  1.0583197 1.170184   100
 ```
-Note that the `Rcpp` version is around 4 times faster that the `R` code, and that with 4 threads we get roughly a linear speed-up. However, the speed-up gains are negligible after that, and using 16 threads is actually detrimental. This is because a processor with 4 physical cores has probably 4 floating-point (FLOP) units, hence trying to parallelise numerical computations on more than 4 threads does not make sense (the threads will start to compete for the same FLOP units). Note also that above we used:
-```{r engine='Rcpp', eval = FALSE}
-#pragma omp parallel for num_threads(ncores)
-```
-which is a shortcut for:
-```{r engine='Rcpp', eval = FALSE}
-#pragma omp parallel num_threads(ncores)
-#pragma omp for
-```
+Note that the `Rcpp` version is around 4 times faster that the `R` code, and that with 4 threads we get roughly a linear speed-up. However, the speed-up gains are negligible after that, and using 16 threads is actually detrimental. This is because a processor with 4 physical cores has probably 4 floating-point (FLOP) units, hence trying to parallelise numerical computations on more than 4 threads does not make sense (the threads will start to compete for the same FLOP units).
 
 One important thing to point out is that R's C API and the Rcpp API are not thread-safe in generally. Hence, doing things such as:
 ```{r engine='Rcpp', eval = FALSE}
@@ -169,12 +177,12 @@ One important thing to point out is that R's C API and the Rcpp API are not thre
  int u = x.length();
 }
 ```
-is not safe and might behave unexpectedly. In our code for the `allFiniteOMP` function, above, we do `out += x[ii]`, which selects elements of the `NumericVector` `x` in parallel. This also not guaranteed to be thread-safe, hence it is preferrable to use the thread-safe data structures provided by the [RcppParallel R package](https://cran.r-project.org/web/packages/RcppParallel/index.html), which will be discussed later in these notes. In the following section we show how to perform parallel random number generation using OpenMP and a thread-safe RNG. 
+is not safe and might behave unexpectedly. In our code for the `allFiniteOMP` function, above, we do `z[kk] += x[ii];`, which selects elements of the `NumericVector` `x` in parallel. This is not guaranteed to be thread-safe, hence it is preferable to use the thread-safe data structures provided by the [RcppParallel R package](https://cran.r-project.org/web/packages/RcppParallel/index.html), which will be discussed later in these notes. In the following section we show how to perform parallel random number generation using OpenMP and a thread-safe RNG. 
 
 
 ### Parallel random number generation using OpenMP 
 
-As other parts of R's C API, R's RNG is not thread safe. Hencem `Rcpp` code such as:
+As other parts of R's C API, R's RNG is not thread safe. Hence, `Rcpp` code such as:
 ```{r engine='Rcpp', eval = FALSE}
 #pragma omp parallel
 {
@@ -294,20 +302,7 @@ Rcpp::NumericVector sumunif_sitmo_omp(unsigned int n,
 }
 ')
 ```
-Note that this code:
-```{r engine='Rcpp', eval = FALSE}
-#ifdef _OPENMP
-#pragma omp parallel num_threads(ncores)
-{
-#endif
-```
-marks the beginning of a parallel section of the code, hence the variables declared in this section (e.g, `coreseed`, `mx`) and the RNG `eng` are private to each parallel thread. This code:
-```{r engine='Rcpp', eval = FALSE}
-#ifdef _OPENMP
-  coreseed = static_cast<uint32_t>(seeds[omp_get_thread_num()]);
-#endif
-```
-provides the seed to each RNG instance using the ID number of each thread (`omp_get_thread_num()` is defined in `omp.h`). The rest of the code should be relatively clear. Let us test it:
+Let us test the parallel version:
 ```{r, fig.align='center', fig.width=6, fig.height=3}
 par(mfrow = c(1, 2))
 hist(rowSums(matrix(runif(n*nstep), n, nstep)), main = "R", xlab = "x")

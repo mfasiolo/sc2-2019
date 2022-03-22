@@ -61,7 +61,7 @@ microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1,
                erf(x), 
                times = 100)
 ```
-our `Rcpp` function does not seem very efficient. Let's see whether we can do any better by parallelising the code via `RcppParalel` and OpenMP. In particular, consider the function:
+our `Rcpp` function does not seem very efficient. Let's see whether we can do any better by parallelising the code via `RcppParallel` and OpenMP. In particular, consider the function:
 ```{r}
 library(Rcpp)
 sourceCpp(code = '
