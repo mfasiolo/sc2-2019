@@ -183,9 +183,9 @@ microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1,
                erf(x), 
                times = 100)</code></pre>
 <pre><code>## Unit: relative
-##    expr      min       lq     mean   median      uq       max neval
-##       R 1.000000 1.000000 1.000000 1.000000 1.00000 1.0000000   100
-##  erf(x) 1.829926 1.648333 1.596137 1.637643 1.62384 0.8703228   100</code></pre>
+##    expr      min       lq     mean   median       uq      max neval
+##       R 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000   100
+##  erf(x) 1.571481 1.530008 1.516356 1.509006 1.507294 1.301017   100</code></pre>
 <p>our <code>Rcpp</code> function does not seem very efficient. Let’s see whether we can do any better by parallelising the code via <code>RcppParallel</code> and OpenMP. In particular, consider the function:</p>
 <pre class="r"><code>library(Rcpp)
 sourceCpp(code = &#39;
@@ -224,7 +224,7 @@ NumericVector erfOmp(NumericVector x, int ncores)
 <p>which we have already seen in a previous section. However, within the parallel for loop, we access the input (<code>x</code>) and output (<code>out</code>) vectors via two wrappers of class <code>RVector&lt;double&gt;</code>. The <code>RVector</code> class provides wrappers around Rcpp vectors, which can be accessed in a thread-safe way. Importantly, no copy is taken. Let us test the function:</p>
 <pre class="r"><code>x &lt;- rnorm(1e6)
 max(abs( (2 * pnorm(x * sqrt(2)) - 1) - erfOmp(x, 4)))</code></pre>
-<pre><code>## [1] 4.440892e-16</code></pre>
+<pre><code>## [1] 3.330669e-16</code></pre>
 <p>Looks close enough. On my Intel i7-3820 3.60GHz CPU with 4 cores 8 threads I get the following relative performance:</p>
 <pre class="r"><code>microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
                erfOmp(x, 1), 
@@ -316,7 +316,7 @@ Rcpp::NumericVector erfPar(Rcpp::NumericVector x) {
 &#39;)</code></pre>
 <p>Before explaining how this works, let’s check whether it gives correct results:</p>
 <pre class="r"><code>max(abs( (2 * pnorm(x * sqrt(2)) - 1) - erfPar(x)))</code></pre>
-<pre><code>## [1] 4.440892e-16</code></pre>
+<pre><code>## [1] 3.330669e-16</code></pre>
 <p>and let’s check its computational performance:</p>
 <pre class="r"><code>microbenchmark(R = 2 * pnorm(x * sqrt(2)) - 1, 
                erfOmp(x, 4),
@@ -398,13 +398,13 @@ gld &lt;- funCreator(0.5, 1) # Analogous to lambda function in C++
 # Perform reduction
 x &lt;- rnorm(10)
 Reduce(gld, x) # Analogous to std::accumulate</code></pre>
-<pre><code>## [1] -2.841769</code></pre>
+<pre><code>## [1] -6.935788</code></pre>
 <p>Some of the features we are using to define the lambda function are defined in the C++14 standard, hence we added the <code>Rcpp::plugins(cpp14)</code> attribute. Let’s see whether the <code>Rcpp</code> function works:</p>
 <pre class="r"><code>x &lt;- rnorm(1e6)
 dnormSeq(x, 0.5, 2)</code></pre>
-<pre><code>## [1] -1768149</code></pre>
+<pre><code>## [1] -1768378</code></pre>
 <pre class="r"><code>sum(dnorm(x, 0.5, 2, log = TRUE))</code></pre>
-<pre><code>## [1] -1768149</code></pre>
+<pre><code>## [1] -1768378</code></pre>
 <p>it seems so, and it is much quicker than base <code>R</code>:</p>
 <pre class="r"><code>microbenchmark(R = sum(dnorm(x, 0.5, 2, log = TRUE)), 
                dnormSeq(x, 0.5, 2))</code></pre>
@@ -462,9 +462,9 @@ double dnormPar(Rcpp::NumericVector x, double m, double s) {
 <p>Before explaining how this works, let’s see whether it produces correct results:</p>
 <pre class="r"><code>x &lt;- rnorm(1e6)
 dnormPar(x, 0.5, 2)</code></pre>
-<pre><code>## [1] -1768365</code></pre>
+<pre><code>## [1] -1768159</code></pre>
 <pre class="r"><code>sum(dnorm(x, 0.5, 2, log = TRUE))</code></pre>
-<pre><code>## [1] -1768365</code></pre>
+<pre><code>## [1] -1768159</code></pre>
 <p>which seems to be the case. Let’s look at the speed-up, which on the CPU described above is:</p>
 <pre class="r"><code>microbenchmark(R = sum(dnorm(x, 0.5, 2, log = TRUE)), 
                RcppSeq = dnormSeq(x, 0.5, 2), 

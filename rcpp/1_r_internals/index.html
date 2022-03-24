@@ -291,8 +291,8 @@ library(microbenchmark)
 microbenchmark(smoR(), smoC(), times = 500)</code></pre>
 <pre><code>## Unit: microseconds
 ##    expr   min    lq     mean median     uq    max neval
-##  smoR() 596.2 665.8 747.1886 720.65 799.40 2212.7   500
-##  smoC()  11.7  12.9  22.8492  13.80  15.25 2072.5   500</code></pre>
+##  smoR() 685.3 742.1 746.4256  743.7 748.45 2161.9   500
+##  smoC()  17.9  19.6  23.7246   19.8  20.10 1895.5   500</code></pre>
 <p>So the C version is more than 10 times faster. The comparison it somewhat unfair, because the R function is allocating memory containing the smoothed temperature at every call, while the C version is re-using the memory allocated to the <code>tmpSmooth</code> vector. However, the ability to overwrite R objects without copying them is one of the reasons for interfacing R with C.</p>
 <p>We now go back to our original application, and fit a model which excludes <code>so2</code> which didn’t seem to matter and that includes the effect of smoothed temperature:</p>
 <pre class="r"><code>chicago$tmpSmooth &lt;- tmpSmooth
@@ -373,10 +373,10 @@ smoC2 &lt;- function() .Call(&quot;expSmooth2&quot;, chicago$tmpd, 0.8)
 library(microbenchmark)
 microbenchmark(smoR(), smoC(), smoC2(), times = 500)</code></pre>
 <pre><code>## Unit: microseconds
-##     expr   min    lq     mean median     uq    max neval
-##   smoR() 562.7 628.4 724.3828  702.2 781.25 3338.7   500
-##   smoC()  12.2  13.5  22.3200   14.5  16.15 2045.6   500
-##  smoC2()  11.8  13.2  19.7800   14.1  15.80 1323.5   500</code></pre>
+##     expr   min     lq     mean median    uq    max neval
+##   smoR() 620.9 727.50 738.7102 743.15 749.9 1919.6   500
+##   smoC()  16.3  19.95  24.1682  20.55  20.9 1854.1   500
+##  smoC2()  15.9  18.95  22.8590  19.90  20.4 1388.1   500</code></pre>
 <p>despite the fact that it is allocating memory for the output vector at every call. Importantly, <code>expSmooth2</code> is safer and works directly with integer input vectors:</p>
 <pre class="r"><code>plot(chicago$death[1:1000], col = &quot;grey&quot;)
 lines(.Call(&quot;expSmooth2&quot;, chicago$death, 0.8)[1:1000], col = 2)</code></pre>
