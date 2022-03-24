@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Advanced Rcpp I on SC2</title>
+    <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/</link>
+    <description>Recent content in Advanced Rcpp I on SC2</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>1. Rcpp sugar</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/1_rcpp_sugar/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/1_rcpp_sugar/</guid>
+      <description>Vectorized operators and sugar versions of basic R functions Random number generation    body { text-align: justify}  In a previous chapter we explained how Rcpp allows users to interface R with C++ in a convenient way. Here we cover Rcpp sugar, which consists of a set of functions and operators which make the C++ code written using Rcpp behave similarly to R code. In other words, Rcpp sugar allows us to write C++ code which looks similar to its R equivalent, but often more efficient.</description>
+    </item>
+    
+    <item>
+      <title>2. RcppArmadillo</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/2_rcpparmadillo/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/2_rcpparmadillo/</guid>
+      <description>Introduction Motivating example 1: matrix-matrix-vector product Motivating example 2: sums of matrices Basic RcppArmadillo usage References    body { text-align: justify}  Introduction Many standard statistical models/algorithms (e.g., linear regression, principal component analysis, …) require using numerical linear algebra routines, hence this section explains how to perform such computations efficiently using the RcppArmadillo R package. RcppArmadillo provides an interface to the Armadillo C++ numerical linear algebra library, which is highly useful in practice because it provides an interesting balance between performance and ease of use.</description>
+    </item>
+    
+    <item>
+      <title>3. Example on multivariate KDE with RcppArmadillo</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/3_kde_armadillo/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/3_kde_armadillo/</guid>
+      <description>Introduction An R-based and a dumb Rcpp solution A better RcppArmadillo solution References    body { text-align: justify}  Introduction To provide a more challeging example illustrating the capabilities of RcppArmadillo, here we show how to perform multivariate kernel density estimation (k.d.e.) using this library. In particular, let \({\bf x}_1^o, \dots, {\bf x}_n^o\) be \(d\)-dimensional vectors, sampled from the density \(\pi(\bf x)\). A k.d.e. estimate of \(\pi({\bf x})\) is \[ \hat{\pi}_{\bf H}({\bf x}) = \frac{1}{n} \sum_{i=1}^n \kappa_{\bf H}({\bf x} - {\bf x}_i^o), \] where \(\kappa_{\bf H}\) is a kernel with positive definite bandwidth matrix \({\bf H}\).</description>
+    </item>
+    
+    <item>
+      <title>4. Exercise on local polynomial regression</title>
+      <link>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/4_exercises/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/4_exercises/</guid>
+      <description>Smoothing by local polynomial regression References    body { text-align: justify}  Smoothing by local polynomial regression Consider the following data set on solar electricity production from Sidney, Australia:
+load(&amp;quot;solarAU.RData&amp;quot;) head(solarAU) ## prod toy tod ## 8832 0.019 0.000000e+00 0 ## 8833 0.032 5.708088e-05 1 ## 8834 0.020 1.141618e-04 2 ## 8835 0.038 1.712427e-04 3 ## 8836 0.036 2.283235e-04 4 ## 8837 0.012 2.854044e-04 5 The variables are:</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>1. Rcpp sugar - SC2</title>
+    <meta property="og:title" content="1. Rcpp sugar - SC2">
+    
+    <meta name="twitter:card" content="summary">
+
+    
+      
+    
+
+    
+      
+      <meta property="description" content="In a previous chapter we explained how Rcpp allows users to interface R with C&#43;&#43; in a convenient way. Here we cover Rcpp sugar, which consists of a set of functions and operators which make the C&#43;&#43; &amp;hellip;">
+      <meta property="og:description" content="In a previous chapter we explained how Rcpp allows users to interface R with C&#43;&#43; in a convenient way. Here we cover Rcpp sugar, which consists of a set of functions and operators which make the C&#43;&#43; &amp;hellip;">
+      
+    
+
+    
+    
+
+    
+
+    
+    
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
+    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+
+<link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="breadcrumbs">
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/">rcpp_advanced_i / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/1_rcpp_sugar/">1_rcpp_sugar / </a>
+    
+</nav>
+
+  </head>
+
+  
+  <body class="sc2-2019">
+    <header class="masthead">
+      <h1><a href="/sc2-2019/">SC2</a></h1>
+
+<p class="tagline">Statistical Computing 2</p>
+
+      <nav class="menu">
+  <input id="menu-check" type="checkbox" hidden/>
+  <label id="menu-label" for="menu-check" class="unselectable" hidden>
+    <span class="icon close-icon">✕</span>
+    <span class="icon open-icon">☰</span>
+    <span class="text">Menu</span>
+  </label>
+  <ul>
+  
+  
+  <li><a href="/sc2-2019/">Home</a></li>
+  
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_iii/">Parallel Rcpp</a></li>
+  
+  
+  </ul>
+</nav>
+
+    </header>
+
+    <article class="main">
+      <header class="title">
+      
+<h1>1. Rcpp sugar</h1>
+
+<h3>
+</h3>
+<hr>
+
+
+      </header>
+
+
+
+
+
+
+
+<div id="TOC">
+<ul>
+<li><a href="#vectorized-operators-and-sugar-versions-of-basic-r-functions">Vectorized operators and sugar versions of basic <code>R</code> functions</a></li>
+<li><a href="#random-number-generation">Random number generation</a></li>
+</ul>
+</div>
+
+<style>
+body {
+text-align: justify}
+</style>
+<p>In a previous chapter we explained how <code>Rcpp</code> allows users to interface <code>R</code> with <code>C++</code> in a convenient way. Here we cover <code>Rcpp sugar</code>, which consists of a set of functions and operators which make the <code>C++</code> code written using <code>Rcpp</code> behave similarly to <code>R</code> code. In other words, <code>Rcpp sugar</code> allows us to write <code>C++</code> code which looks similar to its <code>R</code> equivalent, but often more efficient.
+This document follows closely the official <a href="http://dirk.eddelbuettel.com/code/rcpp/Rcpp-sugar.pdf">Rcpp sugar vignette</a>.</p>
+<div id="vectorized-operators-and-sugar-versions-of-basic-r-functions" class="section level3">
+<h3>Vectorized operators and sugar versions of basic <code>R</code> functions</h3>
+<p>Consider the following <code>Rcpp</code> code for summing two vectors:</p>
+<pre class="r"><code>library(Rcpp)
+sourceCpp(code = &#39;
+#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+// [[Rcpp::export(name = &quot;vsum&quot;)]]
+NumericVector vsum_I(const NumericVector x1, const NumericVector x2)
+{
+  int ni = x1.size();
+  NumericVector out(ni);
+  
+  for(int ii = 0; ii &lt; ni; ii++){
+    out[ii] = x1[ii] + x2[ii];
+  }
+  
+  return out;
+}&#39;)</code></pre>
+<p>First of all, let’s check whether it works:</p>
+<pre class="r"><code>d &lt;- 1e5
+x1 &lt;- rnorm(d)
+x2 &lt;- rnorm(d)
+y &lt;- vsum(x1, x2)
+
+max( abs(y - (x1+x2)) )</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>It seems so. The <code>Rcpp</code> code above is quite lengthy: do we really need to write a <code>for</code> loop to simply add two vectors together? Thanks to <code>Rcpp sugar</code>, we don’t have to. In particular, <code>Rcpp sugar</code> uses operator overloading to vectorize many operations involving vectors represented using the <code>Rcpp</code> vector classes (<code>NumericVector</code>, <code>IntegerVector</code>, …). Hence, we can write vector addition in a much more compact form:</p>
+<pre class="r"><code>sourceCpp(code = &#39;
+#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+// [[Rcpp::export(name = &quot;vsumVett&quot;)]]
+NumericVector vsum_I(const NumericVector x1, const NumericVector x2)
+{
+  return x1 + x2;
+}&#39;)</code></pre>
+<p>Let’s see whether this works:</p>
+<pre class="r"><code>y &lt;- vsumVett(x1, x2)
+max( abs(y - (x1+x2)) )</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>It does! All four basic arithmetic operations <code>+</code>, <code>-</code>, <code>*</code> and <code>/</code> are vectorized, thanks to <code>Rcpp sugar</code>. Vector-scalar operations are also vectorized, for instance we can do <span class="math inline">\(x1 * 3.0 + 1.0\)</span>, which gives the same result as in <code>R</code>.</p>
+<p>However, note that writing such simple arithmetic expression in <code>Rcpp</code> will not give you a big performance gain in most cases, for instance:</p>
+<pre class="r"><code>library(microbenchmark)
+microbenchmark(R = x1 + x2, Rcpp = vsum(x1, x2), RcppSugar = vsumVett(x1, x2))</code></pre>
+<pre><code>## Unit: microseconds
+##       expr   min     lq    mean median     uq     max neval
+##          R 294.3 403.60 536.377 440.10 482.15  4754.1   100
+##       Rcpp 192.3 481.20 597.654 512.35 566.20  6761.5   100
+##  RcppSugar 133.5 403.75 635.972 433.70 506.95 15392.1   100</code></pre>
+<p>This is because basic arithmetic operations in <code>R</code> are computed using internal code, which is written in <code>C</code> or <code>C++</code>. Calling <code>C++</code> from <code>R</code> has also some overheads, so the <code>C++</code> code can actually become much slower than the <code>R</code> version, for instance:</p>
+<pre class="r"><code>d &lt;- 1e2
+x1 &lt;- rnorm(d)
+x2 &lt;- rnorm(d)
+microbenchmark(R = x1 + x2, Rcpp = vsum(x1, x2), RcppSugar = vsumVett(x1, x2))</code></pre>
+<pre><code>## Unit: nanoseconds
+##       expr  min   lq mean median   uq   max neval
+##          R  200  300  481    400  600  2500   100
+##       Rcpp 2000 2500 3727   2750 3000 32800   100
+##  RcppSugar 2100 2600 3475   2800 3100 20200   100</code></pre>
+<p>Here <code>Rcpp</code> is much slower than <code>R</code>, because the computational effort is limited (the vectors <code>x1</code> and <code>x2</code> are short) and it is dominated by the cost of calling <code>C++</code> from <code>R</code>. Closing this brief digression on the dangers of using <code>Rcpp</code> without a clear idea of where the performance gains will come from, we go back to <code>Rcpp sugar</code>.</p>
+<p><code>Rcpp sugar</code> provides vectorized versions of the main logical operators <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code>, <code>==</code>, <code>&amp;</code>, <code>|</code> and <code>!</code>. For instance, we can define the function:</p>
+<pre class="r"><code>sourceCpp(code = &#39;
+#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+// [[Rcpp::export(name = &quot;inRange&quot;)]]
+LogicalVector inRange_I(const NumericVector x, const NumericVector u, const NumericVector l)
+{
+  return x &gt; l &amp; x &lt; u;
+}&#39;)</code></pre>
+<p>which checks which elements of <code>x</code> falls in the range defined by <code>l</code> and <code>u</code>. Example usage:</p>
+<pre class="r"><code>set.seed(5151)
+n &lt;- 5
+u &lt;- rep(0.8, n)
+l &lt;- rep(0.2, n)
+x &lt;- runif(n)
+data.frame(x = x, inside = inRange(x, u, l))</code></pre>
+<pre><code>##            x inside
+## 1 0.78699386   TRUE
+## 2 0.07425964  FALSE
+## 3 0.93492781  FALSE
+## 4 0.22155905   TRUE
+## 5 0.47941927   TRUE</code></pre>
+<p>As in base <code>R</code>, some operators can be used also in a “unary” sense, for example <code>!x</code> will negate a <code>LogicalVector</code> and <code>-x</code> will change the sign of a <code>NumericVector</code> or <code>IntegerVector</code>.</p>
+<p><code>Rcpp sugar</code> also provides <code>Rcpp</code> versions of many basic <code>R</code> functions, including:</p>
+<ul>
+<li><strong>logical operations</strong> such as <code>ifelse</code>, <code>all</code>, <code>any</code>, …;</li>
+<li><strong>arithmetic operation</strong> such as <code>sign</code>, <code>sqrt</code>, <code>diff</code>, <code>cumsum</code>, …;</li>
+<li><strong>special functions</strong> such as <code>gamma</code>, <code>beta</code>, <code>choose</code>, …;</li>
+<li><strong>stat summaries</strong> such as <code>mean</code>, <code>median</code>, <code>range</code>, …;</li>
+<li><strong>matrix operations</strong> such as <code>colSums</code>, <code>diag</code>, …;</li>
+<li><strong>statistical distribution</strong> such as <code>dnorm</code>, <code>pgamma</code>, …;</li>
+<li>…</li>
+</ul>
+<p>See <a href="http://thecoatlessprofessor.com/programming/cpp/unofficial-rcpp-api-documentation/#sugar">here</a> for a full list. This makes working with <code>Rcpp</code> very easy, if you are already familiar with <code>R</code>. For example, we can do:</p>
+<pre class="r"><code>cppFunction(&#39;
+List exampleSugar(NumericVector x) {
+
+ NumericVector x1 = cumsum(x); 
+ LogicalVector x2 = any(is_na(x));
+ NumericMatrix x3 = cbind(x1, x1);
+  
+ List out = List::create(x1, x2, x3);
+  
+ return out;     
+}&#39;)
+
+exampleSugar( c(1, 0, -2, NA) )</code></pre>
+<pre><code>## [[1]]
+## [1]  1  1 -1 NA
+## 
+## [[2]]
+## [1] TRUE
+## 
+## [[3]]
+##      [,1] [,2]
+## [1,]    1    1
+## [2,]    1    1
+## [3,]   -1   -1
+## [4,]   NA   NA</code></pre>
+<p>which gives us the same results we would get in base <code>R</code>.</p>
+</div>
+<div id="random-number-generation" class="section level3">
+<h3>Random number generation</h3>
+<p><code>Rcpp sugar</code> provides <code>C++</code> level access to the random number generator (RNG) available in <code>R</code>. For example, we can do:</p>
+<pre class="r"><code>cppFunction(&#39;
+NumericVector rbeta_rcpp(const int n, const int a, const int b) {
+ return rbeta(n, a, b);
+}&#39;)
+
+hist(rbeta_rcpp(1e3, 1, 3))</code></pre>
+<p><img src="/sc2-2019/rcpp_advanced_I/1_Rcpp_Sugar_files/figure-html/unnamed-chunk-10-1.png" width="384" style="display: block; margin: auto;" />
+Given that <code>Rcpp</code> is using <code>R</code>’s RNG, setting the seed within the <code>R</code> session will make the results reproducible and identical to what we would get with base <code>R</code>:</p>
+<pre class="r"><code>set.seed(321)
+rbeta_rcpp(5, 1, 3)</code></pre>
+<pre><code>## [1] 0.5159567 0.3422122 0.2875003 0.2889146 0.1782904</code></pre>
+<pre class="r"><code>set.seed(321)
+rbeta(5, 1, 3)</code></pre>
+<pre><code>## [1] 0.5159567 0.3422122 0.2875003 0.2889146 0.1782904</code></pre>
+<p><code>cppFunction</code> adopts the <code>Rcpp</code> namespace by default hence, within <code>rbeta_rcpp</code>, the line <code>rbeta(n, a, b)</code> is equivalent to <code>Rcpp::rbeta(n, a, b)</code>. <code>Rcpp::rbeta</code> outputs a <code>NumericVector</code> of length <code>n</code>. If, instead, we want to simulate random variables one at the time, we can use functions defined in the <code>R</code> namespace. For example:</p>
+<pre class="r"><code>cppFunction(&#39;
+NumericVector rbeta_R(const int n, const int a, const int b) {
+ NumericVector out(n);
+ for(int ii = 0; ii &lt; n; ii++) out[ii] = R::rbeta(a, b);
+ return out;
+}&#39;)
+
+set.seed(321)
+rbeta_R(5, 1, 3)</code></pre>
+<pre><code>## [1] 0.5159567 0.3422122 0.2875003 0.2889146 0.1782904</code></pre>
+<p>Note that <code>R::rbeta</code> returns a <code>double</code>, not a <code>NumericVector</code>. See <a href="http://thecoatlessprofessor.com/programming/cpp/unofficial-rcpp-api-documentation/#stat-dist">here</a> for a complete list of the statistical distribution available via <code>Rcpp sugar</code>.</p>
+<p>As explained <a href="https://gallery.rcpp.org/articles/random-number-generation/index.html">here</a> and in the <a href="https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Random-number-generation">Writing R Extensions</a> documentation, to use <code>R</code>’s internal RNG in <code>C/C++</code> we need to call <code>GetRNGState</code> before using the RNG and <code>PutRNGState</code> before returning to <code>R</code>. The first call reads the state of the RNG (see <code>?.Random.seed</code>), the second updates it. When we use <code>R</code>’s RNG within functions exported via the <code>// [[Rcpp::export]]</code> attribute we don’t have to call <code>GetRNGState</code> or <code>PutRNGState</code>, because <code>Rcpp</code> does it for us in the automatically generated <code>C++</code> wrapper function. The <code>// [[Rcpp::export]]</code> attribute is used automatically by <code>cppFunction</code> and, in fact, if we recompile a previous example:</p>
+<pre class="r"><code>cppFunction(&#39;
+NumericVector rbeta_rcpp(const int n, const int a, const int b) {
+ return rbeta(n, a, b);
+}&#39;, rebuild = TRUE, verbose = TRUE)</code></pre>
+<pre><code>## 
+## Generated code for function definition: 
+## --------------------------------------------------------
+## 
+## #include &lt;Rcpp.h&gt;
+## 
+## using namespace Rcpp;
+## 
+## // [[Rcpp::export]]
+## 
+## NumericVector rbeta_rcpp(const int n, const int a, const int b) {
+##  return rbeta(n, a, b);
+## }
+## 
+## Generated extern &quot;C&quot; functions 
+## --------------------------------------------------------
+## 
+## 
+## #include &lt;Rcpp.h&gt;
+## #ifdef RCPP_USE_GLOBAL_ROSTREAM
+## Rcpp::Rostream&lt;true&gt;&amp;  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+## Rcpp::Rostream&lt;false&gt;&amp; Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+## #endif
+## 
+## // rbeta_rcpp
+## NumericVector rbeta_rcpp(const int n, const int a, const int b);
+## RcppExport SEXP sourceCpp_9_rbeta_rcpp(SEXP nSEXP, SEXP aSEXP, SEXP bSEXP) {
+## BEGIN_RCPP
+##     Rcpp::RObject rcpp_result_gen;
+##     Rcpp::RNGScope rcpp_rngScope_gen;
+##     Rcpp::traits::input_parameter&lt; const int &gt;::type n(nSEXP);
+##     Rcpp::traits::input_parameter&lt; const int &gt;::type a(aSEXP);
+##     Rcpp::traits::input_parameter&lt; const int &gt;::type b(bSEXP);
+##     rcpp_result_gen = Rcpp::wrap(rbeta_rcpp(n, a, b));
+##     return rcpp_result_gen;
+## END_RCPP
+## }
+## 
+## Generated R functions 
+## -------------------------------------------------------
+## 
+## `.sourceCpp_9_DLLInfo` &lt;- dyn.load(&#39;/tmp/Rtmp3t0lt5/sourceCpp-x86_64-pc-linux-gnu-1.0.8.3/sourcecpp_ed5f443f53c3/sourceCpp_13.so&#39;)
+## 
+## rbeta_rcpp &lt;- Rcpp:::sourceCppFunction(function(n, a, b) {}, FALSE, `.sourceCpp_9_DLLInfo`, &#39;sourceCpp_9_rbeta_rcpp&#39;)
+## 
+## rm(`.sourceCpp_9_DLLInfo`)
+## 
+## Building shared library
+## --------------------------------------------------------
+## 
+## DIR: /tmp/Rtmp3t0lt5/sourceCpp-x86_64-pc-linux-gnu-1.0.8.3/sourcecpp_ed5f443f53c3
+## 
+## /opt/R/4.1.3/lib/R/bin/R CMD SHLIB --preclean -o &#39;sourceCpp_13.so&#39; &#39;fileed5f54429477.cpp&#39;</code></pre>
+<p>we see that the <code>C++</code> wrapper contains the line <code>Rcpp::RNGScope rcpp_rngScope_gen;</code> which internally calls <code>GetRNGState</code>. <code>PutRNGState</code> will be called automatically when exiting the <code>C++</code> wrapper function.</p>
+<p>One case when we need to worry about the reading and writing the <code>R</code>’s RNG state, is when we want to do things manually, that is without using the <code>// [[Rcpp::export]]</code> attribute. To provide an example, define the function:</p>
+<pre class="cpp"><code>#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+RcppExport SEXP rnorm_manual(SEXP n) {
+  
+  NumericVector out( as&lt;int&gt;(n) );
+  
+  RNGScope rngScope;
+  
+  out = rnorm(as&lt;int&gt;(n), 0.0, 1.0);
+  
+  return out;
+}</code></pre>
+<p>in the “rnorm_manual.cpp” file, load it and test it:</p>
+<pre class="r"><code>system(&quot;export PKG_CXXFLAGS=`Rscript -e \&quot;Rcpp:::CxxFlags()\&quot;` &amp;&amp; 
+        R CMD SHLIB rnorm_manual.cpp&quot;)
+dyn.load(&quot;rnorm_manual.so&quot;)
+
+set.seed(31)
+.Call(&quot;rnorm_manual&quot;, 3)</code></pre>
+<pre><code>## [1]  0.05557024 -0.18423859  1.59576183</code></pre>
+<pre class="r"><code>set.seed(31)
+rnorm(3)</code></pre>
+<pre><code>## [1]  0.05557024 -0.18423859  1.59576183</code></pre>
+<p>Here we needed to create an <code>RNGScope</code> object, before using the RNG via <code>rnorm</code>. <strong>IMPORTANTLY</strong> the <code>RNGScope</code> must be declared <strong>AFTER</strong> declaring any of the outputs of the function (the vector <code>out</code> in this case). Failing to do so, for example declaring an output after the <code>RNGScope</code> object, will lead to very annoying intermittent crashes. Hence, it is generally preferable to use the <code>Rcpp::export</code> attribute, which deals with the RNG state automatically.</p>
+</div>
+
+
+
+  <footer>
+  
+
+<script src="//yihui.name/js/math-code.js"></script>
+<script async src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script async src="//yihui.name/js/center-img.js"></script>
+
+
+<script type="text/javascript">
+var sc_project=12110974;
+var sc_invisible=1;
+var sc_security="9b171880";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12110974/0/9b171880/1/"
+alt="Web Analytics"></a></div></noscript>
+
+
+
+
+
+
+
+
+  
+
+
+<p align=right>
+
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp_advanced_I/1_Rcpp_Sugar.Rmd'>View source</a>
+
+|
+
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp_advanced_I/1_Rcpp_Sugar.Rmd'>Edit source</a>
+
+</p>
+
+
+
+
+
+<script src="https://utteranc.es/client.js"
+        repo="awllee/sc1-2019"
+        issue-term="pathname"
+        label="utterance"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+
+  
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+  
+  <hr>
+  <div class="copyright">© 2020 <a href="https://mfasiolo.github.io/">Matteo Fasiolo</a></div>
+  
+  </footer>
+  </article>
+  
+  </body>
+</html>
+

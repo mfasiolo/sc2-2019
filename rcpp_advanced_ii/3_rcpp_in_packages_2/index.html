@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>3. Using Rcpp in an R package (2) - SC2</title>
+    <meta property="og:title" content="3. Using Rcpp in an R package (2) - SC2">
+    
+    <meta name="twitter:card" content="summary">
+
+    
+      
+    
+
+    
+      
+      <meta property="description" content="In the previous section we explained how to build a basic R package containing Rcpp-based C&#43;&#43; code. Here we explain how you can use C&#43;&#43; code from other packages (e.g., RcppArmadillo) in your package. &amp;hellip;">
+      <meta property="og:description" content="In the previous section we explained how to build a basic R package containing Rcpp-based C&#43;&#43; code. Here we explain how you can use C&#43;&#43; code from other packages (e.g., RcppArmadillo) in your package. &amp;hellip;">
+      
+    
+
+    
+    
+
+    
+
+    
+    
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
+    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+
+<link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="breadcrumbs">
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/">rcpp_advanced_ii / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/3_rcpp_in_packages_2/">3_rcpp_in_packages_2 / </a>
+    
+</nav>
+
+  </head>
+
+  
+  <body class="sc2-2019">
+    <header class="masthead">
+      <h1><a href="/sc2-2019/">SC2</a></h1>
+
+<p class="tagline">Statistical Computing 2</p>
+
+      <nav class="menu">
+  <input id="menu-check" type="checkbox" hidden/>
+  <label id="menu-label" for="menu-check" class="unselectable" hidden>
+    <span class="icon close-icon">✕</span>
+    <span class="icon open-icon">☰</span>
+    <span class="text">Menu</span>
+  </label>
+  <ul>
+  
+  
+  <li><a href="/sc2-2019/">Home</a></li>
+  
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_iii/">Parallel Rcpp</a></li>
+  
+  
+  </ul>
+</nav>
+
+    </header>
+
+    <article class="main">
+      <header class="title">
+      
+<h1>3. Using Rcpp in an R package (2)</h1>
+
+<h3>
+</h3>
+<hr>
+
+
+      </header>
+
+
+
+
+
+
+
+<div id="TOC">
+<ul>
+<li><a href="#using-c-code-from-other-packages-within-your-package">Using <code>C++</code> code from other packages within your package</a></li>
+<li><a href="#making-your-packages-c-code-callable-from-other-packages">Making your package’s <code>C++</code> code callable from other packages</a></li>
+<li><a href="#using-an-r-package-to-make-a-c-library-available-to-other-packages">Using an <code>R</code> package to make a <code>C++</code> library available to other packages</a></li>
+</ul>
+</div>
+
+<style>
+body {
+text-align: justify}
+</style>
+<div id="using-c-code-from-other-packages-within-your-package" class="section level3">
+<h3>Using <code>C++</code> code from other packages within your package</h3>
+<p>In the previous section we explained how to build a basic <code>R</code> package containing <code>Rcpp</code>-based <code>C++</code> code. Here we explain how you can use <code>C++</code> code from other packages (e.g., <code>RcppArmadillo</code>) in your package.</p>
+<p>Consider the following function, which calculates the dot-product between two vectors using <code>RcppArmadillo</code>:</p>
+<pre class="r"><code>printFile &lt;- function(o, n = 1e5) cat(readChar(o, n))
+printFile(&quot;dotArma.cpp&quot;)</code></pre>
+<pre><code>
+// [[Rcpp::depends(RcppArmadillo)]]
+#include &lt;RcppArmadillo.h&gt;
+
+using namespace Rcpp;
+
+//&#39; Dot product in RcppArmadillo.
+//&#39;
+//&#39; @param x1 numeric vector
+//&#39; @param x2 numeric vector
+//&#39; @return dot product, that is \code{t(x1)%*%x2}
+// [[Rcpp::export(dotArma)]]
+arma::vec dotArma_I(arma::vec x1, arma::vec x2)
+{
+  arma::vec out(1);
+  out[0] = arma::as_scalar(x1.t() * x2);
+  return out;
+}</code></pre>
+<p>Notice the <code>Rcpp::depends(RcppArmadillo)</code> attribute at the top. To add this function to the <code>mypack</code> package (see the previous section), we copy the <code>.cpp</code> file to the appropriate directory:</p>
+<pre class="r"><code>system(&quot;cp dotArma.cpp mypack/src/dotArma.cpp&quot;)</code></pre>
+<p>We then call <code>compileAttributes</code> on the package folder:</p>
+<pre class="r"><code>library(Rcpp)
+compileAttributes(&quot;mypack&quot;)</code></pre>
+<pre><code>## Warning: The following packages are referenced using Rcpp::depends attributes
+## however are not listed in the Depends, Imports or LinkingTo fields of the
+## package DESCRIPTION file: RcppArmadillo</code></pre>
+<p>This creates the appropriate <code>C++</code> and <code>R</code> wrappers in <code>mypack/src/RcppExports.cpp</code> and <code>mypack/R/RcppExports.R</code>. We are not quite ready to build the package, because <code>compileAttributes</code> warns us that our code depends on <code>RcppArmadillo</code>, but the <code>DESCRIPTION</code> file does not mention <code>RcppArmadillo</code> under <code>LinkingTo</code>. This is required to link our package to the <code>RcppArmadillo</code> header files, and must be done manually:</p>
+<pre class="r"><code>desc &lt;- readLines(&quot;mypack/DESCRIPTION&quot;)
+kk &lt;- which(grepl(&quot;LinkingTo&quot;, desc))
+desc[kk] &lt;- paste0(desc[kk], &quot;, RcppArmadillo&quot;)
+writeLines(desc, &quot;mypack/DESCRIPTION&quot;)
+
+printFile(&quot;mypack/DESCRIPTION&quot;)</code></pre>
+<pre><code>## Package: mypack
+## Type: Package
+## Title: What the Package Does in One &#39;Title Case&#39; Line
+## Version: 1.0
+## Date: 2022-03-24
+## Author: Your Name
+## Maintainer: Your Name &lt;your@email.com&gt;
+## Description: One paragraph description of what the package does as one
+##         or more full sentences.
+## License: GPL (&gt;= 2)
+## Imports: Rcpp (&gt;= 1.0.8)
+## LinkingTo: Rcpp, RcppArmadillo</code></pre>
+<p>We recompile the attributes again:</p>
+<pre class="r"><code>compileAttributes(&quot;mypack&quot;)</code></pre>
+<p>so that <code>RcppArmadillo</code> is now included in <code>RcppExports.cpp</code>:</p>
+<pre class="r"><code>printFile(&quot;mypack/src/RcppExports.cpp&quot;, 300)</code></pre>
+<pre><code>// Generated by using Rcpp::compileAttributes() -&gt; do not edit by hand
+// Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
+
+#include &lt;RcppArmadillo.h&gt;
+#include &lt;Rcpp.h&gt;
+
+using namespace Rcpp;
+
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream&lt;true&gt;&amp;  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rost</code></pre>
+<p>Our package is ready to be built and installed:</p>
+<pre class="r"><code>system(&quot;R CMD build mypack&quot;)
+system(&quot;R CMD INSTALL mypack_1.0.tar.gz&quot;)</code></pre>
+<p>Here we used <code>RcppArmadillo</code> as an example, but if you want to depend on a different package (e.g., <code>RcppGSL</code>, <code>RcppMLPACK</code>, etc), the process is exactly the same.</p>
+</div>
+<div id="making-your-packages-c-code-callable-from-other-packages" class="section level3">
+<h3>Making your package’s <code>C++</code> code callable from other packages</h3>
+<p>Having installed the <code>mypack</code> package, we can now use its exported <code>R</code> functions. For instance, we could do:</p>
+<pre class="r"><code># NB do no run this, because we will re-install mypack later in the script, and 
+# loading it here would cause problems
+library(mypack) 
+dotArma(5:1, 5:1)
+# 55</code></pre>
+<p>If we wanted to build another package (say, <code>secondPack</code>) that depends on <code>mypack</code>, we could of course import <code>dotArma</code> from <code>mypack</code> by adding the <code>importFrom(mypack, dotArma)</code> line to the <code>NAMESPACE</code> file of <code>secondPack</code>. But what if we wanted to call the <code>_mypack_dotArma_I</code> <code>C++</code> function directly in the <code>C++</code> code contained in <code>secondPack</code>?
+<!-- Or what if we wanted to call `_mypack_dotArma_I` in some `R` function contained in `secondPack` by using: -->
+<!-- ```{r, eval = FALSE} -->
+<!-- .Call("_mypack_dotArma_I", 1:5, 1:5, PACKAGE = "mypack") -->
+<!-- # 55 -->
+<!-- ``` -->
+<!-- ?  -->
+This section explains how do this using <code>Rcpp</code> attributes.</p>
+<p>Strictly speaking, if we created a package <code>secondPack</code> that depended on <code>mypack</code> (via the <code>Depends</code> entry in the Description file) and that containted a <code>.Call</code> to <code>_mypack_dotArma_I</code>, the code would work. But, if we were to check the package via <code>R CMD check secondPack</code>, we would get:</p>
+<pre class="r"><code>* checking foreign function calls ... NOTE
+Foreign function call to a different package:
+  .Call(&quot;_mypack_dotArma_I&quot;, ..., PACKAGE = &quot;mypack&quot;)
+See chapter ‘System and foreign language interfaces’ in the ‘Writing R
+Extensions’ manual.</code></pre>
+<p>This is because calling native (e.g., <code>C++</code>) functions belonging to an <code>R</code> package from another <code>R</code> package via <code>.Call</code> is <a href="https://cran.r-project.org/doc/manuals/R-exts.html#Portable-C-and-C_002b_002b-code">discouraged by CRAN</a>:</p>
+<p>“It is not portable to call compiled code in R or other packages via <code>.Internal</code>, <code>.C</code>, <code>.Fortran</code>, <code>.Call</code> or .External, since such interfaces are subject to change without notice and will probably result in your code terminating the R process.”</p>
+<p><code>C++</code> functions contained in another package should be accessed at <code>C++</code> level, but the functions need to be exported from that package. The <code>Rcpp::interfaces</code> attribute provides a simple way of exporting a <code>C++</code> function from a package. In particular, consider the following function:</p>
+<pre class="r"><code>printFile(&quot;dotArma_2.cpp&quot;)</code></pre>
+<pre><code>// [[Rcpp::depends(RcppArmadillo)]]
+#include &lt;RcppArmadillo.h&gt;
+
+// [[Rcpp::interfaces(cpp)]]
+
+using namespace Rcpp;
+
+// [[Rcpp::export(dotArma2)]]
+arma::vec dotArma_I2(arma::vec x1, arma::vec x2)
+{
+  arma::vec out(1);
+  out[0] = arma::as_scalar(x1.t() * x2);
+  return out;
+}</code></pre>
+<p>Here the <code>// [[Rcpp::interfaces(cpp)]]</code> attribute makes so that the <code>dotArma_I</code> will be exported from the package. To see how this works, we add this file to the source code of <code>mypack</code>:</p>
+<pre class="r"><code>system(&quot;cp dotArma_2.cpp mypack/src/dotArma_2.cpp&quot;) </code></pre>
+<p>we compile the attributes:</p>
+<pre class="r"><code>compileAttributes(&quot;mypack&quot;)</code></pre>
+<p>The <code>mypack/src/RcppExports.cpp</code> generated by <code>compileAttributes</code> is quite long, and we do not print it out here. But the key lines are:</p>
+<pre class="cpp"><code>// registerCCallable (register entry points for exported C++ functions)
+RcppExport SEXP _mypack_RcppExport_registerCCallable() { 
+    R_RegisterCCallable(&quot;mypack&quot;, &quot;_mypack_dotArma2&quot;, (DL_FUNC)_mypack_dotArma_I2_try);
+    R_RegisterCCallable(&quot;mypack&quot;, &quot;_mypack_RcppExport_validate&quot;, (DL_FUNC)_mypack_RcppExport_validate);
+    return R_NilValue;
+}</code></pre>
+<p>This means that the <code>_mypack_dotArma2</code> function (a <code>C++</code> wrapper around our <code>dotArma_I</code> function) has been registered as callable from other packages. To make it more easily accessible from other packages, <code>compileAttributes</code> also created the following header files:</p>
+<pre class="r"><code>printFile(&quot;mypack/inst/include/mypack.h&quot;)</code></pre>
+<pre><code>## // Generated by using Rcpp::compileAttributes() -&gt; do not edit by hand
+## // Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
+## 
+## #ifndef RCPP_mypack_H_GEN_
+## #define RCPP_mypack_H_GEN_
+## 
+## #include &quot;mypack_RcppExports.h&quot;
+## 
+## #endif // RCPP_mypack_H_GEN_</code></pre>
+<pre class="r"><code>printFile(&quot;mypack/inst/include/mypack_RcppExports.h&quot;)</code></pre>
+<pre><code>## // Generated by using Rcpp::compileAttributes() -&gt; do not edit by hand
+## // Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
+## 
+## #ifndef RCPP_mypack_RCPPEXPORTS_H_GEN_
+## #define RCPP_mypack_RCPPEXPORTS_H_GEN_
+## 
+## #include &lt;RcppArmadillo.h&gt;
+## #include &lt;Rcpp.h&gt;
+## 
+## namespace mypack {
+## 
+##     using namespace Rcpp;
+## 
+##     namespace {
+##         void validateSignature(const char* sig) {
+##             Rcpp::Function require = Rcpp::Environment::base_env()[&quot;require&quot;];
+##             require(&quot;mypack&quot;, Rcpp::Named(&quot;quietly&quot;) = true);
+##             typedef int(*Ptr_validate)(const char*);
+##             static Ptr_validate p_validate = (Ptr_validate)
+##                 R_GetCCallable(&quot;mypack&quot;, &quot;_mypack_RcppExport_validate&quot;);
+##             if (!p_validate(sig)) {
+##                 throw Rcpp::function_not_exported(
+##                     &quot;C++ function with signature &#39;&quot; + std::string(sig) + &quot;&#39; not found in mypack&quot;);
+##             }
+##         }
+##     }
+## 
+##     inline arma::vec dotArma2(arma::vec x1, arma::vec x2) {
+##         typedef SEXP(*Ptr_dotArma2)(SEXP,SEXP);
+##         static Ptr_dotArma2 p_dotArma2 = NULL;
+##         if (p_dotArma2 == NULL) {
+##             validateSignature(&quot;arma::vec(*dotArma2)(arma::vec,arma::vec)&quot;);
+##             p_dotArma2 = (Ptr_dotArma2)R_GetCCallable(&quot;mypack&quot;, &quot;_mypack_dotArma2&quot;);
+##         }
+##         RObject rcpp_result_gen;
+##         {
+##             RNGScope RCPP_rngScope_gen;
+##             rcpp_result_gen = p_dotArma2(Shield&lt;SEXP&gt;(Rcpp::wrap(x1)), Shield&lt;SEXP&gt;(Rcpp::wrap(x2)));
+##         }
+##         if (rcpp_result_gen.inherits(&quot;interrupted-error&quot;))
+##             throw Rcpp::internal::InterruptedException();
+##         if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+##             throw Rcpp::LongjumpException(rcpp_result_gen);
+##         if (rcpp_result_gen.inherits(&quot;try-error&quot;))
+##             throw Rcpp::exception(Rcpp::as&lt;std::string&gt;(rcpp_result_gen).c_str());
+##         return Rcpp::as&lt;arma::vec &gt;(rcpp_result_gen);
+##     }
+## 
+## }
+## 
+## #endif // RCPP_mypack_RCPPEXPORTS_H_GEN_</code></pre>
+<p>This looks quite complicated, but the key points that must be understood are that:</p>
+<ul>
+<li><code>mypack.h</code> is a header file with the same name as our package, and it simply includes
+the second header file;</li>
+<li><code>mypack_RcppExports.h</code> defines the <code>mypack</code> namespace (again, the name of our package), which
+contains the <code>arma::vec dotArma2(arma::vec x1, arma::vec x2)</code> function. This is the only <code>C++</code>
+function that we are exporting from the package via the <code>Rcpp::interfaces(cpp)</code> attribute.
+The name <code>dotArma2</code> is the one we have specified via the <code>Rcpp::export(dotRcpp2)</code> attribute.</li>
+<li><code>dotArma2</code> is the <code>C++</code> function that we are going to call from dependent packages, as we will
+illustrate later. It can be seen as a wrapper around our original <code>dotArma_I</code> <code>C++</code> function.</li>
+</ul>
+<p>This is all that need to be done to be able to call the <code>dotArma2</code> <code>C++</code> function from other packages. To demonstrate this, we create a new package:</p>
+<pre class="r"><code>Rcpp.package.skeleton(&quot;secondPack&quot;)</code></pre>
+<p>We add <code>RcppArmadillo</code> and <code>mypack</code> to the <code>LinkingTo</code> field of its description file:</p>
+<pre class="r"><code>desc &lt;- readLines(&quot;secondPack/DESCRIPTION&quot;)
+kk &lt;- which(grepl(&quot;LinkingTo&quot;, desc))
+desc[kk] &lt;- paste0(desc[kk], &quot;, RcppArmadillo&quot;, &quot;, mypack&quot;)
+writeLines(desc, &quot;secondPack/DESCRIPTION&quot;)</code></pre>
+<p>Then we add the following function:</p>
+<pre class="r"><code>printFile(&quot;secondDot.cpp&quot;)</code></pre>
+<pre><code>## #include &lt;RcppArmadillo.h&gt;
+## 
+## #include &lt;mypack.h&gt;
+## 
+## using namespace Rcpp;
+## 
+## // [[Rcpp::export(secondDot)]]
+## arma::vec secondDot_I(arma::vec x1, arma::vec x2)
+## {
+##   arma::vec out(1);
+##   
+##   out = mypack::dotArma2(x1, x2);
+## 
+##   return out;
+## }</code></pre>
+<p>to the <code>secondPack</code> package:</p>
+<pre class="r"><code>system(&quot;cp secondDot.cpp secondPack/src/secondDot.cpp&quot;) </code></pre>
+<p>Notice that <code>secondDot.cpp</code> includes the header <code>mypack.h</code>, which provides a definition of the <code>dotArma2</code> function, inside the <code>mypack</code> namespace. Hence, to use the <code>dotArma2</code> function in the new package we are following the same steps that we used to use functions from <code>RcppArmadillo</code>, namely:</p>
+<ul>
+<li>add <code>mypack</code> to <code>LinkingTo</code> in the <code>Description</code> file;</li>
+<li>add <code>#include &lt;mypack.h&gt;</code> to include the package header;</li>
+<li>use <code>mypack::</code> to find <code>C++</code> functions in the package namespace.</li>
+</ul>
+<p>To see whether this works, we compile and install <code>mypack</code>:</p>
+<pre class="r"><code>system(&quot;R CMD build mypack&quot;)
+system(&quot;R CMD INSTALL mypack_1.0.tar.gz&quot;)</code></pre>
+<p>Then we compile the attributes in <code>secondPack</code>:</p>
+<pre class="r"><code>compileAttributes(&quot;secondPack&quot;)</code></pre>
+<p>and we install it:</p>
+<pre class="r"><code>system(&quot;R CMD build secondPack&quot;)
+system(&quot;R CMD INSTALL secondPack_1.0.tar.gz&quot;)</code></pre>
+<p>Let’s see whether we can load it and use the new function:</p>
+<pre class="r"><code>library(secondPack)
+secondDot(1:5, 1:5)</code></pre>
+<pre><code>##      [,1]
+## [1,]   55</code></pre>
+<pre class="r"><code>t(1:5) %*% 1:5</code></pre>
+<pre><code>##      [,1]
+## [1,]   55</code></pre>
+<p>It works fine! Hence, the <code>Rcpp::interfaces</code> attribute allowed us to make the <code>dotArma_I2</code> accessible from other packages at <code>C++</code> level. There are a few thing to point out:</p>
+<ul>
+<li>the <code>Rcpp::interfaces</code> attribute applies to all the functions that appear in the relevant file, as long as
+they are preceded by the <code>Rcpp::export</code> attribute. In our case, the <code>dotArma_2.cpp</code> contains only one
+function that is exported via <code>Rcpp::export</code>.</li>
+<li>the <code>Rcpp::interfaces(cpp)</code> attributes makes so that a <code>C++</code> wrapper for <code>dotArma_I2</code> is created and exported
+from the package. The attribute <code>Rcpp::interfaces(r, cpp)</code> would lead to the creation of both a <code>C++</code> and an
+<code>R</code> wrapper for <code>dotArma_I2</code>. That is, the package would export an <code>R</code> function called <code>dotArma2</code> and a <code>C++</code>
+function with the same name would be defined in the <code>mypack.h</code> header. <code>Rcpp::interfaces(r)</code> does not do
+anything useful, as the <code>dotArma</code> <code>R</code> wrapper would be created and exported anyway by the <code>Rcpp::export</code>
+attribute.</li>
+<li>the <code>mypack</code> package is now compatible with the <code>Rcpp::depends</code> attribute. For example, now we can do:</li>
+</ul>
+<pre class="r"><code>sourceCpp(code = &#39;
+// [[Rcpp::depends(RcppArmadillo, mypack)]]
+#include &lt;mypack.h&gt;
+
+using namespace Rcpp;
+
+// [[Rcpp::export(dotSource)]]
+arma::vec dotSource_I(arma::vec x1, arma::vec x2)
+{
+  arma::vec out(1);
+  
+  out = mypack::dotArma2(x1, x2);
+
+  return out;
+}
+&#39;)
+
+dotSource(3:1, 3:1)</code></pre>
+<pre><code>##      [,1]
+## [1,]   14</code></pre>
+<p>Notice that we don’t need to include <code>RcppArmadillo.h</code>, because it’s already included in <code>mypack.h</code>, while both <code>RcppArmadillo</code> and <code>mypack</code> have to appear in <code>Rcpp::depends</code>. This is because both packages are needed to correctly set the compilation environment (e.g., <code>sourceCpp</code> will use the compilation flags <code>-I"some_folder/RcppArmadillo/include"</code> <code>-I"some_folder/mypack/include"</code> to link against <code>RcppArmadillo.h</code> and <code>mypack.h</code>).</p>
+</div>
+<div id="using-an-r-package-to-make-a-c-library-available-to-other-packages" class="section level3">
+<h3>Using an <code>R</code> package to make a <code>C++</code> library available to other packages</h3>
+<p>Suppose that we have a <code>C++</code> library, which consists simply of the following header file:</p>
+<pre class="r"><code>printFile(&quot;smart/smart.h&quot;)</code></pre>
+<pre><code>#ifndef smart_library
+#define smart_library
+
+namespace smart{
+
+  inline double mysquare(double x){
+    return x * x;
+  }
+
+}
+
+#endif</code></pre>
+<p>This is called a header-only library, because the functions definition and implementation are both found in the header files, which are denoted by <code>.h</code> or <code>.hpp</code>. In contrasts, standard <code>C++</code> libraries use header files to detail the definitions of the main functions that will be used by the library’s users, while the implementation and the internal functions are contained in the <code>.cpp</code> files. For our purposes, the advantage of header-only libraries (such as <code>Armadillo</code>) is that it is simple to include their code in an <code>R</code> package and to make so that code can be used by other <code>R</code> packages.</p>
+<p>To do this, we first move the folder containing the library to the <code>inst/include</code> sub-folder of our package:</p>
+<pre class="r"><code>system(&quot;cp -a smart mypack/inst/include/smart&quot;)</code></pre>
+<p>We then have to change the <code>mypack.h</code> header (which was automatically generated by <code>compileAttributes</code>) to:</p>
+<pre class="r"><code>system(&quot;cp -a mypack_v2.h mypack/inst/include/mypack.h&quot;)
+printFile(&quot;mypack/inst/include/mypack.h&quot;)</code></pre>
+<pre><code>#ifndef RCPP_mypack_H_GEN_
+#define RCPP_mypack_H_GEN_
+
+#include &quot;mypack_RcppExports.h&quot;
+
+#include &quot;smart/smart.h&quot;
+
+#endif</code></pre>
+<p>The main change is that we added <code>#include "smart/smart.h"</code> to include the new library. We can now re-build and re-install our package:</p>
+<pre class="r"><code>system(&quot;R CMD build mypack&quot;)
+system(&quot;R CMD INSTALL mypack_1.0.tar.gz&quot;)</code></pre>
+<p>And now the <code>smart</code> <code>C++</code> library is available via our package:</p>
+<pre class="r"><code>sourceCpp(code = &#39;
+// [[Rcpp::depends(RcppArmadillo, mypack)]]
+#include &lt;mypack.h&gt;
+
+using namespace Rcpp;
+
+// [[Rcpp::export(smartSquare)]]
+NumericVector smartSquare_I(NumericVector x)
+{
+  NumericVector out(x.length());
+
+  for(int ii = 0; ii &lt; x.length(); ii++)
+  {
+   out[ii] = smart::mysquare(x[ii]);
+  }
+
+  return out;
+}
+&#39;)
+
+smartSquare(1:5)</code></pre>
+<pre><code>## [1]  1  4  9 16 25</code></pre>
+<p>It works! This is pretty much the mechanisms used by <code>RcppArmadillo</code> to make the <code>Armadillo</code> library available to other <code>R</code> packages and to <code>Rcpp</code> programs compiled via <code>sourceCpp</code> (of course, <code>RcppArmadillo</code> does more than that, for instance, it extends the <code>Rcpp::wrap</code> and <code>Rcpp::as</code> functions to facilitate conversion between <code>Armadillo</code> and <code>Rcpp</code> objects).</p>
+<p>For another simple example on shipping header-only libraries via an <code>R</code> package, see <a href="https://github.com/r-pkg-examples/rcpp-shared-cpp-functions">this template</a>. For a more complex example, see the <a href="https://github.com/coatless/sitmo">sitmo</a> package.</p>
+</div>
+
+
+
+  <footer>
+  
+
+<script src="//yihui.name/js/math-code.js"></script>
+<script async src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script async src="//yihui.name/js/center-img.js"></script>
+
+
+<script type="text/javascript">
+var sc_project=12110974;
+var sc_invisible=1;
+var sc_security="9b171880";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12110974/0/9b171880/1/"
+alt="Web Analytics"></a></div></noscript>
+
+
+
+
+
+
+
+
+  
+
+
+<p align=right>
+
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp_advanced_II/3_Rcpp_in_packages_2.Rmd'>View source</a>
+
+|
+
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp_advanced_II/3_Rcpp_in_packages_2.Rmd'>Edit source</a>
+
+</p>
+
+
+
+
+
+<script src="https://utteranc.es/client.js"
+        repo="awllee/sc1-2019"
+        issue-term="pathname"
+        label="utterance"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+
+  
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+  
+  <hr>
+  <div class="copyright">© 2020 <a href="https://mfasiolo.github.io/">Matteo Fasiolo</a></div>
+  
+  </footer>
+  </article>
+  
+  </body>
+</html>
+
