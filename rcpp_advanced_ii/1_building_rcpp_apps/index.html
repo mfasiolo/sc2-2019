@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>1. Building larger Rcpp programs - SC2</title>
+    <meta property="og:title" content="1. Building larger Rcpp programs - SC2">
+    
+    <meta name="twitter:card" content="summary">
+
+    
+      
+    
+
+    
+      
+      <meta property="description" content="So far in these notes, we have put all our Rcpp code in a single .cpp file or we have written the Rcpp code directly in R. An example of the latter approach is:
+library(Rcpp) sourceCpp(code = &amp;#39; &amp;hellip;">
+      <meta property="og:description" content="So far in these notes, we have put all our Rcpp code in a single .cpp file or we have written the Rcpp code directly in R. An example of the latter approach is:
+library(Rcpp) sourceCpp(code = &amp;#39; &amp;hellip;">
+      
+    
+
+    
+    
+
+    
+
+    
+    
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
+    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+
+<link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="breadcrumbs">
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/">rcpp_advanced_ii / </a>
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/1_building_rcpp_apps/">1_building_rcpp_apps / </a>
+    
+</nav>
+
+  </head>
+
+  
+  <body class="sc2-2019">
+    <header class="masthead">
+      <h1><a href="/sc2-2019/">SC2</a></h1>
+
+<p class="tagline">Statistical Computing 2</p>
+
+      <nav class="menu">
+  <input id="menu-check" type="checkbox" hidden/>
+  <label id="menu-label" for="menu-check" class="unselectable" hidden>
+    <span class="icon close-icon">✕</span>
+    <span class="icon open-icon">☰</span>
+    <span class="text">Menu</span>
+  </label>
+  <ul>
+  
+  
+  <li><a href="/sc2-2019/">Home</a></li>
+  
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_iii/">Parallel Rcpp</a></li>
+  
+  
+  </ul>
+</nav>
+
+    </header>
+
+    <article class="main">
+      <header class="title">
+      
+<h1>1. Building larger Rcpp programs</h1>
+
+<h3>
+</h3>
+<hr>
+
+
+      </header>
+
+
+
+
+
+
+
+<div id="TOC">
+<ul>
+<li><a href="#spreading-rcpp-code-over-multiple-c-files">Spreading <code>Rcpp</code> code over multiple <code>C++</code> files</a></li>
+<li><a href="#using-rcpp-extensions-with-sourcecpp">Using <code>Rcpp</code> extensions with <code>sourceCpp</code></a></li>
+</ul>
+</div>
+
+<style>
+body {
+text-align: justify}
+</style>
+<div id="spreading-rcpp-code-over-multiple-c-files" class="section level3">
+<h3>Spreading <code>Rcpp</code> code over multiple <code>C++</code> files</h3>
+<p>So far in these notes, we have put all our <code>Rcpp</code> code in a single <code>.cpp</code> file or we have written the <code>Rcpp</code> code directly in <code>R</code>. An example of the latter approach is:</p>
+<pre class="r"><code>library(Rcpp)
+sourceCpp(code = &#39;
+#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+double mySquare(double x){
+  return x * x;
+}
+
+// [[Rcpp::export(name = &quot;squareVect&quot;)]]
+NumericVector squareVect_I(NumericVector v) {
+  
+  NumericVector out( v.length() );
+  for(int ii = 0; ii &lt; v.length(); ii++){
+    out[ii] = mySquare(v[ii]);
+  }
+  return out;
+  
+}&#39;)</code></pre>
+<p>where the <code>squareVect_I</code> <code>C++</code> function simply applies the <code>mySquare</code> function to each element of the vector <code>v</code>. When building larger programs, it is often convenient to spread the code over several source files, hence here we explain how to do it using header file.</p>
+<p>Suppose that we have a source code file, <code>squareVect.cpp</code>, containing the function that we want to export to <code>R</code>:</p>
+<pre class="cpp"><code>#include &lt;Rcpp.h&gt;
+#include &quot;utilities.h&quot;
+
+using namespace Rcpp;
+
+// [[Rcpp::export(name = &quot;squareVect&quot;)]]
+NumericVector squareVect_I(NumericVector v) {
+  
+  NumericVector out( v.length() );
+  for(int ii = 0; ii &lt; v.length(); ii++){
+    out[ii] = mySquare(v[ii]);
+  }
+  return out;
+  
+}</code></pre>
+<p>Notice that here we are including the <code>utilities.h</code> header file, which contains:</p>
+<pre class="cpp"><code>#ifndef __UTILITIES__
+#define __UTILITIES__
+
+double mySquare(double x);
+
+#endif // __UTILITIES__</code></pre>
+<p>Here <code>#ifndef</code>, <code>#define</code> and <code>#endif</code> are directives that will be used by the preprocessor to do some code editing before compilation. In particular, we define <code>__UTILITIES__</code> and then we add the <code>#ifndef __UTILITIES__</code> directive to avoid including the same header file twice by mistake. The line <code>double mySquare(double x);</code> is a declaration of the <code>mySquare</code> function, simply stating its name, and the type of its inputs and output. The definition of the function is contained in <code>utilities.cpp</code>:</p>
+<pre class="cpp"><code>#include &quot;utilities.h&quot;
+
+double mySquare(double x){
+  return x * x;
+}</code></pre>
+<p>Now we compile the code using <code>sourceCpp</code>:</p>
+<pre class="r"><code>library(Rcpp)
+sourceCpp(file = &quot;squareVect.cpp&quot;)
+
+squareVect(1:5) </code></pre>
+<pre><code>## [1]  1  4  9 16 25</code></pre>
+<p>which seems to work fine.</p>
+</div>
+<div id="using-rcpp-extensions-with-sourcecpp" class="section level3">
+<h3>Using <code>Rcpp</code> extensions with <code>sourceCpp</code></h3>
+<p>We have seen in a previous chapter that <code>sourceCpp</code> and <code>cppFunction</code> take care of the compiler flags and options needed to compile and link <code>Rcpp</code> programs, while such flags need to be handled manually when using <code>R CMD SHLIB</code>. For example, if we compile the following <code>Rcpp</code> function:</p>
+<pre class="r"><code>sourceCpp(code = &#39;
+ #include &lt;Rcpp.h&gt;
+ using namespace Rcpp;
+
+ // [[Rcpp::export(name = &quot;exampleCpp&quot;)]]
+ NumericVector exampleCpp_I() {
+   NumericVector out(10);
+   return out;
+}&#39;)</code></pre>
+<p>then <code>R CMD SHLIB</code> will be use the option <code>-I"some_directory/Rcpp/include"</code> when compiling, which allows the compiler to find <code>Rcpp.h</code>. Similarly, when we use <code>RcppArmadillo</code> in our <code>Rcpp</code> code, as in this example:</p>
+<pre class="r"><code>sourceCpp(code = &#39;
+ // [[Rcpp::depends(RcppArmadillo)]]
+ #include &lt;RcppArmadillo.h&gt;
+ using namespace Rcpp;
+
+ // [[Rcpp::export(name = &quot;MMv_arma&quot;)]]
+ arma::vec Mv_I(arma::mat&amp; A, arma::vec&amp; y) {
+   return A * y;
+}&#39;)</code></pre>
+<p>we include the <code>// [[Rcpp::depends(RcppArmadillo)]]</code> attribute, to make sure that the compiler options are set correctly to work with <code>Armadillo</code>. In particular, in this case <code>R CMD SHLIB</code> will need (among others) the option <code>-I"some_directory/RcppArmadillo/include"</code> to find <code>RcppArmadillo.h</code> as well as <code>-llapack</code> and <code>-lblas</code> to include the <code>LAPACK</code> and <code>BLAS</code> linear algebra libraries, which are used by <code>Armadillo</code>. You can see this by setting <code>verbose = TRUE</code> when calling <code>sourceCpp</code>.</p>
+<p>The point is that the <code>Rcpp::depends</code> mechanism gives you access to lots of extensions that can be used within your <code>Rcpp</code> code, without having to worry about the compilation process. In particular, in addition to <code>RcppArmadillo</code>, you can use:</p>
+<ul>
+<li><code>RcppEigen</code> which provides access to the <code>Eigen</code> linear algebra library;</li>
+<li><code>BH</code> which provides access to the <code>Boost</code> <code>C++</code> library;</li>
+<li><code>RcppGLS</code> for integration with <code>GNU Scientific Library</code> (or <code>GSL</code>) library
+of numerical routines;</li>
+<li><code>RcppMLPACK</code> for integration with the <code>MLPACK</code> <code>C++</code> machine learning library;</li>
+<li><code>RcppParallel</code> for parallel computation in <code>Rcpp</code>;</li>
+<li>and several other packages…</li>
+</ul>
+<p>For example, the following code use the RNG provided by the <code>Boost</code> <code>C++</code> library:</p>
+<pre class="r"><code>library(Rcpp)
+sourceCpp(code = &#39;
+ // [[Rcpp::depends(BH)]]
+ #include &lt;Rcpp.h&gt;
+ #include &lt;random&gt;
+ #include &lt;boost/random/normal_distribution.hpp&gt;
+ using namespace Rcpp;
+
+ // [[Rcpp::export(name = &quot;rnormBoost&quot;)]]
+ NumericVector rnorm_I(int n, int seed) {
+ 
+  // Set up Marsenned Twister RNG from the C++ Standard Library
+  // and initialize is at a given seed
+  std::mt19937 eng;
+  eng.seed(seed);
+  
+  // Create a standard normal distribution using Boost
+  boost::normal_distribution&lt;&gt; normal(0.0, 1.0);
+  
+  NumericVector out(n);
+  
+  for(int ii = 0; ii &lt; n; ii++){
+   // Pass the RNG to the normal distribution to sample
+   out[ii] = normal(eng); 
+  }
+  
+  return out;
+
+}&#39;)
+
+rnormBoost(5, 3)</code></pre>
+<pre><code>## [1] -0.9541617  0.3435606 -1.1171672 -2.0588714  0.1801640</code></pre>
+<pre class="r"><code>rnormBoost(6, 3)</code></pre>
+<pre><code>## [1] -0.9541617  0.3435606 -1.1171672 -2.0588714  0.1801640 -0.1522290</code></pre>
+<pre class="r"><code>rnormBoost(6, 4)</code></pre>
+<pre><code>## [1] -0.3226455  0.4446485  1.2954095  1.6020953 -1.6903968 -0.2742874</code></pre>
+<p>The packages listed above are some of the packages on which your <code>Rcpp</code> code can depend via the <code>Rcpp::depends</code> attribute. Understanding exactly how the latter works is beyond the scope of this course, but it is useful to be aware of the fact that <code>sourceCpp</code> will look for the information on the package(s) mentioned in <code>Rcpp::depends</code>, which is needed to set up the compilation enviroment. For example, it will look for the path to the header file to be included, which can be found by doing:</p>
+<pre class="r"><code>system.file(&quot;include&quot;, package = &quot;RcppArmadillo&quot;)</code></pre>
+<pre><code>## [1] &quot;/home/runner/work/_temp/Library/RcppArmadillo/include&quot;</code></pre>
+<p>Further information can retrieved via the <code>getPlugin</code> function, for example:</p>
+<pre class="r"><code>get(&quot;inlineCxxPlugin&quot;, asNamespace(&quot;RcppArmadillo&quot;))()$env</code></pre>
+<pre><code>## $PKG_LIBS
+## [1] &quot;$(SHLIB_OPENMP_CFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)&quot;
+## 
+## $PKG_CPPFLAGS
+## [1] &quot;-I../inst/include $(SHLIB_OPENMP_CFLAGS)&quot;
+## 
+## $USE_CXX11
+## [1] &quot;yes&quot;</code></pre>
+<p>gives the additional <code>RcppArmadillo</code> environment variables required to successfully compile code depending on <code>Rcpp</code>. Again, we don’t need to know exactly how this works, but it is good to be aware of the fact that <code>sourceCpp</code> is doing some work to set up the compilation environment. Other <code>Rcpp</code> functions, such as <code>cppFunction</code>, work similarly.</p>
+<p>In this section we have seen how to you can spread your <code>Rcpp</code> code over multiple files to build larger applications. However, a better approach to manage and distribute your <code>Rcpp</code> code is building an <code>R</code> package. The next section will explain how to do it.</p>
+</div>
+
+
+
+  <footer>
+  
+
+<script src="//yihui.name/js/math-code.js"></script>
+<script async src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script async src="//yihui.name/js/center-img.js"></script>
+
+
+<script type="text/javascript">
+var sc_project=12110974;
+var sc_invisible=1;
+var sc_security="9b171880";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12110974/0/9b171880/1/"
+alt="Web Analytics"></a></div></noscript>
+
+
+
+
+
+
+
+
+  
+
+
+<p align=right>
+
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/rcpp_advanced_II/1_Building_Rcpp_apps.Rmd'>View source</a>
+
+|
+
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/rcpp_advanced_II/1_Building_Rcpp_apps.Rmd'>Edit source</a>
+
+</p>
+
+
+
+
+
+<script src="https://utteranc.es/client.js"
+        repo="awllee/sc1-2019"
+        issue-term="pathname"
+        label="utterance"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+
+  
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.12.0/languages/tex.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+  
+  <hr>
+  <div class="copyright">© 2020 <a href="https://mfasiolo.github.io/">Matteo Fasiolo</a></div>
+  
+  </footer>
+  </article>
+  
+  </body>
+</html>
+

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+	<meta name="generator" content="Hugo 0.95.0" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>Home - SC2</title>
+    <meta property="og:title" content="Home - SC2">
+    
+    <meta name="twitter:card" content="summary">
+
+    
+      
+    
+
+    
+      
+      <meta property="description" content="This website contains teaching materials for part of the second computing unit of the taught component of the Computational Statistics and Data Science (COMPASS) PhD programme. The source for this &amp;hellip;">
+      <meta property="og:description" content="This website contains teaching materials for part of the second computing unit of the taught component of the Computational Statistics and Data Science (COMPASS) PhD programme. The source for this &amp;hellip;">
+      
+    
+
+    
+    
+
+    
+
+    
+    <link href="/sc2-2019/index.xml" rel="alternate" type="application/rss+xml" title="SC2" />
+    
+    
+
+    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
+    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+
+<link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
+
+
+
+
+
+
+
+
+
+
+
+<nav class="breadcrumbs">
+    
+        <a href="https://mfasiolo.github.io/sc2-2019/">home / </a>
+    
+</nav>
+
+  </head>
+
+  
+  <body class="home">
+    <header class="masthead">
+      <h1><a href="/sc2-2019/">SC2</a></h1>
+
+<p class="tagline">Statistical Computing 2</p>
+
+      <nav class="menu">
+  <input id="menu-check" type="checkbox" hidden/>
+  <label id="menu-label" for="menu-check" class="unselectable" hidden>
+    <span class="icon close-icon">✕</span>
+    <span class="icon open-icon">☰</span>
+    <span class="text">Menu</span>
+  </label>
+  <ul>
+  
+  
+  <li class="active"><a href="/sc2-2019/">Home</a></li>
+  
+  <li><a href="/sc2-2019/rcpp/">Integrating R and C</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_i/">Advanced Rcpp I</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_ii/">Advanced Rcpp II</a></li>
+  
+  <li><a href="/sc2-2019/rcpp_advanced_iii/">Parallel Rcpp</a></li>
+  
+  
+  </ul>
+</nav>
+
+    </header>
+
+    <article class="main">
+      <header class="title">
+      
+
+      </header>
+
+
+<!-- raw HTML omitted -->
+<!-- raw HTML omitted -->
+<h1 id="statistical-computing-2">Statistical Computing 2</h1>
+<p>This website contains teaching materials for part of the second computing unit of the taught component of the <a href="https://www.bristol.ac.uk/cdt/compass/">Computational Statistics and Data Science (COMPASS) PhD programme</a>. The source for this website is available <a href="https://github.com/mfasiolo/sc2-2019">here</a>. The website for the first computing unit can be found <a href="https://awllee.github.io/sc1/">here</a>.</p>
+<p>The material provided here focusses on how <code>R</code> can be interfaced with <code>C++</code> via the <code>Rcpp</code> package. More specifically, we guide the students through the following steps:</p>
+<ol>
+<li>
+<p>interfacing <code>R</code> with <code>C++</code> manually via <code>.Call()</code>;</p>
+</li>
+<li>
+<p>using the <code>Rcpp</code> package for easier/safer integration between <code>R</code> and <code>C++</code>;</p>
+</li>
+<li>
+<p>using <code>Rcpp sugar</code> for performing standard statistical operations in <code>C++</code>;</p>
+</li>
+<li>
+<p>performing numerical linear algebra computation via the <code>RcppArmadillo</code> package;</p>
+</li>
+<li>
+<p>including <code>C++</code> code in an <code>R</code> package via <code>Rcpp</code>;</p>
+</li>
+<li>
+<p>parallelizing your <code>C++</code> code via <code>RcppParallel</code>.</p>
+</li>
+</ol>
+<p>Some of the chapters contain programming exercises, focussed on exploiting the <code>Rcpp</code> family of packages to speed-up statistical computations.</p>
+<p>References:</p>
+<ul>
+<li>Allaire, J.J., Eddelbuettel, D. and François, R., 2018. Rcpp Attributes. Vignette included in R package Rcpp, URL <a href="http://CRAN.R-Project.org/package=Rcpp">http://CRAN.R-Project.org/package=Rcpp</a>.</li>
+<li>Chambers, J.M., 2017. Extending R. Chapman and Hall/CRC.</li>
+<li>Eddelbuettel, D., 2013. Seamless R and C++ integration with Rcpp. New York: Springer.</li>
+<li>Eddelbuettel, D. and Balamuta, J.J., 2018. Extending R with C++: A Brief Introduction to Rcpp. The American Statistician, 72(1), pp.28-36.</li>
+<li>Eddelbuettel, D. and François, R., 2010. Rcpp syntactic sugar.</li>
+<li>Eddelbuettel, D. and Sanderson, C., 2014. RcppArmadillo: Accelerating R with high-performance C++ linear algebra. Computational Statistics &amp; Data Analysis, 71, pp.1054-1063.</li>
+<li>Matloff, N., 2015. Parallel computing for data science: with examples in R, C++ and CUDA. Chapman and Hall/CRC.</li>
+<li>Wickham, H., 2014. Advanced r. Chapman and Hall/CRC.</li>
+</ul>
+
+
+
+
+  <footer>
+  
+
+<script src="//yihui.name/js/math-code.js"></script>
+<script async src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script async src="//yihui.name/js/center-img.js"></script>
+
+
+<script type="text/javascript">
+var sc_project=12110974;
+var sc_invisible=1;
+var sc_security="9b171880";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12110974/0/9b171880/1/"
+alt="Web Analytics"></a></div></noscript>
+
+
+
+
+
+
+
+
+  
+
+
+<p align=right>
+
+<a href='https://github.com/mfasiolo/sc2-2019/blob/master/content/_index.md'>View source</a>
+
+|
+
+<a href='https://github.com/mfasiolo/sc2-2019/edit/master/content/_index.md'>Edit source</a>
+
+</p>
+
+
+
+
+
+
+  
+
+  
+  <hr>
+  <div class="copyright">© 2020 <a href="https://mfasiolo.github.io/">Matteo Fasiolo</a></div>
+  
+  </footer>
+  </article>
+  
+  </body>
+</html>
+
