@@ -9,7 +9,7 @@ output:
 <style>
 body {
 text-align: justify}
-</style>
+</style> 
 
 The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the `Rcpp` package to interface R with C++, but it is useful to know how R’s C API works to have an idea of what is going on under the hood when you use `Rcpp`. Besides, many of the functions in base R are written in C using the R's C API and do not use `Rcpp`. This section assumes that you have some basic knowledge of C.
 
