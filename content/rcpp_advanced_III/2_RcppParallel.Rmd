@@ -12,7 +12,7 @@ text-align: justify}
 </style>
 
 
-Here we briefly introduce the `RcppParallel` R package. As explained in the previous section, Rcpp and R's C API are not guaranteed to be thread-safe, hence calling them within parallel code is 'for experts only'. `RcppParallel` provides tools to access R vectors and matrices in a thread-safe way, thus making parallel coding easier. It also provides simple tools to parallelise your code at a higher level of abstraction, e.g. without explicitly handling parallel threads. Here we introduce the library via some basic examples, for more details see [RcppParallel's website](https://rcppcore.github.io/RcppParallel/).
+Here we briefly introduce the `RcppParallel` `R` package. As explained in the previous section, Rcpp and R's C API are not guaranteed to be thread-safe, hence calling them within parallel code is 'for experts only'. `RcppParallel` provides tools to access R vectors and matrices in a thread-safe way, thus making parallel coding easier. It also provides simple tools to parallelise your code at a higher level of abstraction, e.g. without explicitly handling parallel threads. Here we introduce the library via some basic examples, for more details see [RcppParallel's website](https://rcppcore.github.io/RcppParallel/).
 
 ### Thread-safe accessors
 
