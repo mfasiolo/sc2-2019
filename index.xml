@@ -12,7 +12,7 @@
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/1_building_rcpp_apps/</guid>
-      <description>Spreading Rcpp code over multiple C++ files Using Rcpp extensions with sourceCpp    body { text-align: justify}  Spreading Rcpp code over multiple C++ files So far in these notes, we have put all our Rcpp code in a single .cpp file or we have written the Rcpp code directly in R. An example of the latter approach is:
+      <description>Spreading Rcpp code over multiple C++ files Using Rcpp extensions with sourceCpp Spreading Rcpp code over multiple C++ files So far in these notes, we have put all our Rcpp code in a single .cpp file or we have written the Rcpp code directly in R. An example of the latter approach is:
 library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;Rcpp.h&amp;gt; using namespace Rcpp; double mySquare(double x){ return x * x; } // [[Rcpp::export(name = &amp;quot;squareVect&amp;quot;)]] NumericVector squareVect_I(NumericVector v) { NumericVector out( v.</description>
     </item>
     
@@ -22,7 +22,7 @@ library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;Rcpp.h&amp;gt; using n
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/1_rcpp_sugar/</guid>
-      <description>Vectorized operators and sugar versions of basic R functions Random number generation    body { text-align: justify}  In a previous chapter we explained how Rcpp allows users to interface R with C++ in a convenient way. Here we cover Rcpp sugar, which consists of a set of functions and operators which make the C++ code written using Rcpp behave similarly to R code. In other words, Rcpp sugar allows us to write C++ code which looks similar to its R equivalent, but often more efficient.</description>
+      <description>Vectorized operators and sugar versions of basic R functions Random number generation In a previous chapter we explained how Rcpp allows users to interface R with C++ in a convenient way. Here we cover Rcpp sugar, which consists of a set of functions and operators which make the C++ code written using Rcpp behave similarly to R code. In other words, Rcpp sugar allows us to write C++ code which looks similar to its R equivalent, but often more efficient.</description>
     </item>
     
     <item>
@@ -31,8 +31,9 @@ library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;Rcpp.h&amp;gt; using n
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/1_openmp/</guid>
-      <description>Basic examples Parallel random number generation using OpenMP References    body { text-align: justify}  Here we describe some basic examples on the use of OpenMP to parallelise Rcpp code. We assume that the reader has some basic familiarity with OpenMP. If you need a refresher, have a look at these notes from Chris Wood.
-Basic examples The following Rcpp program simply pauses the system for sec seconds:</description>
+      <description>Basic examples Parallel random number generation using OpenMP References Here we describe some basic examples on the use of OpenMP to parallelise Rcpp code. We assume that the reader has some basic familiarity with OpenMP. If you need a refresher, have a look at these notes from Chris Wood.
+Basic examples The following Rcpp program simply pauses the system for sec seconds:
+library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;unistd.h&amp;gt; #include &amp;lt;Rcpp.</description>
     </item>
     
     <item>
@@ -41,7 +42,7 @@ Basic examples The following Rcpp program simply pauses the system for sec secon
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp/1_r_internals/</guid>
-      <description>Creating C functions that are callable from R Calling expSmooth from R Creating R objects within C code References    body { text-align: justify}  The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the Rcpp package to interface R with C++, but it is useful to know how R’s C API works to have an idea of what is going on under the hood when you use Rcpp.</description>
+      <description>Creating C functions that are callable from R Calling expSmooth from R Creating R objects within C code References The purpose of this section is explaining how to interface R with C/C++ using the raw C API provided by R. In practice it is generally preferable to use the Rcpp package to interface R with C++, but it is useful to know how R’s C API works to have an idea of what is going on under the hood when you use Rcpp.</description>
     </item>
     
     <item>
@@ -50,7 +51,7 @@ Basic examples The following Rcpp program simply pauses the system for sec secon
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp/2_exercises/</guid>
-      <description>Simulation based inference on the Ricker model Adaptive kernel regression smoothing    body { text-align: justify}  Simulation based inference on the Ricker model Here we consider an extremely simple model for population dynamics, the Ricker map: \[ y_{t+1} = ry_te^{-y_t}, \] where \(y_t&amp;gt;0\) represents the size of the population at time \(t\) and \(r&amp;gt;0\) is its growth rate. The model can show a wide range of dynamics, depending on the value of \(r\).</description>
+      <description>Simulation based inference on the Ricker model Adaptive kernel regression smoothing Simulation based inference on the Ricker model Here we consider an extremely simple model for population dynamics, the Ricker map: \[ y_{t+1} = ry_te^{-y_t}, \] where \(y_t&amp;gt;0\) represents the size of the population at time \(t\) and \(r&amp;gt;0\) is its growth rate. The model can show a wide range of dynamics, depending on the value of \(r\). A simple function for generating a trajectory from the map is the following:</description>
     </item>
     
     <item>
@@ -59,7 +60,7 @@ Basic examples The following Rcpp program simply pauses the system for sec secon
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/2_rcpparmadillo/</guid>
-      <description>Introduction Motivating example 1: matrix-matrix-vector product Motivating example 2: sums of matrices Basic RcppArmadillo usage References    body { text-align: justify}  Introduction Many standard statistical models/algorithms (e.g., linear regression, principal component analysis, …) require using numerical linear algebra routines, hence this section explains how to perform such computations efficiently using the RcppArmadillo R package. RcppArmadillo provides an interface to the Armadillo C++ numerical linear algebra library, which is highly useful in practice because it provides an interesting balance between performance and ease of use.</description>
+      <description>Introduction Motivating example 1: matrix-matrix-vector product Motivating example 2: sums of matrices Basic RcppArmadillo usage References Introduction Many standard statistical models/algorithms (e.g., linear regression, principal component analysis, …) require using numerical linear algebra routines, hence this section explains how to perform such computations efficiently using the RcppArmadillo R package. RcppArmadillo provides an interface to the Armadillo C++ numerical linear algebra library, which is highly useful in practice because it provides an interesting balance between performance and ease of use.</description>
     </item>
     
     <item>
@@ -68,7 +69,7 @@ Basic examples The following Rcpp program simply pauses the system for sec secon
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/2_rcppparallel/</guid>
-      <description>Thread-safe accessors Parallel for loops with RcppParallel Parallel reductions with RcppParallel References    body { text-align: justify}  Here we briefly introduce the RcppParallel R package. As explained in the previous section, Rcpp and R’s C API are not guaranteed to be thread-safe, hence calling them within parallel code is ‘for experts only’. RcppParallel provides tools to access R vectors and matrices in a thread-safe way, thus making parallel coding easier.</description>
+      <description>Thread-safe accessors Parallel for loops with RcppParallel Parallel reductions with RcppParallel References Here we briefly introduce the RcppParallel R package. As explained in the previous section, Rcpp and R’s C API are not guaranteed to be thread-safe, hence calling them within parallel code is ‘for experts only’. RcppParallel provides tools to access R vectors and matrices in a thread-safe way, thus making parallel coding easier. It also provides simple tools to parallelise your code at a higher level of abstraction, e.</description>
     </item>
     
     <item>
@@ -77,7 +78,7 @@ Basic examples The following Rcpp program simply pauses the system for sec secon
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/2_rcpp_in_packages/</guid>
-      <description>Intro to Rcpp.package.skeleton and related tools Adding a C++ function to the package    body { text-align: justify}  Intro to Rcpp.package.skeleton and related tools In this section we will learn how to build a basic R package containing Rcpp code. The material provided here relies mainly on the Rcpp-attributes and Rcpp-package vignettes.
+      <description>Intro to Rcpp.package.skeleton and related tools Adding a C++ function to the package Intro to Rcpp.package.skeleton and related tools In this section we will learn how to build a basic R package containing Rcpp code. The material provided here relies mainly on the Rcpp-attributes and Rcpp-package vignettes.
 The Rcpp package provides an extension of the utils::package.skeleton function, which automatically creates a source R package which uses several features of Rcpp.</description>
     </item>
     
@@ -87,7 +88,7 @@ The Rcpp package provides an extension of the utils::package.skeleton function, 
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/3_kde_armadillo/</guid>
-      <description>Introduction An R-based and a dumb Rcpp solution A better RcppArmadillo solution References    body { text-align: justify}  Introduction To provide a more challeging example illustrating the capabilities of RcppArmadillo, here we show how to perform multivariate kernel density estimation (k.d.e.) using this library. In particular, let \({\bf x}_1^o, \dots, {\bf x}_n^o\) be \(d\)-dimensional vectors, sampled from the density \(\pi(\bf x)\). A k.d.e. estimate of \(\pi({\bf x})\) is \[ \hat{\pi}_{\bf H}({\bf x}) = \frac{1}{n} \sum_{i=1}^n \kappa_{\bf H}({\bf x} - {\bf x}_i^o), \] where \(\kappa_{\bf H}\) is a kernel with positive definite bandwidth matrix \({\bf H}\).</description>
+      <description>Introduction An R-based and a dumb Rcpp solution A better RcppArmadillo solution References Introduction To provide a more challeging example illustrating the capabilities of RcppArmadillo, here we show how to perform multivariate kernel density estimation (k.d.e.) using this library. In particular, let \({\bf x}_1^o, \dots, {\bf x}_n^o\) be \(d\)-dimensional vectors, sampled from the density \(\pi(\bf x)\). A k.d.e. estimate of \(\pi({\bf x})\) is \[ \hat{\pi}_{\bf H}({\bf x}) = \frac{1}{n} \sum_{i=1}^n \kappa_{\bf H}({\bf x} - {\bf x}_i^o), \] where \(\kappa_{\bf H}\) is a kernel with positive definite bandwidth matrix \({\bf H}\).</description>
     </item>
     
     <item>
@@ -96,7 +97,7 @@ The Rcpp package provides an extension of the utils::package.skeleton function, 
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_iii/3_exercises/</guid>
-      <description>Smoothing by local polynomial regression    body { text-align: justify}  Smoothing by local polynomial regression Here we consider an Irish smart meter data set which can be found in the electBook package. At the time of writing electBook is available only on Github, hence we need to install it from there using devtools:
+      <description>Smoothing by local polynomial regression Smoothing by local polynomial regression Here we consider an Irish smart meter data set which can be found in the electBook package. At the time of writing electBook is available only on Github, hence we need to install it from there using devtools:
 # Install electBook only if it is not already installed if( !require(electBook) ){ library(devtools) install_github(&amp;quot;mfasiolo/electBook&amp;quot;) library(electBook) } We can now load the data:</description>
     </item>
     
@@ -106,7 +107,7 @@ The Rcpp package provides an extension of the utils::package.skeleton function, 
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp/3_rcpp/</guid>
-      <description>Rcpp via R CMD SHLIB: the old but instructive way Rcpp via sourceCpp() Inline Rcpp via cppFunction() and evalCpp() References    body { text-align: justify}  Rcpp via R CMD SHLIB: the old but instructive way To illustrate how Rcpp works, let us consider again our C function for exponential smoothing, that is:
+      <description>Rcpp via R CMD SHLIB: the old but instructive way Rcpp via sourceCpp() Inline Rcpp via cppFunction() and evalCpp() References Rcpp via R CMD SHLIB: the old but instructive way To illustrate how Rcpp works, let us consider again our C function for exponential smoothing, that is:
 #include &amp;lt;R.h&amp;gt; #include &amp;lt;Rinternals.h&amp;gt; SEXP expSmooth2(SEXP y, SEXP a) { int ni; double *xy, *xys; double ai; SEXP ys; y = PROTECT(coerceVector(y, REALSXP)); ni = length(y); ys = PROTECT(allocVector(REALSXP, ni)); ai = REAL(a)[0]; xy = REAL(y); xys = REAL(ys); xys[0] = xy[0]; for(int i = 1; i &amp;lt; ni; i++){ xys[i] = ai * xys[i-1] + (1 - ai) * xy[i]; } UNPROTECT(2); return ys; } Now, the same function can be implemented in “raw” Rcpp as follows (as we will explain later, this is NOT the recommended way of using Rcpp):</description>
     </item>
     
@@ -116,7 +117,7 @@ The Rcpp package provides an extension of the utils::package.skeleton function, 
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/3_rcpp_in_packages_2/</guid>
-      <description>Using C++ code from other packages within your package Making your package’s C++ code callable from other packages Using an R package to make a C++ library available to other packages    body { text-align: justify}  Using C++ code from other packages within your package In the previous section we explained how to build a basic R package containing Rcpp-based C++ code. Here we explain how you can use C++ code from other packages (e.</description>
+      <description>Using C++ code from other packages within your package Making your package’s C++ code callable from other packages Using an R package to make a C++ library available to other packages Using C++ code from other packages within your package In the previous section we explained how to build a basic R package containing Rcpp-based C++ code. Here we explain how you can use C++ code from other packages (e.</description>
     </item>
     
     <item>
@@ -125,8 +126,9 @@ The Rcpp package provides an extension of the utils::package.skeleton function, 
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_i/4_exercises/</guid>
-      <description>Smoothing by local polynomial regression References    body { text-align: justify}  Smoothing by local polynomial regression Consider the following data set on solar electricity production from Sidney, Australia:
-load(&amp;quot;solarAU.RData&amp;quot;) head(solarAU) ## prod toy tod ## 8832 0.019 0.000000e+00 0 ## 8833 0.032 5.708088e-05 1 ## 8834 0.020 1.141618e-04 2 ## 8835 0.038 1.712427e-04 3 ## 8836 0.036 2.283235e-04 4 ## 8837 0.012 2.854044e-04 5 The variables are:</description>
+      <description>Smoothing by local polynomial regression References Smoothing by local polynomial regression Consider the following data set on solar electricity production from Sidney, Australia:
+load(&amp;quot;solarAU.RData&amp;quot;) head(solarAU) ## prod toy tod ## 8832 0.019 0.000000e+00 0 ## 8833 0.032 5.708088e-05 1 ## 8834 0.020 1.141618e-04 2 ## 8835 0.038 1.712427e-04 3 ## 8836 0.036 2.283235e-04 4 ## 8837 0.012 2.854044e-04 5 The variables are:
+prod total production from 300 homes; toy time-of-year, going from 0 to 1 (00:00 on Jan 1st to 23:30 on 31st Dec); tod time-of-day, taking value in 0, 1, 2, …, 47 (00:00, 00:30, …, 23:30); The interest is modelling the production as a function of the tod and toy.</description>
     </item>
     
     <item>
@@ -135,7 +137,7 @@ load(&amp;quot;solarAU.RData&amp;quot;) head(solarAU) ## prod toy tod ## 8832 0.
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp/4_exercises/</guid>
-      <description>Computing the c.d.f. of the Tweedie distribution    body { text-align: justify}  Computing the c.d.f. of the Tweedie distribution Here we consider the Tweedie distribution which includes continuous distributions, such as the normal and gamma, and discrete distributions, such as the Poisson. Its density is \[ p(y|\mu,\phi,p)=a(y,\phi,p)\exp\bigg[\frac{1}{\phi}\{y\theta-\kappa(\theta)\}\bigg], \] where \[ \theta=\frac{\mu^{1-p}}{1-p}\;\;\text{for}\;p\neq1\;\;\;\text{and}\;\;\;\theta=\log\mu\;\;\text{for}\;p=1, \] and \[ \kappa(\theta)=\frac{\mu^{2-p}}{2-p}\;\;\text{for}\;p\neq2\;\;\;\text{and}\;\;\;\theta=\log\mu\;\;\text{for}\;p=2. \] with \(\mu&amp;gt;0\) being the mean, \(\phi&amp;gt;0\) the scale and \(1\leq p\leq2\) is such that \(\text{var}(y)=\mu^{p}\).</description>
+      <description>Computing the c.d.f. of the Tweedie distribution Computing the c.d.f. of the Tweedie distribution Here we consider the Tweedie distribution which includes continuous distributions, such as the normal and gamma, and discrete distributions, such as the Poisson. Its density is \[ p(y|\mu,\phi,p)=a(y,\phi,p)\exp\bigg[\frac{1}{\phi}\{y\theta-\kappa(\theta)\}\bigg], \] where \[ \theta=\frac{\mu^{1-p}}{1-p}\;\;\text{for}\;p\neq1\;\;\;\text{and}\;\;\;\theta=\log\mu\;\;\text{for}\;p=1, \] and \[ \kappa(\theta)=\frac{\mu^{2-p}}{2-p}\;\;\text{for}\;p\neq2\;\;\;\text{and}\;\;\;\theta=\log\mu\;\;\text{for}\;p=2. \] with \(\mu&amp;gt;0\) being the mean, \(\phi&amp;gt;0\) the scale and \(1\leq p\leq2\) is such that \(\text{var}(y)=\mu^{p}\). As explained in Dunn and Smyth (2005), evaluating the Tweedie density requires approximating the factor \(a(y,\phi,p)\), which does not have a closed-form expression, using specifically designed numerical methods.</description>
     </item>
     
   </channel>

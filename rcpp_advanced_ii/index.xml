@@ -12,7 +12,7 @@
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/1_building_rcpp_apps/</guid>
-      <description>Spreading Rcpp code over multiple C++ files Using Rcpp extensions with sourceCpp    body { text-align: justify}  Spreading Rcpp code over multiple C++ files So far in these notes, we have put all our Rcpp code in a single .cpp file or we have written the Rcpp code directly in R. An example of the latter approach is:
+      <description>Spreading Rcpp code over multiple C++ files Using Rcpp extensions with sourceCpp Spreading Rcpp code over multiple C++ files So far in these notes, we have put all our Rcpp code in a single .cpp file or we have written the Rcpp code directly in R. An example of the latter approach is:
 library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;Rcpp.h&amp;gt; using namespace Rcpp; double mySquare(double x){ return x * x; } // [[Rcpp::export(name = &amp;quot;squareVect&amp;quot;)]] NumericVector squareVect_I(NumericVector v) { NumericVector out( v.</description>
     </item>
     
@@ -22,7 +22,7 @@ library(Rcpp) sourceCpp(code = &amp;#39; #include &amp;lt;Rcpp.h&amp;gt; using n
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/2_rcpp_in_packages/</guid>
-      <description>Intro to Rcpp.package.skeleton and related tools Adding a C++ function to the package    body { text-align: justify}  Intro to Rcpp.package.skeleton and related tools In this section we will learn how to build a basic R package containing Rcpp code. The material provided here relies mainly on the Rcpp-attributes and Rcpp-package vignettes.
+      <description>Intro to Rcpp.package.skeleton and related tools Adding a C++ function to the package Intro to Rcpp.package.skeleton and related tools In this section we will learn how to build a basic R package containing Rcpp code. The material provided here relies mainly on the Rcpp-attributes and Rcpp-package vignettes.
 The Rcpp package provides an extension of the utils::package.skeleton function, which automatically creates a source R package which uses several features of Rcpp.</description>
     </item>
     
@@ -32,7 +32,7 @@ The Rcpp package provides an extension of the utils::package.skeleton function, 
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://mfasiolo.github.io/sc2-2019/rcpp_advanced_ii/3_rcpp_in_packages_2/</guid>
-      <description>Using C++ code from other packages within your package Making your package’s C++ code callable from other packages Using an R package to make a C++ library available to other packages    body { text-align: justify}  Using C++ code from other packages within your package In the previous section we explained how to build a basic R package containing Rcpp-based C++ code. Here we explain how you can use C++ code from other packages (e.</description>
+      <description>Using C++ code from other packages within your package Making your package’s C++ code callable from other packages Using an R package to make a C++ library available to other packages Using C++ code from other packages within your package In the previous section we explained how to build a basic R package containing Rcpp-based C++ code. Here we explain how you can use C++ code from other packages (e.</description>
     </item>
     
   </channel>

@@ -35,13 +35,13 @@ The Rcpp package provides &amp;hellip;">
 
 
 
-    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
-    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
 
-<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+<link rel="stylesheet" href="/css/custom.css" />
 
 <link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
 
@@ -82,7 +82,7 @@ The Rcpp package provides &amp;hellip;">
   
   <body class="sc2-2019">
     <header class="masthead">
-      <h1><a href="/sc2-2019/">SC2</a></h1>
+      <h1><a href="/">SC2</a></h1>
 
 <p class="tagline">Statistical Computing 2</p>
 
@@ -132,8 +132,8 @@ The Rcpp package provides &amp;hellip;">
 
 <div id="TOC">
 <ul>
-<li><a href="#intro-to-rcpp.package.skeleton-and-related-tools">Intro to <code>Rcpp.package.skeleton</code> and related tools</a></li>
-<li><a href="#adding-a-c-function-to-the-package">Adding a <code>C++</code> function to the package</a></li>
+<li><a href="#intro-to-rcpp.package.skeleton-and-related-tools" id="toc-intro-to-rcpp.package.skeleton-and-related-tools">Intro to <code>Rcpp.package.skeleton</code> and related tools</a></li>
+<li><a href="#adding-a-c-function-to-the-package" id="toc-adding-a-c-function-to-the-package">Adding a <code>C++</code> function to the package</a></li>
 </ul>
 </div>
 
@@ -260,7 +260,7 @@ system(&quot;R CMD INSTALL mypack&quot;)</code></pre>
 [1] &quot;_mypack_rcpp_hello_world&quot;
 
 $address
-&lt;pointer: 0x563b1e4138b0&gt;
+&lt;pointer: 0x56505915db50&gt;
 attr(,&quot;class&quot;)
 [1] &quot;RegisteredNativeSymbol&quot;
 
@@ -288,13 +288,13 @@ attr(,&quot;class&quot;)
 Type: Package
 Title: What the Package Does in One &#39;Title Case&#39; Line
 Version: 1.0
-Date: 2022-03-24
+Date: 2023-01-09
 Author: Your Name
 Maintainer: Your Name &lt;your@email.com&gt;
 Description: One paragraph description of what the package does as one
         or more full sentences.
 License: GPL (&gt;= 2)
-Imports: Rcpp (&gt;= 1.0.8)
+Imports: Rcpp (&gt;= 1.0.9)
 LinkingTo: Rcpp</code></pre>
 <p>This is fairly standard, the only thing to notice is that <code>Rcpp</code> appear both in <code>LinkingTo</code> and in <code>Imports</code>. Once the above-mentioned bug will be solved, <code>Rcpp</code> will need to appear only in <code>LinkingTo</code> (unless we genuinely need to import <code>R</code> functions from <code>Rcpp</code> in our package). The latter is a declaration which allows <code>R</code> to retrieve the header file of the target package (<code>Rcpp</code> in this case) and to link them to the compiled code in our package. Hence, it cannot be used to link to a <code>C++</code> library (e.g., the <code>MKL</code> library) which is not contained in a <code>R</code> package. Linking to external libraries must be done manually using makefiles and it is not covered here.</p>
 </div>

@@ -33,13 +33,13 @@
 
 
 
-    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
-    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
 
-<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+<link rel="stylesheet" href="/css/custom.css" />
 
 <link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
 
@@ -80,7 +80,7 @@
   
   <body class="sc2-2019">
     <header class="masthead">
-      <h1><a href="/sc2-2019/">SC2</a></h1>
+      <h1><a href="/">SC2</a></h1>
 
 <p class="tagline">Statistical Computing 2</p>
 
@@ -130,7 +130,7 @@
 
 <div id="TOC">
 <ul>
-<li><a href="#computing-the-c.d.f.-of-the-tweedie-distribution">Computing the c.d.f. of the Tweedie distribution</a></li>
+<li><a href="#computing-the-c.d.f.-of-the-tweedie-distribution" id="toc-computing-the-c.d.f.-of-the-tweedie-distribution">Computing the c.d.f. of the Tweedie distribution</a></li>
 </ul>
 </div>
 
@@ -168,7 +168,7 @@ p(Y&lt;y)\approx\hat{p}(Y&lt;y)=\sum_{k=k_{min}}^{k_{max}}p_{G}\Big (\sum_{i=1}^
 for some <span class="math inline">\(k_{min}\)</span> and <span class="math inline">\(k_{max}\)</span>.</p>
 <p>How to choose <span class="math inline">\(k_{min}\)</span> and <span class="math inline">\(k_{max}\)</span>? Given that <span class="math inline">\(p_{P}\)</span> is maximal at <span class="math inline">\(k = \text{floor}(\lambda)\)</span>, and then monotonically decreases as we move <span class="math inline">\(k\)</span> away from the mode, a reasonable approach is to choose <span class="math inline">\(k_{min}\)</span> and <span class="math inline">\(k_{max}\)</span> such that <span class="math inline">\(p_{P}(N=k) &lt; \epsilon p_{P}\{N=\text{floor}(\lambda)\}\)</span> for <span class="math inline">\(k&lt;k_{min}\)</span> or <span class="math inline">\(k&gt;k_{max}\)</span>, for some small <span class="math inline">\(\epsilon\)</span>. If we do so, it is clear that the a very pessimistic bound on the absolute approximation error is
 <span class="math display">\[
-|p(Y&lt;y)-\hat{p}(Y&lt;y)| &lt; p_{P}(N&lt;k_{min} \; \text{or} \; N&gt;k_{max}) = 1 - p_{P}(k_{min}&lt;N&lt;k_{max}), 
+|p(Y&lt;y)-\hat{p}(Y&lt;y)| &lt; p_{P}(N&lt;k_{min} \; \text{or} \; N&gt;k_{max}) = 1 - p_{P}(k_{min}&lt;N&lt;k_{max}),
 \]</span>
 which is easy to compute. Of course, <span class="math inline">\(k_{min}\)</span> and <span class="math inline">\(k_{max}\)</span> are not known in advance, but we can initialize <span class="math inline">\(k\)</span> to <span class="math inline">\(\text{floor}(\lambda)\)</span> and then increase <span class="math inline">\(k\)</span> until we get to <span class="math inline">\(p_{P}(N=k) &lt; \epsilon p_{P}\{N=\text{floor}(\lambda)\}\)</span>, which means that we have found <span class="math inline">\(k_{max}\)</span>. Then we can set <span class="math inline">\(k\)</span> to the Poisson mode and decrease <span class="math inline">\(k\)</span> until we find <span class="math inline">\(k_{min}\)</span>. All this is implemented in the following R function:</p>
 <pre class="r"><code>pTweedR0 &lt;- function(y, mu, phi, p, eps = 1e-17, log = FALSE){

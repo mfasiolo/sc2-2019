@@ -35,13 +35,13 @@ load(&amp;quot;solarAU.RData&amp;quot;) head(solarAU) ## prod toy tod ## 8832 0.
 
 
 
-    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
-    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
 
-<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+<link rel="stylesheet" href="/css/custom.css" />
 
 <link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
 
@@ -82,7 +82,7 @@ load(&amp;quot;solarAU.RData&amp;quot;) head(solarAU) ## prod toy tod ## 8832 0.
   
   <body class="sc2-2019">
     <header class="masthead">
-      <h1><a href="/sc2-2019/">SC2</a></h1>
+      <h1><a href="/">SC2</a></h1>
 
 <p class="tagline">Statistical Computing 2</p>
 
@@ -132,8 +132,8 @@ load(&amp;quot;solarAU.RData&amp;quot;) head(solarAU) ## prod toy tod ## 8832 0.
 
 <div id="TOC">
 <ul>
-<li><a href="#smoothing-by-local-polynomial-regression">Smoothing by local polynomial regression</a></li>
-<li><a href="#references">References</a></li>
+<li><a href="#smoothing-by-local-polynomial-regression" id="toc-smoothing-by-local-polynomial-regression">Smoothing by local polynomial regression</a></li>
+<li><a href="#references" id="toc-references">References</a></li>
 </ul>
 </div>
 
@@ -202,7 +202,7 @@ grid.arrange(pl1, pl2, ncol = 2)</code></pre>
 <p><img src="/sc2-2019/rcpp_advanced_I/4_Exercises_files/figure-html/unnamed-chunk-6-1.png" width="960" style="display: block; margin: auto;" />
 In particular, the second plot shows a clear non-linear pattern in the residuals. To improve our fit, we make our linear regression model locally adaptive by adopting a local least regression approach (see, e.g., Hastie et al, 2009, section 6.1.2 and 6.3). This consists in letting the estimated regression coefficients depend on <span class="math inline">\(\bf x\)</span>, so that <span class="math inline">\(\hat{\beta} = \hat{\beta}({\bf x})\)</span>. To achieve this, for a fixed value <span class="math inline">\({\bf x}_0\)</span>, we find <span class="math inline">\(\hat{\beta}({\bf x}_0)\)</span> by minimizing the following objective:
 <span class="math display">\[
-\hat{\beta}({\bf x}_0) = \underset{\beta}{\text{argmin}} 
+\hat{\beta}({\bf x}_0) = \underset{\beta}{\text{argmin}}
 \sum_{i=1}^n \kappa_{\bf H}({\bf x}_0-{\bf x}_i) (y_i - \tilde{\bf x}_i^T\beta)^2,
 \]</span>
 where <span class="math inline">\(\kappa_{\bf H}\)</span> is a density kernel with positive definite bandwidth matrix <span class="math inline">\(\bf H\)</span>. Given that <span class="math inline">\(\kappa_{\bf H}({\bf x}_0-{\bf x}_i) \rightarrow 0\)</span> as <span class="math inline">\(||{\bf x}_0-{\bf x}_i|| \rightarrow \infty\)</span>, we have that <span class="math inline">\(\hat{\beta}({\bf x}_0)\)</span> will depend more strongly on the data points close to <span class="math inline">\({\bf x}_0\)</span> than on those far from it.</p>

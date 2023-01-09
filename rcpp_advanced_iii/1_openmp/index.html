@@ -33,13 +33,13 @@
 
 
 
-    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
-    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
 
-<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+<link rel="stylesheet" href="/css/custom.css" />
 
 <link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
 
@@ -80,7 +80,7 @@
   
   <body class="sc2-2019">
     <header class="masthead">
-      <h1><a href="/sc2-2019/">SC2</a></h1>
+      <h1><a href="/">SC2</a></h1>
 
 <p class="tagline">Statistical Computing 2</p>
 
@@ -130,9 +130,9 @@
 
 <div id="TOC">
 <ul>
-<li><a href="#basic-examples">Basic examples</a></li>
-<li><a href="#parallel-random-number-generation-using-openmp">Parallel random number generation using OpenMP</a></li>
-<li><a href="#references">References</a></li>
+<li><a href="#basic-examples" id="toc-basic-examples">Basic examples</a></li>
+<li><a href="#parallel-random-number-generation-using-openmp" id="toc-parallel-random-number-generation-using-openmp">Parallel random number generation using OpenMP</a></li>
+<li><a href="#references" id="toc-references">References</a></li>
 </ul>
 </div>
 
@@ -162,7 +162,7 @@ bool wait_a_second(int sec)
 
 system.time( wait_a_second(2) )[3]</code></pre>
 <pre><code>## elapsed 
-##   2.001</code></pre>
+##       2</code></pre>
 <p>Where <code>sleep</code> is defined in <code>unistd.h</code>. The following function uses OpenMP to wait <code>sec</code> seconds on <code>ncores</code> in parallel:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
 #include &lt;unistd.h&gt;
@@ -194,7 +194,7 @@ bool wait_a_second_omp(int sec, int ncores)
 <p>which tells the compiler that the <code>for</code> loop can be run in parallel. Let try if this works:</p>
 <pre class="r"><code>system.time(wait_a_second_omp(4, 1))[3]</code></pre>
 <pre><code>## elapsed 
-##       4</code></pre>
+##   4.001</code></pre>
 <pre class="r"><code>system.time(wait_a_second_omp(4, 4))[3]</code></pre>
 <pre><code>## elapsed 
 ##   1.002</code></pre>

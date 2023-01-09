@@ -33,13 +33,13 @@
 
 
 
-    <link rel="stylesheet" href="/sc2-2019/css/style.css" />
-    <link rel="stylesheet" href="/sc2-2019/css/fonts.css" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arvo">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Marcellus">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro">
 
-<link rel="stylesheet" href="/sc2-2019/css/custom.css" />
+<link rel="stylesheet" href="/css/custom.css" />
 
 <link rel="icon" href="/sc1-2019/favicon.ico" type="image/x-icon" />
 
@@ -80,7 +80,7 @@
   
   <body class="sc2-2019">
     <header class="masthead">
-      <h1><a href="/sc2-2019/">SC2</a></h1>
+      <h1><a href="/">SC2</a></h1>
 
 <p class="tagline">Statistical Computing 2</p>
 
@@ -130,10 +130,10 @@
 
 <div id="TOC">
 <ul>
-<li><a href="#introduction">Introduction</a></li>
-<li><a href="#an-r-based-and-a-dumb-rcpp-solution">An R-based and a dumb <code>Rcpp</code> solution</a></li>
-<li><a href="#a-better-rcpparmadillo-solution">A better <code>RcppArmadillo</code> solution</a></li>
-<li><a href="#references">References</a></li>
+<li><a href="#introduction" id="toc-introduction">Introduction</a></li>
+<li><a href="#an-r-based-and-a-dumb-rcpp-solution" id="toc-an-r-based-and-a-dumb-rcpp-solution">An R-based and a dumb <code>Rcpp</code> solution</a></li>
+<li><a href="#a-better-rcpparmadillo-solution" id="toc-a-better-rcpparmadillo-solution">A better <code>RcppArmadillo</code> solution</a></li>
+<li><a href="#references" id="toc-references">References</a></li>
 </ul>
 </div>
 
@@ -219,6 +219,11 @@ library(viridis)</code></pre>
 <pre class="r"><code>ggplot(data = data.frame(x = grd[ , 1], y = grd[ , 2], z = dns),
        mapping = aes(x = x, y = y, z = z, fill = z)) +
        geom_raster() + geom_contour() + scale_fill_viridis_c()</code></pre>
+<pre><code>## Warning: The following aesthetics were dropped during statistical transformation: fill
+## ℹ This can happen when ggplot fails to infer the correct grouping structure in
+##   the data.
+## ℹ Did you forget to specify a `group` aesthetic or to convert a numerical
+##   variable into a factor?</code></pre>
 <p><img src="/sc2-2019/rcpp_advanced_I/3_KDE_Armadillo_files/figure-html/unnamed-chunk-5-1.png" width="480" style="display: block; margin: auto;" /></p>
 <p>Can we speed the evaluation of the k.d.e. up using <code>RcppArmadillo</code>? We start with a “lazy” version, where we replace <code>kdeR</code> with:</p>
 <pre class="r"><code>library(Rcpp)
@@ -249,8 +254,8 @@ microbenchmark(kdeR = kdeR(dmvnorm, x, x, diag(d)),
                kdeLazy = kdeLazy(dmvnorm, x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
 ##     expr      min       lq     mean   median       uq      max neval
-##     kdeR 252.4900 260.4413 272.8032 267.8018 275.8732 380.5256   100
-##  kdeLazy 294.6933 309.6324 319.9890 316.9669 329.2711 403.4508   100</code></pre>
+##     kdeR 236.5143 240.2882 244.7328 241.9232 243.7759 328.7994   100
+##  kdeLazy 282.9209 288.0005 293.1174 290.6326 293.1061 375.4042   100</code></pre>
 <p>It turns out that the <code>Rcpp</code> version is not faster. This demonstrates that writing part of the code in <code>Rcpp</code> does not automatically lead to performance gains. In particular our <code>Rcpp</code> code:</p>
 <ul>
 <li>calls the <code>dmvnR</code> function to compute the Gaussian kernel. But we cannot expect an <code>R</code> function
@@ -264,7 +269,7 @@ inefficient.</li>
 <h3>A better <code>RcppArmadillo</code> solution</h3>
 <p>We start by developing an efficient <code>RcppArmadillo</code> function for evaluating the multivariate normal density. Before thinking about its implementation in software, we have to think about what is the most efficient way of computing it numerically. The formula for the log-density is
 <span class="math display">\[
-\log \phi({\bf x}, \mu, {\bf H}) = -\frac{1}{2}({\bf x} - \mu)^T{\bf H}^{-1}({\bf x} - \mu) - \frac{d}{2} \log (2\pi) - \frac{1}{2}\log\text{det}({\bf H}). 
+\log \phi({\bf x}, \mu, {\bf H}) = -\frac{1}{2}({\bf x} - \mu)^T{\bf H}^{-1}({\bf x} - \mu) - \frac{d}{2} \log (2\pi) - \frac{1}{2}\log\text{det}({\bf H}).
 \]</span>
 Now, for the purpose of maximizing efficiency, we have to think about how to numerically compute the quadratic form and the determinant. Let’s start with the first.</p>
 <p>Remember that, in our k.d.e. application, <span class="math inline">\({\bf x}_1, \dots, {\bf x}_m\)</span> are the points at which we want to evaluate the k.d.e. and <span class="math inline">\(\mu_1 = {\bf x}^o_1, \dots, \mu_n = {\bf x}^o_n\)</span> represent the means of the kernel densities. Hence, for any fixed value of <span class="math inline">\(\mu\)</span>, we will have to evaluate the quadratic form <span class="math inline">\(m\)</span> times. For fixed <span class="math inline">\(\mu\)</span>, we could consider two approaches:</p>
@@ -399,17 +404,17 @@ It seems so! We now compare the <code>Armadillo</code> and the <code>R</code> ve
 microbenchmark(R = kdeR(dmvnorm, x, x, diag(d)),
                Armadillo = kdeArma(x, x, diag(d)))</code></pre>
 <pre><code>## Unit: milliseconds
-##       expr      min        lq      mean   median        uq      max neval
-##          R 248.1424 262.04410 272.14696 266.4611 275.32015 393.2609   100
-##  Armadillo  33.2484  35.93235  37.72381  37.6311  39.47025  44.1966   100</code></pre>
+##       expr      min        lq     mean   median       uq      max neval
+##          R 232.8459 235.63985 239.0160 237.2173 239.2580 314.5512   100
+##  Armadillo  45.2688  45.83515 105.2098 148.5707 161.4411 187.8854   100</code></pre>
 <p>This is definitely better than the previous version! Note that the <code>R</code> version (<code>kdeR</code>) is not too inefficient here because, at each iteration of the main <code>for</code> loop, the <code>dmvnorm</code> function evaluates a Gaussian density at <span class="math inline">\(10^3\)</span> data points. If we reduce the number of points at which the k.d.e. is evaluated, the performance gain increases. For instance:</p>
 <pre class="r"><code>library(microbenchmark)
 microbenchmark(R = kdeR(dmvnorm, x[1:10, ], x, diag(d)),
                Armadillo = kdeArma(x[1:10, ], x, diag(d)))</code></pre>
 <pre><code>## Unit: microseconds
-##       expr      min        lq       mean    median       uq      max neval
-##          R 168595.2 182281.05 188914.867 188176.30 192302.0 285383.0   100
-##  Armadillo    373.1    382.25    455.059    413.35    468.3   1824.4   100</code></pre>
+##       expr      min       lq       mean    median       uq      max neval
+##          R 158061.4 159790.7 162213.006 160732.95 162790.5 254353.4   100
+##  Armadillo    569.1    572.7    593.709    602.45    605.6    644.1   100</code></pre>
 <p>This is attributable to a) the fact that we are computing the Cholesky decomposition of <span class="math inline">\(\bf H\)</span> only once rather than <span class="math inline">\(n\)</span> times, b) to the fact that <code>for</code> loops are much quicker in <code>C++</code> that in <code>R</code> and c) (hopefully) that our code for computing the multivariate normal density is faster than that used by <code>dmvtnorm</code>.</p>
 </div>
 <div id="references" class="section level3">
