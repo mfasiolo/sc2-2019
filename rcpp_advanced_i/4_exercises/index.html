@@ -168,7 +168,7 @@ head(solarAU)</code></pre>
 library(viridis)
 ggplot(solarAU,
        aes(x = toy, y = tod, z = logprod)) +
-       stat_summary_hex() +
+       stat_summary_2d() +
        scale_fill_gradientn(colours = viridis(50))</code></pre>
 <p><img src="/sc2-2019/rcpp_advanced_I/4_Exercises_files/figure-html/unnamed-chunk-3-1.png" width="672" />
 As expected, there are more hours of daylight in Austral winter, hence more production occurs during that period of the year.</p>
@@ -193,12 +193,12 @@ solarAU$fitPoly &lt;- fit$fitted.values
 
 pl1 &lt;- ggplot(solarAU,
               aes(x = toy, y = tod, z = fitPoly)) +
-       stat_summary_hex() +
+       stat_summary_2d() +
        scale_fill_gradientn(colours = viridis(50))
 
 pl2 &lt;- ggplot(solarAU,
               aes(x = toy, y = tod, z = logprod - fitPoly)) +
-       stat_summary_hex() +
+       stat_summary_2d() +
        scale_fill_gradientn(colours = viridis(50))
 grid.arrange(pl1, pl2, ncol = 2)</code></pre>
 <p><img src="/sc2-2019/rcpp_advanced_I/4_Exercises_files/figure-html/unnamed-chunk-6-1.png" width="960" style="display: block; margin: auto;" />
@@ -237,12 +237,12 @@ X0 &lt;- X[sub, ]</code></pre>
 
 pl1 &lt;- ggplot(solarAU_sub,
        aes(x = toy, y = tod, z = fitLocal)) +
-       stat_summary_hex() +
+       stat_summary_2d() +
        scale_fill_gradientn(colours = viridis(50))
 
 pl2 &lt;- ggplot(solarAU_sub,
        aes(x = toy, y = tod, z = logprod - fitLocal)) +
-       stat_summary_hex() +
+       stat_summary_2d() +
        scale_fill_gradientn(colours = viridis(50))
 
 grid.arrange(pl1, pl2, ncol = 2)</code></pre>

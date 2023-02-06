@@ -191,9 +191,9 @@ max( abs(y - (x1+x2)) )</code></pre>
 microbenchmark(R = x1 + x2, Rcpp = vsum(x1, x2), RcppSugar = vsumVett(x1, x2))</code></pre>
 <pre><code>## Unit: microseconds
 ##       expr   min     lq    mean median     uq     max neval
-##          R 116.2 418.25 443.398 423.00 427.65  3919.6   100
-##       Rcpp 151.2 503.25 499.567 507.65 512.15  1446.2   100
-##  RcppSugar 115.9 422.45 660.935 428.10 434.25 13197.2   100</code></pre>
+##          R 127.5 426.75 521.981 431.75 440.45  3932.0   100
+##       Rcpp 159.5 513.10 636.968 519.30 528.20 13796.9   100
+##  RcppSugar 129.6 431.75 482.644 436.80 446.30  5428.8   100</code></pre>
 <p>This is because basic arithmetic operations in <code>R</code> are computed using internal code, which is written in <code>C</code> or <code>C++</code>. Calling <code>C++</code> from <code>R</code> has also some overheads, so the <code>C++</code> code can actually become much slower than the <code>R</code> version, for instance:</p>
 <pre class="r"><code>d &lt;- 1e2
 x1 &lt;- rnorm(d)
@@ -201,9 +201,9 @@ x2 &lt;- rnorm(d)
 microbenchmark(R = x1 + x2, Rcpp = vsum(x1, x2), RcppSugar = vsumVett(x1, x2))</code></pre>
 <pre><code>## Unit: nanoseconds
 ##       expr  min   lq mean median   uq   max neval
-##          R  100  300  392    400  400  3600   100
-##       Rcpp 2500 2700 2906   2800 3100  5700   100
-##  RcppSugar 2400 2600 3005   2800 2950 14800   100</code></pre>
+##          R  100  300  427    400  400  4000   100
+##       Rcpp 2300 2600 2879   2800 3000  6100   100
+##  RcppSugar 2200 2500 2840   2700 2900 12100   100</code></pre>
 <p>Here <code>Rcpp</code> is much slower than <code>R</code>, because the computational effort is limited (the vectors <code>x1</code> and <code>x2</code> are short) and it is dominated by the cost of calling <code>C++</code> from <code>R</code>. Closing this brief digression on the dangers of using <code>Rcpp</code> without a clear idea of where the performance gains will come from, we go back to <code>Rcpp sugar</code>.</p>
 <p><code>Rcpp sugar</code> provides vectorized versions of the main logical operators <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code>, <code>==</code>, <code>&amp;</code>, <code>|</code> and <code>!</code>. For instance, we can define the function:</p>
 <pre class="r"><code>sourceCpp(code = &#39;
@@ -342,7 +342,7 @@ NumericVector rbeta_rcpp(const int n, const int a, const int b) {
 ## Generated R functions 
 ## -------------------------------------------------------
 ## 
-## `.sourceCpp_9_DLLInfo` &lt;- dyn.load(&#39;/tmp/RtmpvPeYEG/sourceCpp-x86_64-pc-linux-gnu-1.0.9/sourcecpp_e39870bc4401/sourceCpp_13.so&#39;)
+## `.sourceCpp_9_DLLInfo` &lt;- dyn.load(&#39;/tmp/Rtmp358fok/sourceCpp-x86_64-pc-linux-gnu-1.0.10/sourcecpp_b56220a9763/sourceCpp_13.so&#39;)
 ## 
 ## rbeta_rcpp &lt;- Rcpp:::sourceCppFunction(function(n, a, b) {}, FALSE, `.sourceCpp_9_DLLInfo`, &#39;sourceCpp_9_rbeta_rcpp&#39;)
 ## 
@@ -351,9 +351,9 @@ NumericVector rbeta_rcpp(const int n, const int a, const int b) {
 ## Building shared library
 ## --------------------------------------------------------
 ## 
-## DIR: /tmp/RtmpvPeYEG/sourceCpp-x86_64-pc-linux-gnu-1.0.9/sourcecpp_e39870bc4401
+## DIR: /tmp/Rtmp358fok/sourceCpp-x86_64-pc-linux-gnu-1.0.10/sourcecpp_b56220a9763
 ## 
-## /opt/R/4.2.2/lib/R/bin/R CMD SHLIB --preclean -o &#39;sourceCpp_13.so&#39; &#39;filee39873c738db.cpp&#39;</code></pre>
+## /opt/R/4.2.2/lib/R/bin/R CMD SHLIB --preclean -o &#39;sourceCpp_13.so&#39; &#39;fileb5623898f60b.cpp&#39;</code></pre>
 <p>we see that the <code>C++</code> wrapper contains the line <code>Rcpp::RNGScope rcpp_rngScope_gen;</code> which internally calls <code>GetRNGState</code>. <code>PutRNGState</code> will be called automatically when exiting the <code>C++</code> wrapper function.</p>
 <p>One case when we need to worry about the reading and writing the <code>R</code>’s RNG state, is when we want to do things manually, that is without using the <code>// [[Rcpp::export]]</code> attribute. To provide an example, define the function:</p>
 <pre class="cpp"><code>#include &lt;Rcpp.h&gt;
